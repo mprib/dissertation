@@ -1,6 +1,7 @@
 #%%
 import polars as pl
 from pathlib import Path
+from plotnine import ggplot, aes, geom_line, facet_wrap, themes
 
 output_folder = Path(r"C:\Users\Mac Prible\OneDrive - The University of Texas at Austin\research\PDSV\data\pilot\v3d_output\gait_cycle_data")
 
@@ -123,13 +124,66 @@ variables = ["RightBeltSpeed_X","LeftBeltSpeed_X"]
 
 #%%
 sample_data = (data_long.lazy()
-               .filter(pl.col("Condition")==condition)
-               .filter(pl.col("Period")=="start")
+            #    .filter(pl.col("Condition")==condition)
+            #    .filter(pl.col("Period")=="start")
                .filter(pl.col("VariableAxis").is_in(variables))
+            #    .filter(pl.col("GaitCycle") < 10)
                .collect())
+
 # %%
-sample_data_wide = sample_data.pivot(
+belt_speed_data = sample_data.pivot(
     index=["Participant", "Side", "Condition", "Period", "GaitCycle", "NormalizedTimeStep"],
     columns = "VariableAxis",
     values="Value")
+
+belt_speed_data = (belt_speed_data.lazy()
+                   # get difference between belt speeds at each instant of time
+                   .with_columns(
+                       ((pl.col("LeftBeltSpeed_X")-pl.col("RightBeltSpeed_X")).abs()*1000).alias("SpeedDiff")
+                   )
+                   # get max belt speed difference across each gait cycle
+                   .group_by(["Condition", "Side", "Participant", "Period", "GaitCycle"])
+                   .agg(pl.col("SpeedDiff").max().alias("MaxSpeedDiff"))
+                   .sort(pl.col("GaitCycle"))               
+                   .collect()
+                   )
+
+
+#%%
+# Plot using plotnine
+plot = (ggplot(belt_speed_data, aes(x='GaitCycle', y='MaxSpeedDiff', color='Condition')) +
+        geom_line() +
+        facet_wrap("~Period")+
+        themes.theme_minimal())
+
+# %%
+plot.show()
+
+# %%
+# grab gait cycles to measure by filtering belt_speed_data on speed difFerence and getting max gait cycle
+steady_state_gait_cycles = (belt_speed_data.lazy()
+                            .filter(pl.col("MaxSpeedDiff")<0.3)
+                            .collect()
+                            )
+# %%
+last_steady_state_Pre = (steady_state_gait_cycles.lazy()
+                         .filter(pl.col("Period")=="start")
+                         .sort(by="GaitCycle", descending=True)
+                         .group_by(["Condition"]).head(6)
+                         .collect()
+)
+#%%
+first_steady_state_Post = (steady_state_gait_cycles.lazy()
+                           .filter(pl.col("Period")=="stop")
+                           .sort(by="GaitCycle")
+                           .group_by(["Condition"]).head(6)
+                           .collect()
+)
+
+# %%
+# For "Start" Period, sort by GaitCycle descending and get the first (latest) of each group
+# Combine the results back into a single DataFrame
+result = pl.concat([last_steady_state_Pre, first_steady_state_Post])
+result
+
 # %%
