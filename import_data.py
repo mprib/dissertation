@@ -12,67 +12,66 @@ file_name = f"s{subject}_{side}_gait_cycle_data.tsv"
 data_path = Path(output_folder,file_name)
 
 # Read the data without headers
-data = pl.read_csv(data_path, separator='\t', has_header=False)
+raw_data = pl.read_csv(data_path, separator='\t', has_header=False)
 
-data = data.transpose()
-data[0,0] = "file"
-data[0,1] = "variable"
-data[0,4] = "axis"
-
+raw_data = raw_data.transpose()
+raw_data[0,0] = "file"
+raw_data[0,1] = "variable"
+raw_data[0,4] = "axis"
 
 # Drop the file folder columns which are extraneous
-columns_to_drop = data.columns[2:4]  # Adjust the indices to match the columns you want to drop
-data = data.drop(columns_to_drop)
+columns_to_drop = raw_data.columns[2:4]  # Adjust the indices to match the columns you want to drop
+raw_data = raw_data.drop(columns_to_drop)
 
 # Step 1: Extract the first row to get the new column names
-new_column_names = data.head(1).to_dict(as_series=False)
+new_column_names = raw_data.head(1).to_dict(as_series=False)
 # Convert the dictionary values to a list of new column names
 new_column_names = [value[0] for value in new_column_names.values()]
 
 # Step 2: Remove the first row from the DataFrame
-data = data.tail(-1)
+raw_data = raw_data.tail(-1)
 
 # Step 3: Set the new column names
-data.columns = new_column_names
+raw_data.columns = new_column_names
 
 #%%
 # Concatenate "file", "variable", and "axis" columns into a new column named "concatenated"
-data = data.with_columns(
+raw_data = raw_data.with_columns(
     pl.concat_str(
-       [data["variable"], data["axis"]],
+       [raw_data["variable"], raw_data["axis"]],
        separator="_"
     ).alias("VariableAxis"))
 
-data = data.with_columns(
+raw_data = raw_data.with_columns(
     pl.concat_str(
-        [data["file"], data["VariableAxis"]], 
+        [raw_data["file"], raw_data["VariableAxis"]], 
         separator="_"  # You can adjust the separator as needed
     ).alias("concatenated")
 )
 
-data = data.drop(["variable", "axis"])
+raw_data = raw_data.drop(["variable", "axis"])
 # To insert 'concatenated' at column 0 position, we use `select` with column names reordered
 front_columns = ["VariableAxis", "concatenated"]
-back_columns = [col for col in data.columns if col not in front_columns]
-data = data.select(front_columns+back_columns)
+back_columns = [col for col in raw_data.columns if col not in front_columns]
+raw_data = raw_data.select(front_columns+back_columns)
 
 #%%
 # Create a counter for each gait cycle to be used for selecting relevent data
 sequenced_column_names = []
 gait_cycle_sequence = []
-concatenated_names = data["concatenated"].to_list()
+concatenated_names = raw_data["concatenated"].to_list()
 
 for item in concatenated_names:
     gait_cycle_sequence.append(sequenced_column_names.count(item))
     sequenced_column_names.append(item)
 
-data = data.with_columns(pl.Series("GaitCycle", gait_cycle_sequence))
-data = data.select(["GaitCycle"] + data.columns[:-1])
+raw_data = raw_data.with_columns(pl.Series("GaitCycle", gait_cycle_sequence))
+raw_data = raw_data.select(["GaitCycle"] + raw_data.columns[:-1])
 
 # %%
 # realizing I also need to be storing the order of the trials in each file name
 # extract data that can be extracted from file name
-file_names = data["file"].to_list()
+file_names = raw_data["file"].to_list()
 participants = []
 conditions = []  #   
 periods = []  #  i.e. start/stop
@@ -85,7 +84,7 @@ for name in file_names:
     conditions.append(condition)
     periods.append(period)
 
-data = data.with_columns(
+raw_data = raw_data.with_columns(
     [
     pl.Series("Participant", participants), 
     pl.Series("Condition", conditions),
@@ -96,16 +95,15 @@ data = data.with_columns(
 
 # %%
 drop_columns = ["file", "concatenated"]
-data = data.drop(drop_columns)
+raw_data = raw_data.drop(drop_columns)
 
 
 front_columns = ["Participant", "Side", "Condition", "Period", "VariableAxis", "GaitCycle"]
-back_columns = [col for col in data.columns if col not in front_columns]
-data = data.select(front_columns+back_columns)
+back_columns = [col for col in raw_data.columns if col not in front_columns]
+raw_data = raw_data.select(front_columns+back_columns)
 
 # %%
-data_long = data.melt(id_vars=front_columns, value_name="Value", variable_name="NormalizedTimeStep")
-
+data_long = raw_data.melt(id_vars=front_columns, value_name="Value", variable_name="NormalizedTimeStep")
 
 # %%
 data_long = data_long.with_columns(pl.col("Value").cast(pl.Float64))
@@ -113,8 +111,6 @@ data_long = data_long.with_columns(pl.col("NormalizedTimeStep").cast(pl.Int16))
 # %%
 
 # Now the hard part...figuring out when the perturbation begins...
-
-
 conditions = data_long["Condition"].unique().to_list()
 all_variables = data_long["VariableAxis"].unique().to_list()
 # %%
@@ -183,7 +179,33 @@ first_steady_state_Post = (steady_state_gait_cycles.lazy()
 # %%
 # For "Start" Period, sort by GaitCycle descending and get the first (latest) of each group
 # Combine the results back into a single DataFrame
-result = pl.concat([last_steady_state_Pre, first_steady_state_Post])
-result
+measured_gait_cycles = pl.concat([last_steady_state_Pre, first_steady_state_Post])
+measured_gait_cycles
 
+# %%
+join_columns = ["Condition", "Side", "Participant", "GaitCycle", "Period"]
+measured_data_long = measured_gait_cycles.join(data_long,on=join_columns)
+# %%
+# measured data here is the Visual3D data associated with the last 6 steps of PreAdaptation and
+# the first 6 steps of post adaptation. I would like to potentially filter out the "intermediate"
+# steps as well (# 6 or #1 as the case may be) but this is my draft approach
+index_columns = ["Condition", "Side", "Participant", "GaitCycle", "Period", "NormalizedTimeStep"]
+measured_data = measured_data_long.pivot(index = index_columns,
+                                         values="Value",
+                                         columns="VariableAxis")
+# %%
+group_columns = ["Condition", "Side", "Participant", "Period", "NormalizedTimeStep"]
+
+result = (measured_data
+          .group_by(group_columns)
+          .agg([
+                 pl.col("L_ANKLE_MOMENT_X").mean().alias("avg_L_ANKLE_MOMENT_X"),
+                 pl.col("R_ANKLE_MOMENT_X").mean().alias("avg_R_ANKLE_MOMENT_X"),
+                 pl.col("R_ANKLE_MOMENT_Y").mean().alias("avg_R_ANKLE_MOMENT_Y"),
+                 pl.col("R_ANKLE_MOMENT_Z").mean().alias("avg_R_ANKLE_MOMENT_Z"),
+                 pl.col("LeftBeltSpeed_X").mean().alias("avg_LeftBeltSpeed_X"),
+                 pl.col("RightBeltSpeed_X").mean().alias("avg_RightBeltSpeed_X"),
+                 pl.col("HEEL_DISTANCE_X").mean().alias("avg_HEEL_DISTANCE_X") 
+          ])
+)
 # %%
