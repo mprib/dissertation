@@ -6,6 +6,7 @@ from plotnine import ggplot, aes, geom_line, facet_wrap, themes
 output_folder = Path(r"C:\Users\Mac Prible\OneDrive - The University of Texas at Austin\research\PDSV\data\pilot\v3d_output\gait_cycle_data")
 
 subject = 2
+side = "right"
 side = "left"
 
 file_name = f"s{subject}_{side}_gait_cycle_data.tsv"
@@ -108,6 +109,7 @@ data_long = raw_data.melt(id_vars=front_columns, value_name="Value", variable_na
 # %%
 data_long = data_long.with_columns(pl.col("Value").cast(pl.Float64))
 data_long = data_long.with_columns(pl.col("NormalizedTimeStep").cast(pl.Int16))
+data_long = data_long.with_columns(pl.col("Value")*-1)
 # %%
 
 # Now the hard part...figuring out when the perturbation begins...
@@ -115,15 +117,11 @@ conditions = data_long["Condition"].unique().to_list()
 all_variables = data_long["VariableAxis"].unique().to_list()
 # %%
 
-condition = "uni_sbt"
 variables = ["RightBeltSpeed_X","LeftBeltSpeed_X"]
 
 #%%
 sample_data = (data_long.lazy()
-            #    .filter(pl.col("Condition")==condition)
-            #    .filter(pl.col("Period")=="start")
                .filter(pl.col("VariableAxis").is_in(variables))
-            #    .filter(pl.col("GaitCycle") < 10)
                .collect())
 
 # %%
@@ -208,4 +206,20 @@ result = (measured_data
                  pl.col("HEEL_DISTANCE_X").mean().alias("avg_HEEL_DISTANCE_X") 
           ])
 )
+# %%
+
+plot = (ggplot(result, aes(x='NormalizedTimeStep', y='avg_L_ANKLE_MOMENT_X', color='Condition')) +
+        geom_line() +
+        facet_wrap("~Period")+
+        themes.theme_minimal())
+
+plot.show()
+# %%
+plot = (ggplot(result, aes(x='NormalizedTimeStep', y='avg_R_ANKLE_MOMENT_X', color='Condition')) +
+        geom_line() +
+        facet_wrap("~Period")+
+        themes.theme_minimal())
+
+plot.show()
+
 # %%
