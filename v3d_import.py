@@ -14,7 +14,7 @@ RAW_OUTPUT_FOLDER = Path(r"C:\Users\Mac Prible\OneDrive - The University of Texa
 
 
 def import_long_data(subject: int, side:str,) -> pl.DataFrame:
-    file_name = f"s{subject}_{side}_gait_cycle_data.tsv"
+    file_name = f"S{subject}_{side}_gait_cycle_data.tsv"
     data_path = Path(RAW_OUTPUT_FOLDER,file_name)
 
     # Read the data without headers
@@ -121,8 +121,8 @@ if __name__ == "__main__":
 
     #%%    
     subject = 1
-    side = "left"
     side = "right"
+    side = "left"
 
     data_long = import_long_data(subject, side)
     # %%
