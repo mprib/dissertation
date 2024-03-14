@@ -116,8 +116,8 @@ if __name__ == "__main__":
 
     #%%    
     subject = 2
-    side = "right"
     side = "left"
+    side = "right"
 
     data_long = import_long_data(subject, side)
     # %%
@@ -172,14 +172,14 @@ if __name__ == "__main__":
     last_steady_state_Pre = (steady_state_gait_cycles.lazy()
                             .filter(pl.col("Period")=="start")
                             .sort(by="GaitCycle", descending=True)
-                            .group_by(["Condition"]).head(6)
+                            .group_by(["Condition"]).head(5)
                             .collect()
     )
     #%%
     first_steady_state_Post = (steady_state_gait_cycles.lazy()
                             .filter(pl.col("Period")=="stop")
                             .sort(by="GaitCycle")
-                            .group_by(["Condition"]).head(6)
+                            .group_by(["Condition"]).head(5)
                             .collect()
     )
 
@@ -225,6 +225,22 @@ if __name__ == "__main__":
     plot.show()
     # %%
     plot = (ggplot(result, aes(x='NormalizedTimeStep', y='avg_R_ANKLE_MOMENT_X', color='Condition')) +
+            geom_line() +
+            facet_wrap("~Period")+
+            themes.theme_minimal())
+
+    plot.show()
+
+    # %%
+
+    plot = (ggplot(result, aes(x='NormalizedTimeStep', y='avg_HEEL_DISTANCE_X', color='Condition')) +
+            geom_line() +
+            facet_wrap("~Period")+
+            themes.theme_minimal())
+
+    plot.show()
+    # %%
+    plot = (ggplot(result, aes(x='NormalizedTimeStep', y='avg_HEEL_DISTANCE_X', color='Condition')) +
             geom_line() +
             facet_wrap("~Period")+
             themes.theme_minimal())
