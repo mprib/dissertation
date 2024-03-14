@@ -9,7 +9,9 @@ import polars as pl
 from pathlib import Path
 from plotnine import ggplot, aes, geom_line, facet_wrap, themes
 
-RAW_OUTPUT_FOLDER = Path(r"C:\Users\Mac Prible\OneDrive - The University of Texas at Austin\research\PDSV\data\pilot\v3d_output\gait_cycle_data")
+# RAW_OUTPUT_FOLDER = Path(r"C:\Users\Mac Prible\OneDrive - The University of Texas at Austin\research\PDSV\data\pilot\v3d_output\gait_cycle_data")
+RAW_OUTPUT_FOLDER = Path(r"C:\Users\Mac Prible\OneDrive - The University of Texas at Austin\research\PDSV\data\PDVS_2024\v3d")
+
 
 def import_long_data(subject: int, side:str,) -> pl.DataFrame:
     file_name = f"s{subject}_{side}_gait_cycle_data.tsv"
@@ -76,19 +78,22 @@ def import_long_data(subject: int, side:str,) -> pl.DataFrame:
     participants = []
     conditions = []  #   
     periods = []  #  i.e. start/stop
+    condition_orders = []
     for name in file_names:
-        participant, remainder = name.split(sep="_",maxsplit=1)
+        participant, condition_order, remainder = name.split(sep="_",maxsplit=2)
         remainder = remainder.replace(".c3d","")
         condition, period = remainder.rsplit(sep="_",maxsplit=1)
     
         participants.append(participant)
         conditions.append(condition)
+        condition_orders.append(condition_order)
         periods.append(period)
 
     raw_data = raw_data.with_columns(
         [
         pl.Series("Participant", participants), 
         pl.Series("Condition", conditions),
+        pl.Series("ConditionOrder", condition_order),
         pl.Series("Period",periods),
         pl.Series("Side", [side]*len(periods))
         ]
@@ -97,7 +102,7 @@ def import_long_data(subject: int, side:str,) -> pl.DataFrame:
     raw_data = raw_data.drop(drop_columns)
 
 
-    front_columns = ["Participant", "Side", "Condition", "Period", "VariableAxis", "GaitCycle"]
+    front_columns = ["Participant", "Side", "Condition", "ConditionOrder", "Period", "VariableAxis", "GaitCycle"]
     back_columns = [col for col in raw_data.columns if col not in front_columns]
     raw_data = raw_data.select(front_columns+back_columns)
 
@@ -115,7 +120,7 @@ def import_long_data(subject: int, side:str,) -> pl.DataFrame:
 if __name__ == "__main__":
 
     #%%    
-    subject = 2
+    subject = 1
     side = "left"
     side = "right"
 
@@ -135,7 +140,7 @@ if __name__ == "__main__":
 
     # %%
     belt_speed_data = sample_data.pivot(
-        index=["Participant", "Side", "Condition", "Period", "GaitCycle", "NormalizedTimeStep"],
+        index=["Participant", "Side", "Condition", "ConditionOrder", "Period", "GaitCycle", "NormalizedTimeStep"],
         columns = "VariableAxis",
         values="Value")
 
@@ -165,21 +170,21 @@ if __name__ == "__main__":
     # %%
     # grab gait cycles to measure by filtering belt_speed_data on speed difFerence and getting max gait cycle
     steady_state_gait_cycles = (belt_speed_data.lazy()
-                                .filter(pl.col("MaxSpeedDiff")<0.3)
+                                .filter(pl.col("MaxSpeedDiff")<0.5)
                                 .collect()
                                 )
     # %%
     last_steady_state_Pre = (steady_state_gait_cycles.lazy()
                             .filter(pl.col("Period")=="start")
                             .sort(by="GaitCycle", descending=True)
-                            .group_by(["Condition"]).head(5)
+                            .group_by(["Condition"]).head(6)
                             .collect()
     )
     #%%
     first_steady_state_Post = (steady_state_gait_cycles.lazy()
                             .filter(pl.col("Period")=="stop")
                             .sort(by="GaitCycle")
-                            .group_by(["Condition"]).head(5)
+                            .group_by(["Condition"]).head(6)
                             .collect()
     )
 
@@ -206,18 +211,47 @@ if __name__ == "__main__":
     result = (measured_data
             .group_by(group_columns)
             .agg([
-                    pl.col("L_ANKLE_MOMENT_X").mean().alias("avg_L_ANKLE_MOMENT_X"),
+                    pl.col("R_HIP_MOMENT_X").mean().alias("avg_R_HIP_MOMENT_X"),
+                    pl.col("R_KNEE_MOMENT_X").mean().alias("avg_R_KNEE_MOMENT_X"),
                     pl.col("R_ANKLE_MOMENT_X").mean().alias("avg_R_ANKLE_MOMENT_X"),
-                    pl.col("R_ANKLE_MOMENT_Y").mean().alias("avg_R_ANKLE_MOMENT_Y"),
-                    pl.col("R_ANKLE_MOMENT_Z").mean().alias("avg_R_ANKLE_MOMENT_Z"),
+                    pl.col("L_HIP_MOMENT_X").mean().alias("avg_L_HIP_MOMENT_X"),
+                    pl.col("L_KNEE_MOMENT_X").mean().alias("avg_L_KNEE_MOMENT_X"),
+                    pl.col("L_ANKLE_MOMENT_X").mean().alias("avg_L_ANKLE_MOMENT_X"),
                     pl.col("LeftBeltSpeed_X").mean().alias("avg_LeftBeltSpeed_X"),
                     pl.col("RightBeltSpeed_X").mean().alias("avg_RightBeltSpeed_X"),
                     pl.col("HEEL_DISTANCE_X").mean().alias("avg_HEEL_DISTANCE_X") 
             ])
     )
     # %%
+    plot = (ggplot(result, aes(x='NormalizedTimeStep', y='avg_L_HIP_MOMENT_X', color='Condition')) +
+            geom_line() +
+            facet_wrap("~Period")+
+            themes.theme_minimal())
 
+    plot.show()
+    # %%
+    plot = (ggplot(result, aes(x='NormalizedTimeStep', y='avg_L_KNEE_MOMENT_X', color='Condition')) +
+            geom_line() +
+            facet_wrap("~Period")+
+            themes.theme_minimal())
+
+    plot.show()
+    # %%
     plot = (ggplot(result, aes(x='NormalizedTimeStep', y='avg_L_ANKLE_MOMENT_X', color='Condition')) +
+            geom_line() +
+            facet_wrap("~Period")+
+            themes.theme_minimal())
+
+    plot.show()
+    # %%
+    plot = (ggplot(result, aes(x='NormalizedTimeStep', y='avg_R_HIP_MOMENT_X', color='Condition')) +
+            geom_line() +
+            facet_wrap("~Period")+
+            themes.theme_minimal())
+
+    plot.show()
+    # %%
+    plot = (ggplot(result, aes(x='NormalizedTimeStep', y='avg_R_KNEE_MOMENT_X', color='Condition')) +
             geom_line() +
             facet_wrap("~Period")+
             themes.theme_minimal())
