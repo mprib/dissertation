@@ -114,31 +114,16 @@ def import_long_data(subject: int, side:str,) -> pl.DataFrame:
 
     return data_long
 
-#%% 
-
-
-if __name__ == "__main__":
-
-    #%%    
-    subject = 1
-    side = "right"
-    side = "left"
-
-    data_long = import_long_data(subject, side)
-    # %%
-
-    # Now the hard part...figuring out when the perturbation begins...
-    # conditions = data_long["Condition"].unique().to_list()
-    # all_variables = data_long["VariableAxis"].unique().to_list()
-    # %%
-
+def get_max_belt_speed_diff(data_long:pl.DataFrame)->pl.DataFrame:
+    """
+    returns the maximum belt speed difference across stance phases
+    """
     variables = ["RightBeltSpeed_X","LeftBeltSpeed_X"]
 
     sample_data = (data_long.lazy()
                 .filter(pl.col("VariableAxis").is_in(variables))
                 .collect())
 
-    # %%
     belt_speed_data = sample_data.pivot(
         index=["Participant", "Side", "Condition", "ConditionOrder", "Period", "GaitCycle", "NormalizedTimeStep"],
         columns = "VariableAxis",
@@ -155,32 +140,20 @@ if __name__ == "__main__":
                     .sort(pl.col("GaitCycle"))               
                     .collect()
                     )
+    return belt_speed_data
 
-
-    #%%
-    # Plot using plotnine
-    plot = (ggplot(belt_speed_data, aes(x='GaitCycle', y='MaxSpeedDiff', color='Condition')) +
-            geom_line() +
-            facet_wrap("~Period")+
-            themes.theme_minimal())
-
-    # %%
-    plot.show()
-
-    # %%
+def get_measured_gait_cycles(belt_speed_data:pl.DataFrame)->pl.DataFrame:
     # grab gait cycles to measure by filtering belt_speed_data on speed difFerence and getting max gait cycle
     steady_state_gait_cycles = (belt_speed_data.lazy()
                                 .filter(pl.col("MaxSpeedDiff")<0.5)
                                 .collect()
                                 )
-    # %%
     last_steady_state_Pre = (steady_state_gait_cycles.lazy()
                             .filter(pl.col("Period")=="start")
                             .sort(by="GaitCycle", descending=True)
                             .group_by(["Condition"]).head(6)
                             .collect()
     )
-    #%%
     first_steady_state_Post = (steady_state_gait_cycles.lazy()
                             .filter(pl.col("Period")=="stop")
                             .sort(by="GaitCycle")
@@ -188,11 +161,39 @@ if __name__ == "__main__":
                             .collect()
     )
 
-    # %%
     # For "Start" Period, sort by GaitCycle descending and get the first (latest) of each group
     # Combine the results back into a single DataFrame
     measured_gait_cycles = pl.concat([last_steady_state_Pre, first_steady_state_Post])
-    measured_gait_cycles
+        
+    return measured_gait_cycles    
+
+#%%
+if __name__ == "__main__":
+
+    #%%    
+    subject = 1
+    side = "right"
+    side = "left"
+
+    data_long = import_long_data(subject, side)
+    # %%
+
+    # Now the hard part...figuring out when the perturbation begins...
+    # conditions = data_long["Condition"].unique().to_list()
+    # all_variables = data_long["VariableAxis"].unique().to_list()
+
+    belt_speed_data = get_max_belt_speed_diff(data_long)
+    #%%
+    # Plot using plotnine
+    plot = (ggplot(belt_speed_data, aes(x='GaitCycle', y='MaxSpeedDiff', color='Condition')) +
+            geom_line() +
+            facet_wrap("~Period")+
+            themes.theme_minimal())
+
+    plot.show()
+
+    # %%
+    measured_gait_cycles = get_measured_gait_cycles(belt_speed_data)
 
     # %%
     join_columns = ["Condition", "Side", "Participant", "GaitCycle", "Period"]
@@ -206,20 +207,17 @@ if __name__ == "__main__":
                                             values="Value",
                                             columns="VariableAxis")
     # %%
+    side_letter = str.upper(side[0])
     group_columns = ["Condition", "Side", "Participant", "Period", "NormalizedTimeStep"]
-
     result = (measured_data
             .group_by(group_columns)
             .agg([
-                    pl.col("R_HIP_MOMENT_X").mean().alias("avg_R_HIP_MOMENT_X"),
-                    pl.col("R_KNEE_MOMENT_X").mean().alias("avg_R_KNEE_MOMENT_X"),
-                    pl.col("R_ANKLE_MOMENT_X").mean().alias("avg_R_ANKLE_MOMENT_X"),
-                    pl.col("L_HIP_MOMENT_X").mean().alias("avg_L_HIP_MOMENT_X"),
-                    pl.col("L_KNEE_MOMENT_X").mean().alias("avg_L_KNEE_MOMENT_X"),
-                    pl.col("L_ANKLE_MOMENT_X").mean().alias("avg_L_ANKLE_MOMENT_X"),
-                    pl.col("LeftBeltSpeed_X").mean().alias("avg_LeftBeltSpeed_X"),
-                    pl.col("RightBeltSpeed_X").mean().alias("avg_RightBeltSpeed_X"),
-                    pl.col("HEEL_DISTANCE_X").mean().alias("avg_HEEL_DISTANCE_X") 
+                    pl.col(f"{side_letter}_HIP_MOMENT_X").mean().alias(f"avg_{side_letter}_HIP_MOMENT_X"),
+                    pl.col(f"{side_letter}_KNEE_MOMENT_X").mean().alias(f"avg_{side_letter}_KNEE_MOMENT_X"),
+                    pl.col(f"{side_letter}_ANKLE_MOMENT_X").mean().alias(f"avg_{side_letter}_ANKLE_MOMENT_X"),
+                    pl.col("LeftBeltSpeed_X").mean().alias("avg_LeftBeltSpeed"),
+                    pl.col("RightBeltSpeed_X").mean().alias("avg_RightBeltSpeed"),
+                    pl.col("HEEL_DISTANCE_X").mean().alias("avg_HEEL_DISTANCE") 
             ])
     )
     # %%
@@ -243,42 +241,24 @@ if __name__ == "__main__":
             themes.theme_minimal())
 
     plot.show()
-    # %%
-    plot = (ggplot(result, aes(x='NormalizedTimeStep', y='avg_R_HIP_MOMENT_X', color='Condition')) +
+    #%%
+    plot = (ggplot(result, aes(x='NormalizedTimeStep', y='avg_HEEL_DISTANCE', color='Condition')) +
             geom_line() +
             facet_wrap("~Period")+
             themes.theme_minimal())
 
     plot.show()
     # %%
-    plot = (ggplot(result, aes(x='NormalizedTimeStep', y='avg_R_KNEE_MOMENT_X', color='Condition')) +
+    plot = (ggplot(result, aes(x='NormalizedTimeStep', y='avg_LeftBeltSpeed', color='Condition')) +
             geom_line() +
             facet_wrap("~Period")+
             themes.theme_minimal())
 
     plot.show()
-    # %%
-    plot = (ggplot(result, aes(x='NormalizedTimeStep', y='avg_R_ANKLE_MOMENT_X', color='Condition')) +
+    #%%
+    plot = (ggplot(result, aes(x='NormalizedTimeStep', y='avg_RightBeltSpeed', color='Condition')) +
             geom_line() +
             facet_wrap("~Period")+
             themes.theme_minimal())
 
     plot.show()
-
-    # %%
-
-    plot = (ggplot(result, aes(x='NormalizedTimeStep', y='avg_HEEL_DISTANCE_X', color='Condition')) +
-            geom_line() +
-            facet_wrap("~Period")+
-            themes.theme_minimal())
-
-    plot.show()
-    # %%
-    plot = (ggplot(result, aes(x='NormalizedTimeStep', y='avg_HEEL_DISTANCE_X', color='Condition')) +
-            geom_line() +
-            facet_wrap("~Period")+
-            themes.theme_minimal())
-
-    plot.show()
-
-    # %%
