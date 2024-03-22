@@ -176,29 +176,25 @@ if __name__ == "__main__":
     side = "left"
 
     data_long = import_long_data(subject, side)
-    # %%
 
     # Now the hard part...figuring out when the perturbation begins...
     # conditions = data_long["Condition"].unique().to_list()
     # all_variables = data_long["VariableAxis"].unique().to_list()
 
     belt_speed_data = get_max_belt_speed_diff(data_long)
-    #%%
-    # Plot using plotnine
-    plot = (ggplot(belt_speed_data, aes(x='GaitCycle', y='MaxSpeedDiff', color='Condition')) +
-            geom_line() +
-            facet_wrap("~Period")+
-            themes.theme_minimal())
+    # # Plot using plotnine
+    # plot = (ggplot(belt_speed_data, aes(x='GaitCycle', y='MaxSpeedDiff', color='Condition')) +
+    #         geom_line() +
+    #         facet_wrap("~Period")+
+    #         themes.theme_minimal())
 
-    plot.show()
+    # plot.show()
 
-    # %%
     measured_gait_cycles = get_measured_gait_cycles(belt_speed_data)
 
-    # %%
     join_columns = ["Condition", "Side", "Participant", "GaitCycle", "Period"]
     measured_data_long = measured_gait_cycles.join(data_long,on=join_columns)
-    # %%
+
     # measured data here is the Visual3D data associated with the last 6 steps of PreAdaptation and
     # the first 6 steps of post adaptation. I would like to potentially filter out the "intermediate"
     # steps as well (# 6 or #1 as the case may be) but this is my draft approach
@@ -206,7 +202,6 @@ if __name__ == "__main__":
     measured_data = measured_data_long.pivot(index = index_columns,
                                             values="Value",
                                             columns="VariableAxis")
-    # %%
     side_letter = str.upper(side[0])
     group_columns = ["Condition", "Side", "Participant", "Period", "NormalizedTimeStep"]
     result = (measured_data
@@ -220,45 +215,44 @@ if __name__ == "__main__":
                     pl.col("HEEL_DISTANCE_X").mean().alias("avg_HEEL_DISTANCE") 
             ])
     )
-    # %%
-    plot = (ggplot(result, aes(x='NormalizedTimeStep', y='avg_L_HIP_MOMENT_X', color='Condition')) +
+    # # %%
+    # plot = (ggplot(result, aes(x='NormalizedTimeStep', y='avg_L_HIP_MOMENT_X', color='Condition')) +
+    #         geom_line() +
+    #         facet_wrap("~Period")+
+    #         themes.theme_minimal())
+
+    # plot.show()
+    # # %%
+    # plot = (ggplot(result, aes(x='NormalizedTimeStep', y='avg_L_KNEE_MOMENT_X', color='Condition')) +
+    #         geom_line() +
+    #         facet_wrap("~Period")+
+    #         themes.theme_minimal())
+
+    # plot.show()
+    plot = (ggplot(result, aes(x='NormalizedTimeStep', y=f'avg_{side_letter}_ANKLE_MOMENT_X', color='Condition')) +
             geom_line() +
             facet_wrap("~Period")+
             themes.theme_minimal())
 
     plot.show()
-    # %%
-    plot = (ggplot(result, aes(x='NormalizedTimeStep', y='avg_L_KNEE_MOMENT_X', color='Condition')) +
-            geom_line() +
-            facet_wrap("~Period")+
-            themes.theme_minimal())
-
-    plot.show()
-    # %%
-    plot = (ggplot(result, aes(x='NormalizedTimeStep', y='avg_L_ANKLE_MOMENT_X', color='Condition')) +
-            geom_line() +
-            facet_wrap("~Period")+
-            themes.theme_minimal())
-
-    plot.show()
-    #%%
     plot = (ggplot(result, aes(x='NormalizedTimeStep', y='avg_HEEL_DISTANCE', color='Condition')) +
             geom_line() +
             facet_wrap("~Period")+
             themes.theme_minimal())
 
     plot.show()
-    # %%
-    plot = (ggplot(result, aes(x='NormalizedTimeStep', y='avg_LeftBeltSpeed', color='Condition')) +
-            geom_line() +
-            facet_wrap("~Period")+
-            themes.theme_minimal())
 
-    plot.show()
-    #%%
-    plot = (ggplot(result, aes(x='NormalizedTimeStep', y='avg_RightBeltSpeed', color='Condition')) +
-            geom_line() +
-            facet_wrap("~Period")+
-            themes.theme_minimal())
+    # plot = (ggplot(result, aes(x='NormalizedTimeStep', y='avg_LeftBeltSpeed', color='Condition')) +
+    #         geom_line() +
+    #         facet_wrap("~Period")+
+    #         themes.theme_minimal())
 
-    plot.show()
+    # plot.show()
+
+    # plot = (ggplot(result, aes(x='NormalizedTimeStep', y='avg_RightBeltSpeed', color='Condition')) +
+    #         geom_line() +
+    #         facet_wrap("~Period")+
+    #         themes.theme_minimal())
+
+    # plot.show()
+# %%
