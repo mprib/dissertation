@@ -7,13 +7,16 @@ more stable functions that will make things easier to grok and maintain.
 #%%
 import polars as pl
 from pathlib import Path
-from plotnine import ggplot, aes, geom_line, facet_wrap, themes
+from plotnine import ggplot, aes, geom_line, facet_wrap, themes, facet_grid
 
 # RAW_OUTPUT_FOLDER = Path(r"C:\Users\Mac Prible\OneDrive - The University of Texas at Austin\research\PDSV\data\pilot\v3d_output\gait_cycle_data")
 RAW_OUTPUT_FOLDER = Path(r"C:\Users\Mac Prible\OneDrive - The University of Texas at Austin\research\PDSV\data\PDVS_2024\v3d")
 
 
 def import_long_data(subject: int, side:str,) -> pl.DataFrame:
+    """
+    Note that all data here is in the form of normalized stance phase
+    """
     file_name = f"S{subject}_{side}_gait_cycle_data.tsv"
     data_path = Path(RAW_OUTPUT_FOLDER,file_name)
 
@@ -77,32 +80,32 @@ def import_long_data(subject: int, side:str,) -> pl.DataFrame:
     file_names = raw_data["file"].to_list()
     participants = []
     conditions = []  #   
-    periods = []  #  i.e. start/stop
+    start_stop = []  #  i.e. start/stop
     condition_orders = []
     for name in file_names:
         participant, condition_order, remainder = name.split(sep="_",maxsplit=2)
         remainder = remainder.replace(".c3d","")
-        condition, period = remainder.rsplit(sep="_",maxsplit=1)
+        condition, start_stop_str = remainder.rsplit(sep="_",maxsplit=1)
     
         participants.append(participant)
         conditions.append(condition)
         condition_orders.append(condition_order)
-        periods.append(period)
+        start_stop.append(start_stop_str)
 
     raw_data = raw_data.with_columns(
         [
         pl.Series("Participant", participants), 
         pl.Series("Condition", conditions),
         pl.Series("ConditionOrder", condition_order),
-        pl.Series("Period",periods),
-        pl.Series("Side", [side]*len(periods))
+        pl.Series("StartStop",start_stop),
+        pl.Series("Side", [side]*len(start_stop))
         ]
         )
     drop_columns = ["file", "concatenated"]
     raw_data = raw_data.drop(drop_columns)
 
 
-    front_columns = ["Participant", "Side", "Condition", "ConditionOrder", "Period", "VariableAxis", "GaitCycle"]
+    front_columns = ["Participant", "Side", "Condition", "ConditionOrder", "StartStop", "VariableAxis", "GaitCycle"]
     back_columns = [col for col in raw_data.columns if col not in front_columns]
     raw_data = raw_data.select(front_columns+back_columns)
 
@@ -110,7 +113,13 @@ def import_long_data(subject: int, side:str,) -> pl.DataFrame:
 
     data_long = data_long.with_columns(pl.col("Value").cast(pl.Float64))
     data_long = data_long.with_columns(pl.col("NormalizedTimeStep").cast(pl.Int16))
-    data_long = data_long.with_columns(pl.col("Value")*-1)
+    data_long = data_long.with_columns(
+                        pl.when(pl.col("VariableAxis").str.contains("BeltSpeed"))
+                        .then(pl.col("Value") * 1000)
+                        .otherwise(pl.col("Value"))
+                        .alias("Value")
+                        )
+    
 
     return data_long
 
@@ -125,45 +134,94 @@ def get_max_belt_speed_diff(data_long:pl.DataFrame)->pl.DataFrame:
                 .collect())
 
     belt_speed_data = sample_data.pivot(
-        index=["Participant", "Side", "Condition", "ConditionOrder", "Period", "GaitCycle", "NormalizedTimeStep"],
+        index=["Participant", "Side", "Condition", "ConditionOrder", "StartStop", "GaitCycle", "NormalizedTimeStep"],
         columns = "VariableAxis",
         values="Value")
 
     belt_speed_data = (belt_speed_data.lazy()
                     # get difference between belt speeds at each instant of time
                     .with_columns(
-                        ((pl.col("LeftBeltSpeed_X")-pl.col("RightBeltSpeed_X")).abs()*1000).alias("SpeedDiff")
+                        ((pl.col("LeftBeltSpeed_X")-pl.col("RightBeltSpeed_X")).abs()).alias("SpeedDiff")
                     )
                     # get max belt speed difference across each gait cycle
-                    .group_by(["Condition", "Side", "Participant", "Period", "GaitCycle"])
+                    .group_by(["Condition", "Side", "Participant", "StartStop", "GaitCycle"])
                     .agg(pl.col("SpeedDiff").max().alias("MaxSpeedDiff"))
                     .sort(pl.col("GaitCycle"))               
                     .collect()
                     )
     return belt_speed_data
 
-def get_measured_gait_cycles(belt_speed_data:pl.DataFrame)->pl.DataFrame:
-    # grab gait cycles to measure by filtering belt_speed_data on speed difFerence and getting max gait cycle
+def get_gait_cycle_periods(belt_speed_data:pl.DataFrame, steady_state_diff = 0.3,adaptation_diff=0.8, stance_count = 5)->pl.DataFrame:
+    """
+
+    returns a dataframe of stance phases that will represent:
+        [late baseline, early adaptation, late adaptation, early post adaptation]
+    
+    steady_state_diff: maximum difference in belt speeds across stance phase for it to be included
+                       in either baseline or post_adaptation periods
+        
+    adaptation_diff: minimum difference in belt speeds across stance phase for it to be included in
+                     early_adaptation or late_adaptation 
+    """
+
     steady_state_gait_cycles = (belt_speed_data.lazy()
-                                .filter(pl.col("MaxSpeedDiff")<0.5)
+                                .filter(pl.col("MaxSpeedDiff")<steady_state_diff)
                                 .collect()
                                 )
-    last_steady_state_Pre = (steady_state_gait_cycles.lazy()
-                            .filter(pl.col("Period")=="start")
+    
+    baseline_cycles = (steady_state_gait_cycles.lazy()
+                            .filter(pl.col("StartStop")=="start")
                             .sort(by="GaitCycle", descending=True)
-                            .group_by(["Condition"]).head(6)
-                            .collect()
-    )
-    first_steady_state_Post = (steady_state_gait_cycles.lazy()
-                            .filter(pl.col("Period")=="stop")
-                            .sort(by="GaitCycle")
-                            .group_by(["Condition"]).head(6)
+                            .group_by(["Condition", "Side"])
+                            .head(stance_count+1)
+                            .group_by(["Condition", "Side"])
+                            .tail(stance_count)
+                            .with_columns(pl.lit("Baseline").alias("Period"))
                             .collect()
     )
 
-    # For "Start" Period, sort by GaitCycle descending and get the first (latest) of each group
-    # Combine the results back into a single DataFrame
-    measured_gait_cycles = pl.concat([last_steady_state_Pre, first_steady_state_Post])
+    post_adaptation_cycles = (steady_state_gait_cycles.lazy()
+                            .filter(pl.col("StartStop")=="stop")
+                            .sort(by="GaitCycle")
+                            .group_by(["Condition", "Side"])
+                            .head(stance_count+1)
+                            .group_by(["Condition", "Side"])
+                            .tail(stance_count)
+                            .with_columns(pl.lit("PostAdapt").alias("Period"))
+                            .collect()
+    )
+
+    perturbed_gait_cycles = (belt_speed_data.lazy()
+                            .filter(pl.col("MaxSpeedDiff")>adaptation_diff)
+                            .collect()
+                            )
+
+    early_adaptation_cycles = (perturbed_gait_cycles.lazy()
+                            .filter(pl.col("StartStop")=="start")
+                            .sort(by="GaitCycle", descending=True)
+                            .group_by(["Condition", "Side"])
+                            .tail(stance_count+1)
+                            .group_by(["Condition", "Side"])
+                            .head(stance_count)
+                            .with_columns(pl.lit("Early Adapt").alias("Period"))
+                            .collect()
+    )
+
+    late_adaptation_cycles = (perturbed_gait_cycles.lazy()
+                            .filter(pl.col("StartStop")=="stop")
+                            .sort(by="GaitCycle")
+                            .group_by(["Condition", "Side"])
+                            .tail(stance_count+1)
+                            .group_by(["Condition", "Side"])
+                            .head(stance_count)
+                            .with_columns(pl.lit("Late Adapt").alias("Period"))
+                            .collect()
+    )
+
+    measured_gait_cycles = pl.concat([baseline_cycles,
+                                      early_adaptation_cycles, 
+                                      late_adaptation_cycles,
+                                      post_adaptation_cycles])
         
     return measured_gait_cycles    
 
@@ -172,27 +230,17 @@ if __name__ == "__main__":
 
     #%%    
     subject = 1
-    side = "right"
-    side = "left"
 
-    data_long = import_long_data(subject, side)
-
-    # Now the hard part...figuring out when the perturbation begins...
-    # conditions = data_long["Condition"].unique().to_list()
-    # all_variables = data_long["VariableAxis"].unique().to_list()
+    left_data_long = import_long_data(subject, "left")
+    right_data_long = import_long_data(subject, "right")
+    data_long = pl.concat([left_data_long,right_data_long])
 
     belt_speed_data = get_max_belt_speed_diff(data_long)
-    # # Plot using plotnine
-    # plot = (ggplot(belt_speed_data, aes(x='GaitCycle', y='MaxSpeedDiff', color='Condition')) +
-    #         geom_line() +
-    #         facet_wrap("~Period")+
-    #         themes.theme_minimal())
+    #%%
+    measured_gait_cycles = get_gait_cycle_periods(belt_speed_data)
 
-    # plot.show()
-
-    measured_gait_cycles = get_measured_gait_cycles(belt_speed_data)
-
-    join_columns = ["Condition", "Side", "Participant", "GaitCycle", "Period"]
+    #%%
+    join_columns = ["Condition", "Side", "Participant", "GaitCycle", "StartStop"]
     measured_data_long = measured_gait_cycles.join(data_long,on=join_columns)
 
     # measured data here is the Visual3D data associated with the last 6 steps of PreAdaptation and
@@ -202,57 +250,102 @@ if __name__ == "__main__":
     measured_data = measured_data_long.pivot(index = index_columns,
                                             values="Value",
                                             columns="VariableAxis")
+    side = "right"
+    side = "left"
+
     side_letter = str.upper(side[0])
     group_columns = ["Condition", "Side", "Participant", "Period", "NormalizedTimeStep"]
-    result = (measured_data
+    mean_by_stance = (measured_data
             .group_by(group_columns)
             .agg([
-                    pl.col(f"{side_letter}_HIP_MOMENT_X").mean().alias(f"avg_{side_letter}_HIP_MOMENT_X"),
-                    pl.col(f"{side_letter}_KNEE_MOMENT_X").mean().alias(f"avg_{side_letter}_KNEE_MOMENT_X"),
-                    pl.col(f"{side_letter}_ANKLE_MOMENT_X").mean().alias(f"avg_{side_letter}_ANKLE_MOMENT_X"),
-                    pl.col("LeftBeltSpeed_X").mean().alias("avg_LeftBeltSpeed"),
-                    pl.col("RightBeltSpeed_X").mean().alias("avg_RightBeltSpeed"),
+                    pl.col("R_HIP_MOMENT_X").mean().alias("avg_RIGHT_HIP_MOMENT_X"),
+                    pl.col("R_KNEE_MOMENT_X").mean().alias("avg_RIGHT_KNEE_MOMENT_X"),
+                    pl.col("R_ANKLE_MOMENT_X").mean().alias("avg_RIGHT_ANKLE_MOMENT_X"),
+                    pl.col("L_HIP_MOMENT_X").mean().alias("avg_LEFT_HIP_MOMENT_X"),
+                    pl.col("L_KNEE_MOMENT_X").mean().alias("avg_LEFT_KNEE_MOMENT_X"),
+                    pl.col("L_ANKLE_MOMENT_X").mean().alias("avg_LEFT_ANKLE_MOMENT_X"),
+                    pl.col("LeftBeltSpeed_X").mean().alias("avg_LEFT_BeltSpeed"),
+                    pl.col("RightBeltSpeed_X").mean().alias("avg_RIGHT_BeltSpeed"),
                     pl.col("HEEL_DISTANCE_X").mean().alias("avg_HEEL_DISTANCE") 
             ])
     )
-    # # %%
-    # plot = (ggplot(result, aes(x='NormalizedTimeStep', y='avg_L_HIP_MOMENT_X', color='Condition')) +
-    #         geom_line() +
-    #         facet_wrap("~Period")+
-    #         themes.theme_minimal())
 
-    # plot.show()
-    # # %%
-    # plot = (ggplot(result, aes(x='NormalizedTimeStep', y='avg_L_KNEE_MOMENT_X', color='Condition')) +
-    #         geom_line() +
-    #         facet_wrap("~Period")+
-    #         themes.theme_minimal())
+           
+    # Add new columns for avg_IPSI_ and avg_CONTRA versions of variables
+    # Side refers to stance phase side and this naming convention will make plotting and analysis easier
+    mean_by_stance = mean_by_stance.with_columns([
+        pl.when(pl.col("Side") == "left")
+        .then(pl.col("avg_LEFT_HIP_MOMENT_X"))
+        .otherwise(pl.col("avg_RIGHT_HIP_MOMENT_X"))
+        .alias("avg_IPSI_HIP_MOMENT_X"),
 
-    # plot.show()
-    plot = (ggplot(result, aes(x='NormalizedTimeStep', y=f'avg_{side_letter}_ANKLE_MOMENT_X', color='Condition')) +
+        pl.when(pl.col("Side") == "left")
+        .then(pl.col("avg_RIGHT_HIP_MOMENT_X"))
+        .otherwise(pl.col("avg_LEFT_HIP_MOMENT_X"))
+        .alias("avg_CONTRA_HIP_MOMENT_X"),
+
+        pl.when(pl.col("Side") == "left")
+        .then(pl.col("avg_LEFT_KNEE_MOMENT_X"))
+        .otherwise(pl.col("avg_RIGHT_KNEE_MOMENT_X"))
+        .alias("avg_IPSI_KNEE_MOMENT_X"),
+
+        pl.when(pl.col("Side") == "left")
+        .then(pl.col("avg_RIGHT_KNEE_MOMENT_X"))
+        .otherwise(pl.col("avg_LEFT_KNEE_MOMENT_X"))
+        .alias("avg_CONTRA_KNEE_MOMENT_X"),
+
+        pl.when(pl.col("Side") == "left")
+        .then(pl.col("avg_LEFT_ANKLE_MOMENT_X"))
+        .otherwise(pl.col("avg_RIGHT_ANKLE_MOMENT_X"))
+        .alias("avg_IPSI_ANKLE_MOMENT_X"),
+
+        pl.when(pl.col("Side") == "left")
+        .then(pl.col("avg_RIGHT_ANKLE_MOMENT_X"))
+        .otherwise(pl.col("avg_LEFT_ANKLE_MOMENT_X"))
+        .alias("avg_CONTRA_ANKLE_MOMENT_X"),
+
+        pl.when(pl.col("Side") == "left")
+        .then(pl.col("avg_LEFT_BeltSpeed"))
+        .otherwise(pl.col("avg_RIGHT_BeltSpeed"))
+        .alias("avg_IPSI_BeltSpeed"),
+
+        pl.when(pl.col("Side") == "left")
+        .then(pl.col("avg_RIGHT_BeltSpeed"))
+        .otherwise(pl.col("avg_LEFT_BeltSpeed"))
+        .alias("avg_CONTRA_BeltSpeed"),
+    
+    ]) 
+
+    #%%
+    plot = (ggplot(mean_by_stance, aes(x='NormalizedTimeStep', y='avg_IPSI_ANKLE_MOMENT_X', color='Period')) +
             geom_line() +
-            facet_wrap("~Period")+
+            facet_grid("Condition ~ Side")+
             themes.theme_minimal())
 
     plot.show()
-    plot = (ggplot(result, aes(x='NormalizedTimeStep', y='avg_HEEL_DISTANCE', color='Condition')) +
+
+    plot = (ggplot(mean_by_stance, aes(x='NormalizedTimeStep', y='avg_HEEL_DISTANCE', color='Period')) +
             geom_line() +
-            facet_wrap("~Period")+
+            facet_grid("Condition ~ Side")+
             themes.theme_minimal())
 
     plot.show()
 
-    # plot = (ggplot(result, aes(x='NormalizedTimeStep', y='avg_LeftBeltSpeed', color='Condition')) +
-    #         geom_line() +
-    #         facet_wrap("~Period")+
-    #         themes.theme_minimal())
+    plot = (ggplot(mean_by_stance, aes(x='NormalizedTimeStep', y='avg_IPSI_BeltSpeed', color='Period')) +
+            geom_line() +
+            facet_grid("Condition ~ Side")+
+            themes.theme_minimal())
 
-    # plot.show()
+    plot.show()
 
-    # plot = (ggplot(result, aes(x='NormalizedTimeStep', y='avg_RightBeltSpeed', color='Condition')) +
-    #         geom_line() +
-    #         facet_wrap("~Period")+
-    #         themes.theme_minimal())
+# %%
+# getting step lengths at heel strike
 
-    # plot.show()
+step_lengths = (mean_by_stance
+                .filter(pl.col("NormalizedTimeStep")==1)
+                .with_columns([
+                        pl.col("avg_HEEL_DISTANCE").abs().alias("StepLength")
+                ])
+                .select(["Condition", "Side", "Participant","Period", "StepLength"])
+                )
 # %%
