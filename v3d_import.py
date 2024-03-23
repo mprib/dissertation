@@ -324,13 +324,6 @@ if __name__ == "__main__":
 
     plot.show()
 
-    plot = (ggplot(mean_by_stance, aes(x='NormalizedTimeStep', y='avg_HEEL_DISTANCE', color='Period')) +
-            geom_line() +
-            facet_grid("Condition ~ Side")+
-            themes.theme_minimal())
-
-    plot.show()
-
     plot = (ggplot(mean_by_stance, aes(x='NormalizedTimeStep', y='avg_IPSI_BeltSpeed', color='Period')) +
             geom_line() +
             facet_grid("Condition ~ Side")+
@@ -348,4 +341,46 @@ step_lengths = (mean_by_stance
                 ])
                 .select(["Condition", "Side", "Participant","Period", "StepLength"])
                 )
+
+step_length_symmetry = (step_lengths
+                        .pivot(index=["Participant", "Condition", "Period"], columns="Side",values="StepLength", aggregate_function="first")
+                        .with_columns(
+                            (pl.col("left")/pl.col("right"))
+                            .alias("SLR")
+                        )
+                        )
+
+
+
+step_length_symmetry
 # %%
+include = ["sbt", "ubp", "upp"]
+plot_data = (step_length_symmetry
+             .filter(pl.col("Condition")
+                     .is_in(include))
+            )
+
+(
+    ggplot(plot_data,
+        aes(x="Period", y="SLR", group="Condition", color="Condition"))+ 
+        geom_line()
+)
+
+# %%
+pf_impulses = (mean_by_stance
+ .lazy()
+ .select(["Condition", "Side", "Participant","Period","NormalizedTimeStep", "avg_IPSI_ANKLE_MOMENT_X"])
+ .filter(pl.col("avg_IPSI_ANKLE_MOMENT_X") < 0)
+ .filter(pl.col("Period").is_in(["Baseline", "PostAdapt"]))
+ .filter(pl.col("Condition").is_in(["sbt", "ubp", "upp"]))
+ .group_by(["Condition", "Side", "Participant","Period"])
+ .agg(pl.col("avg_IPSI_ANKLE_MOMENT_X").sum().alias("IPSI_ANKLE_PF_IMPULSE"))
+ .collect()
+)
+
+pf_impulses
+# %%
+(ggplot(pf_impulses,aes(x="Period", y = "IPSI_ANKLE_PF_IMPULSE",group ="Side", color = "Side")) +
+ facet_grid("Condition") +
+ geom_line()
+ )
