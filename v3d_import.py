@@ -153,7 +153,6 @@ def get_max_belt_speed_diff(data_long:pl.DataFrame)->pl.DataFrame:
 
 def get_gait_cycle_periods(belt_speed_data:pl.DataFrame, steady_state_diff = 0.3,adaptation_diff=0.8, stance_count = 5)->pl.DataFrame:
     """
-
     returns a dataframe of stance phases that will represent:
         [late baseline, early adaptation, late adaptation, early post adaptation]
     
@@ -177,8 +176,7 @@ def get_gait_cycle_periods(belt_speed_data:pl.DataFrame, steady_state_diff = 0.3
                             .group_by(["Condition", "Side"])
                             .tail(stance_count)
                             .with_columns(pl.lit("Baseline").alias("Period"))
-                            .collect()
-    )
+                            .collect())
 
     post_adaptation_cycles = (steady_state_gait_cycles.lazy()
                             .filter(pl.col("StartStop")=="stop")
@@ -188,13 +186,11 @@ def get_gait_cycle_periods(belt_speed_data:pl.DataFrame, steady_state_diff = 0.3
                             .group_by(["Condition", "Side"])
                             .tail(stance_count)
                             .with_columns(pl.lit("PostAdapt").alias("Period"))
-                            .collect()
-    )
+                            .collect())
 
     perturbed_gait_cycles = (belt_speed_data.lazy()
                             .filter(pl.col("MaxSpeedDiff")>adaptation_diff)
-                            .collect()
-                            )
+                            .collect())
 
     early_adaptation_cycles = (perturbed_gait_cycles.lazy()
                             .filter(pl.col("StartStop")=="start")
@@ -204,8 +200,7 @@ def get_gait_cycle_periods(belt_speed_data:pl.DataFrame, steady_state_diff = 0.3
                             .group_by(["Condition", "Side"])
                             .head(stance_count)
                             .with_columns(pl.lit("Early Adapt").alias("Period"))
-                            .collect()
-    )
+                            .collect())
 
     late_adaptation_cycles = (perturbed_gait_cycles.lazy()
                             .filter(pl.col("StartStop")=="stop")
@@ -215,8 +210,7 @@ def get_gait_cycle_periods(belt_speed_data:pl.DataFrame, steady_state_diff = 0.3
                             .group_by(["Condition", "Side"])
                             .head(stance_count)
                             .with_columns(pl.lit("Late Adapt").alias("Period"))
-                            .collect()
-    )
+                            .collect())
 
     measured_gait_cycles = pl.concat([baseline_cycles,
                                       early_adaptation_cycles, 
@@ -375,12 +369,15 @@ pf_impulses = (mean_by_stance
  .filter(pl.col("Condition").is_in(["sbt", "ubp", "upp"]))
  .group_by(["Condition", "Side", "Participant","Period"])
  .agg(pl.col("avg_IPSI_ANKLE_MOMENT_X").sum().alias("IPSI_ANKLE_PF_IMPULSE"))
+ .with_columns((pl.col("IPSI_ANKLE_PF_IMPULSE")*-1).alias("IPSI_ANKLE_PF_IMPULSE"))
  .collect()
 )
 
 pf_impulses
 # %%
-(ggplot(pf_impulses,aes(x="Period", y = "IPSI_ANKLE_PF_IMPULSE",group ="Side", color = "Side")) +
+(
+ ggplot(pf_impulses,aes(x="Period", y = "IPSI_ANKLE_PF_IMPULSE",group ="Side", color = "Side")) +
  facet_grid("Condition") +
  geom_line()
  )
+# %%
