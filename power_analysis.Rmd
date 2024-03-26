@@ -8,14 +8,22 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+
+library(ggplot2)
+library(lme4)
+library(emmeans)
+library(dplyr)
+library(tidyr)
 ```
 
-# Establish Parameters
+# Simulate data
 
-```{r cars}
+This will involve getting 
+
+```{r}
 
 # Number of participants
-n <- 100
+n <- 10
 
 # Function to generate simulated data
 generate_sim_data <- function(n, condition_name, period_name, mean_slr, var_slr, mean_pf, var_pf) { # Generate baseline data
@@ -26,8 +34,9 @@ generate_sim_data <- function(n, condition_name, period_name, mean_slr, var_slr,
 
   condition <- rep(condition_name, n)
   period <- rep(period_name,n)
-            
-  return(data.frame(condition, period, slr, pf_impulse))
+  participant <- seq_len(n)
+  
+  return(data.frame(participant, condition, period, slr, pf_impulse))
 }
 
 # Parameters for cSBT
@@ -42,7 +51,7 @@ cSBT_post_params <- list(condition_name = "cSBT",
                     period_name = "PostAdapt",
                     mean_slr = 1.4, 
                     var_slr = 0.15,
-                    mean_pf = 450, 
+                    mean_pf = 400, 
                     var_pf = 150)
 
 # Parameters for FastBraking (Example values, adjust as needed)
@@ -57,7 +66,7 @@ FastBraking_post_params <- list(condition_name = "FastBrake",
                            period_name = "PostAdapt",
                            mean_slr = 1.3, 
                            var_slr = 0.14,
-                           mean_pf = 440, 
+                           mean_pf = 400, 
                            var_pf = 145)
 
 # Parameters for FastPropulsion (Example values, adjust as needed)
@@ -72,7 +81,7 @@ FastPropulsion_post_params <- list(condition_name = "FastProp",
                               period_name = "PostAdapt",
                               mean_slr = 1.3, 
                               var_slr = 0.16,
-                              mean_pf = 460, 
+                              mean_pf = 500, 
                               var_pf = 155)
 
 # Generate simulated data
@@ -91,15 +100,113 @@ sim_data = rbind(cSBT_baseline_data,
                  FastPropulsion_baseline_data, 
                  FastPropulsion_post_data)
 
+# Pivot data wider
+rm(list = setdiff(ls(),"sim_data"))
+
+# Reshape data: wide format to have baseline and post-adaptation SLR for each participant
+sim_data_wide <- sim_data %>%
+  pivot_wider(names_from = period, values_from = c(slr, pf_impulse), names_sep = "_") %>%
+  mutate(change_in_slr = slr_PostAdapt - slr_Baseline,
+         change_in_pf_impulse = pf_impulse_PostAdapt - pf_impulse_Baseline)
+
+
+
+
 head(sim_data)
 ```
 
-## Simulate Large Dataset
+## Visualize results
 
-You can also embed plots, for example:
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+```{r}
+library(ggplot2)
+
+ggplot(sim_data, aes(x=period, y=slr, )) +
+  geom_boxplot(width =0.2, alpha=0.5) + # Boxplot with semi-transparent fill
+  geom_jitter(, width=0.2) + # Jittered scatter points, colored by condition
+  geom_line(aes(group=participant), alpha=0.5) + # Lines connecting same participants
+  stat_summary(fun=mean, geom="point", aes(group=condition, color=condition), shape=18, size=3) + # Plot mean points
+  stat_summary(fun=mean, geom="line", aes(group=condition, color=condition), size=1) + # Connect mean points with line
+  labs(title="Step Length Ratio (SLR)",
+       x="Period",
+       y="SLR") +
+  facet_wrap(~condition) + # Use facet_wrap for separate plots per condition
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1), # Adjust text angle for readability
+        legend.position="bottom") # Move legend to bottom
+
+
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+```{r}
+library(ggplot2)
+
+ggplot(sim_data, aes(x=period, y=pf_impulse, )) +
+  geom_boxplot(width =0.2, alpha=0.5) + # Boxplot with semi-transparent fill
+  geom_jitter(, width=0.2) + # Jittered scatter points, colored by condition
+  geom_line(aes(group=participant), alpha=0.5) + # Lines connecting same participants
+  stat_summary(fun=mean, geom="point", aes(group=condition, color=condition), shape=18, size=3) + # Plot mean points
+  stat_summary(fun=mean, geom="line", aes(group=condition, color=condition), size=1) + # Connect mean points with line
+  labs(title="Plantarflexor Impulse",
+       x="Period",
+       y="SLR") +
+  facet_wrap(~condition) + # Use facet_wrap for separate plots per condition
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1), # Adjust text angle for readability
+        legend.position="bottom") # Move legend to bottom
+
+```
+```{r}
+
+
+# Model with SLR as the response, fixed effects for condition and period, and random intercepts for participants
+model <- lmer(slr ~ condition * period + (1|participant), data = sim_data)
+
+# Summary of the model to check fixed effects estimates
+summary(model)
+
+```
+```{r}
+# Estimated marginal means
+emm <- emmeans(model, ~ condition | period)
+
+# Pairwise comparisons
+pairwise <- pairs(emm)
+print(pairwise)
+
+# Adjust for multiple comparisons, e.g., using Tukey method
+pairwise_adj <- pairs(emm, adjust = "bonferroni")
+print(pairwise_adj)
+
+```
+
+
+## Plot Change Scores
+
+
+```{r}
+
+ggplot(sim_data_wide, aes(x=condition, y=change_in_slr, )) +
+  geom_boxplot(width =0.2, alpha=0.5) + # Boxplot with semi-transparent fill
+  geom_jitter(, width=0.2) + # Jittered scatter points, colored by condition
+  stat_summary(fun=mean, geom="point", aes(group=condition, color=condition), shape=18, size=3) + # Plot mean points
+  labs(title="Change in SLR",
+       x="Condition",
+       y="change in SLR") +
+  #facet_wrap(~condition) + # Use facet_wrap for separate plots per condition
+  theme_minimal() +
+  theme( legend.position="none") # Move legend to bottom
+
+
+ggplot(sim_data_wide, aes(x=condition, y=change_in_pf_impulse, )) +
+  geom_boxplot(width =0.2, alpha=0.5) + # Boxplot with semi-transparent fill
+  geom_jitter(, width=0.2) + # Jittered scatter points, colored by condition
+  stat_summary(fun=mean, geom="point", aes(group=condition, color=condition), shape=18, size=3) + # Plot mean points
+  labs(title="Change in Plantarflexor Impulse",
+       x="Condition",
+       y="change in SLR") +
+  #facet_wrap(~condition) + # Use facet_wrap for separate plots per condition
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1), # Adjust text angle for readability
+        legend.position="bottom") # Move legend to bottom
+```
