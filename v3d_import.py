@@ -311,14 +311,31 @@ if __name__ == "__main__":
     ]) 
 
     #%%
-    plot = (ggplot(mean_by_stance, aes(x='NormalizedTimeStep', y='avg_IPSI_ANKLE_MOMENT_X', color='Period')) +
+    mean_by_stance_pre_post = (mean_by_stance.filter(pl.col("Period").is_in(["Baseline", "PostAdapt"])))
+    plot = (ggplot(mean_by_stance_pre_post, aes(x='NormalizedTimeStep', y='avg_IPSI_ANKLE_MOMENT_X', color='Period')) +
             geom_line() +
             facet_grid("Condition ~ Side")+
             themes.theme_minimal())
 
     plot.show()
 
-    plot = (ggplot(mean_by_stance, aes(x='NormalizedTimeStep', y='avg_IPSI_BeltSpeed', color='Period')) +
+
+    plot = (ggplot(mean_by_stance.filter(pl.col("Period") == "Early Adapt"), aes(x='NormalizedTimeStep', y='avg_IPSI_BeltSpeed', color='Period')) +
+            geom_line() +
+            facet_grid("Condition ~ Side")+
+            themes.theme_minimal())
+
+    plot.show()
+
+#%%
+    plot = (ggplot(mean_by_stance_pre_post, aes(x='NormalizedTimeStep', y='avg_IPSI_HIP_MOMENT_X', color='Period')) +
+            geom_line() +
+            facet_grid("Condition ~ Side")+
+            themes.theme_minimal())
+
+    plot.show()
+
+    plot = (ggplot(mean_by_stance_pre_post, aes(x='NormalizedTimeStep', y='avg_IPSI_KNEE_MOMENT_X', color='Period')) +
             geom_line() +
             facet_grid("Condition ~ Side")+
             themes.theme_minimal())
