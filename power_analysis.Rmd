@@ -193,7 +193,6 @@ ggplot(sim_data_wide, aes(x=condition, y=change_in_slr, )) +
   labs(title="Change in SLR",
        x="Condition",
        y="change in SLR") +
-  #facet_wrap(~condition) + # Use facet_wrap for separate plots per condition
   theme_minimal() +
   theme( legend.position="none") # Move legend to bottom
 
@@ -205,8 +204,6 @@ ggplot(sim_data_wide, aes(x=condition, y=change_in_pf_impulse, )) +
   labs(title="Change in Plantarflexor Impulse",
        x="Condition",
        y="change in SLR") +
-  #facet_wrap(~condition) + # Use facet_wrap for separate plots per condition
   theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1), # Adjust text angle for readability
-        legend.position="bottom") # Move legend to bottom
+   theme( legend.position="none") # Move legend to bottom     
 ```
