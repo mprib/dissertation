@@ -10,10 +10,13 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 
 library(ggplot2)
-library(lme4)
-library(emmeans)
 library(dplyr)
 library(tidyr)
+library(rstatix)
+library(ggpubr)
+library(ez)
+library(emmeans)
+
 ```
 
 # Simulate data
@@ -23,7 +26,7 @@ This will involve getting
 ```{r}
 
 # Number of participants
-n <- 10
+n <- 30
 
 # Function to generate simulated data
 generate_sim_data <- function(n, condition_name, period_name, mean_slr, var_slr, mean_pf, var_pf) { # Generate baseline data
@@ -43,14 +46,14 @@ generate_sim_data <- function(n, condition_name, period_name, mean_slr, var_slr,
 cSBT_baseline_params <- list(condition_name = "cSBT", 
                     period_name = "Baseline",
                     mean_slr = 1, 
-                    var_slr = 0.06, 
+                    var_slr = 0.0036, 
                     mean_pf = 450, 
                     var_pf = 150 )
                     
 cSBT_post_params <- list(condition_name = "cSBT", 
                     period_name = "PostAdapt",
                     mean_slr = 1.4, 
-                    var_slr = 0.15,
+                    var_slr = 0.07,
                     mean_pf = 400, 
                     var_pf = 150)
 
@@ -58,31 +61,31 @@ cSBT_post_params <- list(condition_name = "cSBT",
 FastBraking_baseline_params <- list(condition_name = "FastBrake", 
                            period_name = "Baseline",
                            mean_slr = 1, 
-                           var_slr = 0.06, 
+                           var_slr = 0.0036, 
                            mean_pf = 450, 
                            var_pf = 150)                           
                            
 FastBraking_post_params <- list(condition_name = "FastBrake", 
                            period_name = "PostAdapt",
-                           mean_slr = 1.3, 
-                           var_slr = 0.14,
+                           mean_slr = 1.2, 
+                           var_slr = 0.07,
                            mean_pf = 400, 
-                           var_pf = 145)
+                           var_pf = 300)
 
 # Parameters for FastPropulsion (Example values, adjust as needed)
 FastPropulsion_baseline_params <- list(condition_name = "FastProp", 
                               period_name = "Baseline",
                               mean_slr = 1, 
-                              var_slr = 0.06, 
+                              var_slr = 0.0036, 
                               mean_pf = 450, 
-                              var_pf = 150)
+                              var_pf = 300)
 
 FastPropulsion_post_params <- list(condition_name = "FastProp", 
                               period_name = "PostAdapt",
-                              mean_slr = 1.3, 
-                              var_slr = 0.16,
+                              mean_slr = 1.2, 
+                              var_slr = 0.07,
                               mean_pf = 500, 
-                              var_pf = 155)
+                              var_pf = 300)
 
 # Generate simulated data
 cSBT_baseline_data <- do.call(generate_sim_data, c(list(n), cSBT_baseline_params))
@@ -100,16 +103,13 @@ sim_data = rbind(cSBT_baseline_data,
                  FastPropulsion_baseline_data, 
                  FastPropulsion_post_data)
 
+# Convert factors if not already done
+sim_data$participant <- factor(sim_data$participant)
+sim_data$condition <- factor(sim_data$condition)
+sim_data$period <- factor(sim_data$period)
+
 # Pivot data wider
 rm(list = setdiff(ls(),"sim_data"))
-
-# Reshape data: wide format to have baseline and post-adaptation SLR for each participant
-sim_data_wide <- sim_data %>%
-  pivot_wider(names_from = period, values_from = c(slr, pf_impulse), names_sep = "_") %>%
-  mutate(change_in_slr = slr_PostAdapt - slr_Baseline,
-         change_in_pf_impulse = pf_impulse_PostAdapt - pf_impulse_Baseline)
-
-
 
 
 head(sim_data)
@@ -119,7 +119,6 @@ head(sim_data)
 
 
 ```{r}
-library(ggplot2)
 
 ggplot(sim_data, aes(x=period, y=slr, )) +
   geom_boxplot(width =0.2, alpha=0.5) + # Boxplot with semi-transparent fill
@@ -143,67 +142,96 @@ library(ggplot2)
 
 ggplot(sim_data, aes(x=period, y=pf_impulse, )) +
   geom_boxplot(width =0.2, alpha=0.5) + # Boxplot with semi-transparent fill
-  geom_jitter(, width=0.2) + # Jittered scatter points, colored by condition
+  geom_jitter( width=0.2) + # Jittered scatter points, colored by condition
   geom_line(aes(group=participant), alpha=0.5) + # Lines connecting same participants
   stat_summary(fun=mean, geom="point", aes(group=condition, color=condition), shape=18, size=3) + # Plot mean points
   stat_summary(fun=mean, geom="line", aes(group=condition, color=condition), size=1) + # Connect mean points with line
   labs(title="Plantarflexor Impulse",
        x="Period",
-       y="SLR") +
+       y="PF Impulse") +
   facet_wrap(~condition) + # Use facet_wrap for separate plots per condition
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1), # Adjust text angle for readability
         legend.position="bottom") # Move legend to bottom
 
 ```
+# Statistical Analysis
+
+Following basic guidelines (here)[https://www.datanovia.com/en/lessons/repeated-measures-anova-in-r/#two-way-repeated-measures-anova]
+
+## Identify Outliers
 ```{r}
 
+sim_data %>% 
+  group_by(condition, period) %>% 
+  identify_outliers(slr)
 
-# Model with SLR as the response, fixed effects for condition and period, and random intercepts for participants
-model <- lmer(slr ~ condition * period + (1|participant), data = sim_data)
 
-# Summary of the model to check fixed effects estimates
-summary(model)
-
-```
-```{r}
-# Estimated marginal means
-emm <- emmeans(model, ~ condition | period)
-
-# Pairwise comparisons
-pairwise <- pairs(emm)
-print(pairwise)
-
-# Adjust for multiple comparisons, e.g., using Tukey method
-pairwise_adj <- pairs(emm, adjust = "bonferroni")
-print(pairwise_adj)
+sim_data %>% 
+  group_by(condition, period) %>% 
+  identify_outliers(pf_impulse)
 
 ```
 
 
-## Plot Change Scores
+## Assess Normality Assumption
 
 
+### Shapiro-Wilks   
 ```{r}
 
-ggplot(sim_data_wide, aes(x=condition, y=change_in_slr, )) +
-  geom_boxplot(width =0.2, alpha=0.5) + # Boxplot with semi-transparent fill
-  geom_jitter(, width=0.2) + # Jittered scatter points, colored by condition
-  stat_summary(fun=mean, geom="point", aes(group=condition, color=condition), shape=18, size=3) + # Plot mean points
-  labs(title="Change in SLR",
-       x="Condition",
-       y="change in SLR") +
-  theme_minimal() +
-  theme( legend.position="none") # Move legend to bottom
+sim_data %>% 
+  group_by(condition, period) %>% 
+  shapiro_test(slr) %>% 
+  filter(p < .05)
+
+sim_data %>% 
+  group_by(condition, period) %>% 
+  shapiro_test(slr) %>% 
+  filter(p < .05)
+
+```
+
+### QQ plot
+
+```{r}
+ggqqplot(sim_data, "slr", ggtheme = theme_bw()) +
+  facet_grid(period ~ condition, labeller = "label_both")
+
+```
+## Assess Sphericity
 
 
-ggplot(sim_data_wide, aes(x=condition, y=change_in_pf_impulse, )) +
-  geom_boxplot(width =0.2, alpha=0.5) + # Boxplot with semi-transparent fill
-  geom_jitter(, width=0.2) + # Jittered scatter points, colored by condition
-  stat_summary(fun=mean, geom="point", aes(group=condition, color=condition), shape=18, size=3) + # Plot mean points
-  labs(title="Change in Plantarflexor Impulse",
-       x="Condition",
-       y="change in SLR") +
-  theme_minimal() +
-   theme( legend.position="none") # Move legend to bottom     
+
+# ANOVA
+```{r}
+slr_anova <- anova_test(
+      data = sim_data,
+      dv = slr,
+      wid = participant,
+      within = c(condition,period)) %>% 
+  get_anova_table() 
+
+slr_anova
+
+
+```
+
+```{r}
+sim_data %>% 
+  group_by(condition) %>% 
+  pairwise_t_test(
+    slr ~ period, 
+    paired=TRUE, 
+    p.adjust.method = "bonferroni")
+
+```
+
+```{r}
+anova_test(
+      data = sim_data,
+      dv = pf_impulse,
+      wid = participant,
+      within = c(condition,period)) %>% 
+  get_anova_table()
 ```
