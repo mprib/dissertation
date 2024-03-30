@@ -1,237 +1,181 @@
 ---
 title: "Power Analysis"
 author: "Mac Prible"
+date: "2024-03-30"
 output: html_document
 ---
 
-
-
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-
-library(ggplot2)
-library(dplyr)
-library(tidyr)
-library(rstatix)
-library(ggpubr)
-library(ez)
-library(emmeans)
-
+source("power_analysis_simulation.R")
 ```
 
-# Simulate data
+# Aim 2
 
-This will involve getting 
+## Hypothesis: SLR moves significantly in same direction in all conditions
 
+Planned comparisons are made between baseline and post adaptation within each condition. 
+Powered to distinguish differences in interaction effect (i.e. PDSV may have half impact on SLR)
 ```{r}
 
-# Number of participants
-n <- 30
+# healthy population...anticipate symmetry
+pre_means <-list(
+  "cSBT" = 1,
+  "FastProp" = 1,
+  "FastBrake" = 1
+)
 
-# Function to generate simulated data
-generate_sim_data <- function(n, condition_name, period_name, mean_slr, var_slr, mean_pf, var_pf) { # Generate baseline data
-  
-  # Generate post-adaptation data
-  slr <- rnorm(n, mean = mean_slr, sd = sqrt(var_slr))
-  pf_impulse <- rnorm(n, mean = mean_pf, sd = sqrt(var_pf))
+post_means <-list(
+  "cSBT" = 1.4, # from lauziere et al 2014
+  "FastProp" = 1.2, # expect half impact
+  "FastBrake" = 1.2 # expect half impact
+)
 
-  condition <- rep(condition_name, n)
-  period <- rep(period_name,n)
-  participant <- seq_len(n)
+# from Lauziere et al 2014
+pre_vars <-list(
+  "cSBT" = .0036,
+  "FastProp" = .0036,
+  "FastBrake" = .0036
+)
+
+# cSBT from Lauzier et al 2014
+# makes sense as greater variance expected after adaptation
+post_vars <-list(
+  "cSBT" = .07,
+  "FastProp" = .07,
+  "FastBrake" = .07
+)
+    
+conditions <- list( "cSBT", "FastProp", "FastBrake" )
+    
+test_sample_sizes = 25:35
+for (n in test_sample_sizes){
   
-  return(data.frame(participant, condition, period, slr, pf_impulse))
+    num_simulations = 30
+    
+    # Running simulations in parallel
+    aim_2_slr_results <- lapply(1:num_simulations, function(i) {
+      simulate_aim(n, conditions, pre_means, pre_vars, post_means, post_vars)
+    })
+    
+    # Computing success count and success rate
+    success_count <- sum(unlist(aim_2_slr_results))
+    success_rate <- success_count / num_simulations
+    
+    print(paste("For n = ", n, ", success rate is ", success_rate, " after ", num_simulations, " simulations."))
+  
 }
 
-# Parameters for cSBT
-cSBT_baseline_params <- list(condition_name = "cSBT", 
-                    period_name = "Baseline",
-                    mean_slr = 1, 
-                    var_slr = 0.0036, 
-                    mean_pf = 450, 
-                    var_pf = 150 )
-                    
-cSBT_post_params <- list(condition_name = "cSBT", 
-                    period_name = "PostAdapt",
-                    mean_slr = 1.4, 
-                    var_slr = 0.07,
-                    mean_pf = 400, 
-                    var_pf = 150)
-
-# Parameters for FastBraking (Example values, adjust as needed)
-FastBraking_baseline_params <- list(condition_name = "FastBrake", 
-                           period_name = "Baseline",
-                           mean_slr = 1, 
-                           var_slr = 0.0036, 
-                           mean_pf = 450, 
-                           var_pf = 150)                           
-                           
-FastBraking_post_params <- list(condition_name = "FastBrake", 
-                           period_name = "PostAdapt",
-                           mean_slr = 1.2, 
-                           var_slr = 0.07,
-                           mean_pf = 400, 
-                           var_pf = 300)
-
-# Parameters for FastPropulsion (Example values, adjust as needed)
-FastPropulsion_baseline_params <- list(condition_name = "FastProp", 
-                              period_name = "Baseline",
-                              mean_slr = 1, 
-                              var_slr = 0.0036, 
-                              mean_pf = 450, 
-                              var_pf = 300)
-
-FastPropulsion_post_params <- list(condition_name = "FastProp", 
-                              period_name = "PostAdapt",
-                              mean_slr = 1.2, 
-                              var_slr = 0.07,
-                              mean_pf = 500, 
-                              var_pf = 300)
-
-# Generate simulated data
-cSBT_baseline_data <- do.call(generate_sim_data, c(list(n), cSBT_baseline_params))
-cSBT_post_data <- do.call(generate_sim_data, c(list(n), cSBT_post_params))
-FastBraking_baseline_data <- do.call(generate_sim_data, c(list(n), FastBraking_baseline_params))
-FastBraking_post_data <- do.call(generate_sim_data, c(list(n), FastBraking_post_params))
-FastPropulsion_baseline_data <- do.call(generate_sim_data, c(list(n), FastPropulsion_baseline_params))
-FastPropulsion_post_data <- do.call(generate_sim_data, c(list(n), FastPropulsion_post_params))
-
-
-sim_data = rbind(cSBT_baseline_data,  
-                 cSBT_post_data, 
-                 FastBraking_baseline_data, 
-                 FastBraking_post_data, 
-                 FastPropulsion_baseline_data, 
-                 FastPropulsion_post_data)
-
-# Convert factors if not already done
-sim_data$participant <- factor(sim_data$participant)
-sim_data$condition <- factor(sim_data$condition)
-sim_data$period <- factor(sim_data$period)
-
-# Pivot data wider
-rm(list = setdiff(ls(),"sim_data"))
-
-
-head(sim_data)
 ```
 
-## Visualize results
 
+## Hypothesis: PF impulse increases in FastProp, decreases in other conditions
 
+Planned comparisons are made between baseline and post adaptation within each condition. 
+Powered to distinguish differences in interaction effect (i.e. PDSV may have half impact on SLR)
 ```{r}
 
-ggplot(sim_data, aes(x=period, y=slr, )) +
-  geom_boxplot(width =0.2, alpha=0.5) + # Boxplot with semi-transparent fill
-  geom_jitter(, width=0.2) + # Jittered scatter points, colored by condition
-  geom_line(aes(group=participant), alpha=0.5) + # Lines connecting same participants
-  stat_summary(fun=mean, geom="point", aes(group=condition, color=condition), shape=18, size=3) + # Plot mean points
-  stat_summary(fun=mean, geom="line", aes(group=condition, color=condition), size=1) + # Connect mean points with line
-  labs(title="Step Length Ratio (SLR)",
-       x="Period",
-       y="SLR") +
-  facet_wrap(~condition) + # Use facet_wrap for separate plots per condition
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1), # Adjust text angle for readability
-        legend.position="bottom") # Move legend to bottom
+# estimates here taken from subject 1 values; time normalized impulse across stance
+pre_means <-list(
+  "cSBT" = 450,
+  "FastProp" = 450,
+  "FastBrake" = 450
+)
 
+# subject 1: PF impulse decrease in cSBT (as with Lauziere 2014) and fastBrake, increased with FastProp
+post_means <-list(
+  "cSBT" = 425,
+  "FastProp" = 475,
+  "FastBrake" = 425
+)
 
-```
+# estimates based on Allen et al (2011)
+pre_vars <-list(
+  "cSBT" = 150,
+  "FastProp" = 150,
+  "FastBrake" = 150
+)
 
-```{r}
-library(ggplot2)
+# expecting increased variance following perturbation
+post_vars <-list(
+  "cSBT" = 300,
+  "FastProp" = 300,
+  "FastBrake" = 300
+)
 
-ggplot(sim_data, aes(x=period, y=pf_impulse, )) +
-  geom_boxplot(width =0.2, alpha=0.5) + # Boxplot with semi-transparent fill
-  geom_jitter( width=0.2) + # Jittered scatter points, colored by condition
-  geom_line(aes(group=participant), alpha=0.5) + # Lines connecting same participants
-  stat_summary(fun=mean, geom="point", aes(group=condition, color=condition), shape=18, size=3) + # Plot mean points
-  stat_summary(fun=mean, geom="line", aes(group=condition, color=condition), size=1) + # Connect mean points with line
-  labs(title="Plantarflexor Impulse",
-       x="Period",
-       y="PF Impulse") +
-  facet_wrap(~condition) + # Use facet_wrap for separate plots per condition
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1), # Adjust text angle for readability
-        legend.position="bottom") # Move legend to bottom
-
-```
-# Statistical Analysis
-
-Following basic guidelines (here)[https://www.datanovia.com/en/lessons/repeated-measures-anova-in-r/#two-way-repeated-measures-anova]
-
-## Identify Outliers
-```{r}
-
-sim_data %>% 
-  group_by(condition, period) %>% 
-  identify_outliers(slr)
-
-
-sim_data %>% 
-  group_by(condition, period) %>% 
-  identify_outliers(pf_impulse)
+conditions <- list( "cSBT", "FastProp", "FastBrake" )
+    
+       
+test_sample_sizes = 5:10
+for (n in test_sample_sizes){
+  
+    num_simulations = 20
+    
+    # Running simulations in parallel
+    aim_2_pf_results <- lapply(1:num_simulations, function(i) {
+      simulate_aim(n, conditions, pre_means, pre_vars, post_means, post_vars)
+    })
+    
+    # Computing success count and success rate
+    success_count <- sum(unlist(aim_2_pf_results))
+    success_rate <- success_count / num_simulations
+    
+    print(paste("For n = ", n, ", success rate is ", success_rate, " after ", num_simulations, " simulations."))
+  
+}
 
 ```
 
 
-## Assess Normality Assumption
+# Aim 3
+
+## Change PF Impulse Bilaterally in either direction
 
 
-### Shapiro-Wilks   
 ```{r}
 
-sim_data %>% 
-  group_by(condition, period) %>% 
-  shapiro_test(slr) %>% 
-  filter(p < .05)
+# estimates here taken from subject 1 values; time normalized impulse across stance
+pre_means <-list(
+  "FastProp" = 450,
+  "FastBrake" = 450
+)
 
-sim_data %>% 
-  group_by(condition, period) %>% 
-  shapiro_test(slr) %>% 
-  filter(p < .05)
+# subject 1: PF impulse decrease in cSBT (as with Lauziere 2014) and fastBrake, increased with FastProp
+post_means <-list(
+  "FastProp" = 475,
+  "FastBrake" = 425
+)
 
-```
+# estimates based on Allen et al (2011)
+pre_vars <-list(
+  "FastProp" = 150,
+  "FastBrake" = 150
+)
 
-### QQ plot
+# expecting increased variance following perturbation
+post_vars <-list(
+  "FastProp" = 300,
+  "FastBrake" = 300
+)
+    
+conditions <- list( "FastProp", "FastBrake" )
+    
+test_sample_sizes = 5:10
+for (n in test_sample_sizes){
+  
+    num_simulations = 20
+    
+    # Running simulations in parallel
+    aim_2_pf_results <- lapply(1:num_simulations, function(i) {
+      simulate_aim(n, conditions, pre_means, pre_vars, post_means, post_vars)
+    })
+    
+    # Computing success count and success rate
+    success_count <- sum(unlist(aim_2_pf_results))
+    success_rate <- success_count / num_simulations
+    
+    print(paste("For n = ", n, ", success rate is ", success_rate, " after ", num_simulations, " simulations."))
+  
+}
 
-```{r}
-ggqqplot(sim_data, "slr", ggtheme = theme_bw()) +
-  facet_grid(period ~ condition, labeller = "label_both")
-
-```
-## Assess Sphericity
-
-
-
-# ANOVA
-```{r}
-slr_anova <- anova_test(
-      data = sim_data,
-      dv = slr,
-      wid = participant,
-      within = c(condition,period)) %>% 
-  get_anova_table() 
-
-slr_anova
-
-
-```
-
-```{r}
-sim_data %>% 
-  group_by(condition) %>% 
-  pairwise_t_test(
-    slr ~ period, 
-    paired=TRUE, 
-    p.adjust.method = "bonferroni")
-
-```
-
-```{r}
-anova_test(
-      data = sim_data,
-      dv = pf_impulse,
-      wid = participant,
-      within = c(condition,period)) %>% 
-  get_anova_table()
 ```
