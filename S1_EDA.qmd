@@ -1,0 +1,40 @@
+---
+title: "S1_EDA"
+format: html
+editor: visual
+---
+
+# Import Long Data
+
+```{r}
+library(readxl)
+library(tidyverse)
+RAW_OUTPUT_FOLDER <- "C:\\Users\\Mac Prible\\OneDrive - The University of Texas at Austin\\research\\PDSV\\data\\PDVS_2024\\v3d"
+measured_data_long <- read.csv(paste0(RAW_OUTPUT_FOLDER,"\\", "S1_measured_data_long.csv"))
+```
+
+# Average normalized variables and Clean Up
+
+Averages across relevant stance phases.
+
+```{r}
+mean_stance_data <-measured_data_long %>% 
+  select(-MaxSpeedDiff) %>% 
+  group_by(Condition, Side, Participant, StartStop, Period, ConditionOrder, VariableAxis, NormalizedTimeStep) %>% 
+  summarize(AverageValue = mean(Value, na.rm=TRUE)) %>% 
+  separate(VariableAxis, into = c("Variable", "Axis"), sep = "_(?=[^_]+$)", extra = "merge") %>% 
+  mutate(Variable = case_when(
+    Variable == "FP1" ~ "Left_GRF",
+    Variable == "FP2" ~ "Right_GRF",
+    TRUE ~ Variable  # This keeps all other values unchanged
+  )) 
+
+
+# rm(measured_data_long)
+```
+# Minor clean up of some things
+```{r}
+mean_stance_data %>% 
+
+```
+

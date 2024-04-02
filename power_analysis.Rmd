@@ -41,9 +41,9 @@ pre_vars <-list(
 # cSBT from Lauzier et al 2014
 # makes sense as greater variance expected after adaptation
 post_vars <-list(
-  "cSBT" = .07,
-  "FastProp" = .07,
-  "FastBrake" = .07
+  "cSBT" = .067,
+  "FastProp" = .067,
+  "FastBrake" = .067
 )
     
 conditions <- list( "cSBT", "FastProp", "FastBrake" )
@@ -51,7 +51,7 @@ conditions <- list( "cSBT", "FastProp", "FastBrake" )
 test_sample_sizes = 25:35
 for (n in test_sample_sizes){
   
-    num_simulations = 30
+    num_simulations = 100
     
     # Running simulations in parallel
     aim_2_slr_results <- lapply(1:num_simulations, function(i) {
@@ -166,12 +166,12 @@ for (n in test_sample_sizes){
     num_simulations = 20
     
     # Running simulations in parallel
-    aim_2_pf_results <- lapply(1:num_simulations, function(i) {
+    aim_3_pf_results <- lapply(1:num_simulations, function(i) {
       simulate_aim(n, conditions, pre_means, pre_vars, post_means, post_vars)
     })
     
     # Computing success count and success rate
-    success_count <- sum(unlist(aim_2_pf_results))
+    success_count <- sum(unlist(aim_3_pf_results))
     success_rate <- success_count / num_simulations
     
     print(paste("For n = ", n, ", success rate is ", success_rate, " after ", num_simulations, " simulations."))

@@ -236,10 +236,10 @@ if __name__ == "__main__":
     #%%
     join_columns = ["Condition", "Side", "Participant", "GaitCycle", "StartStop"]
     measured_data_long = measured_gait_cycles.join(data_long,on=join_columns)
+    
+    measured_data_long.write_csv(Path(RAW_OUTPUT_FOLDER, f"S{subject}_measured_data_long.csv"))
 
-    # measured data here is the Visual3D data associated with the last 6 steps of PreAdaptation and
-    # the first 6 steps of post adaptation. I would like to potentially filter out the "intermediate"
-    # steps as well (# 6 or #1 as the case may be) but this is my draft approach
+    #%%
     index_columns = ["Condition", "Side", "Participant", "GaitCycle", "Period", "NormalizedTimeStep"]
     measured_data = measured_data_long.pivot(index = index_columns,
                                             values="Value",
