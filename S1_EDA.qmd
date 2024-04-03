@@ -13,28 +13,152 @@ RAW_OUTPUT_FOLDER <- "C:\\Users\\Mac Prible\\OneDrive - The University of Texas 
 measured_data_long <- read.csv(paste0(RAW_OUTPUT_FOLDER,"\\", "S1_measured_data_long.csv"))
 ```
 
+
+
 # Average normalized variables and Clean Up
 
 Averages across relevant stance phases.
 
 ```{r}
 mean_stance_data <-measured_data_long %>% 
+  ungroup() %>% 
   select(-MaxSpeedDiff) %>% 
   group_by(Condition, Side, Participant, StartStop, Period, ConditionOrder, VariableAxis, NormalizedTimeStep) %>% 
   summarize(AverageValue = mean(Value, na.rm=TRUE)) %>% 
   separate(VariableAxis, into = c("Variable", "Axis"), sep = "_(?=[^_]+$)", extra = "merge") %>% 
   mutate(Variable = case_when(
+    Variable == "RHEEL" ~ "R_HEEL",
+    Variable == "LHEEL" ~ "L_HEEL",
     Variable == "FP1" ~ "Left_GRF",
     Variable == "FP2" ~ "Right_GRF",
     TRUE ~ Variable  # This keeps all other values unchanged
-  )) 
+  )) %>% 
+    mutate(NewVariable = case_when(
+    Side == "left" & grepl("^(L_|Left)", Variable) ~ sub("^(L_|Left_|Left)", "IPSI_", Variable),
+    Side == "right" & grepl("^(R_|Right)", Variable) ~ sub("^(R_|Right_|Right)", "IPSI_", Variable),
+    Side == "right" & grepl("^(L_|Left)", Variable) ~ sub("^(L_|Left_|Left)", "CONTRA_", Variable),
+    Side == "left" & grepl("^(R_|Right)", Variable) ~ sub("^(R_|Right_|Right)", "CONTRA_", Variable),
+    TRUE ~ Variable # Keeps all other values unchanged
+  ))
 
 
 # rm(measured_data_long)
 ```
-# Minor clean up of some things
+# Set Ipsi/Contra Language
+```{r}
+# get list of variable names
+mean_stance_data %>% 
+  ungroup() %>% 
+  select(NewVariable, Side, Variable) %>% 
+  group_by(NewVariable, Side) %>% 
+  summarize(NewVariable = first(NewVariable),
+            OriginalVariable = first(Variable))
+```
+
+
+```{r}
+
+mean_stance_data %>% 
+  group_by(Period) %>% 
+  summarize(Period = first(Period))
+
+mean_stance_data %>% 
+  group_by(NewVariable) %>% 
+  summarize(NewVariable = first(NewVariable))
+
+```
+
+# Unilateral PDSV Impact on Ankle PF
+
+```{r }
+mean_stance_data %>% 
+  filter(Period %in% c("Baseline", "PostAdapt")) %>% 
+  filter(Condition %in% c("sbt", "ubp", "upp")) %>% 
+  filter(Axis %in% c("X")) %>% 
+  # filter(NewVariable == "HEEL_DISTANCE") %>% 
+  filter(NewVariable == "IPSI_ANKLE_MOMENT") %>% 
+  ggplot(aes(x=NormalizedTimeStep, y = AverageValue, color=Period))+
+  geom_line()+
+  facet_grid(cols = vars(Side), rows = vars(Axis, Condition,NewVariable), scales = "free_y")+
+  theme_minimal()
+
+```
+
+# Bilateral PDSV Impact on Ankle PF
+
 ```{r}
 mean_stance_data %>% 
+  filter(Period %in% c("Baseline", "PostAdapt")) %>% 
+  filter(Condition %in% c("bbp", "bpp")) %>% 
+  filter(Axis %in% c("X")) %>% 
+  # filter(NewVariable == "HEEL_DISTANCE") %>% 
+  filter(NewVariable == "IPSI_ANKLE_MOMENT") %>% 
+  ggplot(aes(x=NormalizedTimeStep, y = AverageValue, color=Period))+
+  geom_line()+
+  facet_grid(cols = vars(Side), rows = vars(Axis, Condition,NewVariable), scales = "free_y")+
+  theme_minimal()
+
+```
+
+# SLR change across periods by condition
+```{r}
+mean_stance_data %>% 
+  ungroup() %>% 
+  filter(NormalizedTimeStep==1) %>% 
+  filter(Axis == "X") %>% 
+  filter(NewVariable %in% c("HEEL_DISTANCE")) %>% 
+  filter(Condition %in% c("sbt", "ubp", "upp")) %>% 
+  mutate(StepLength = abs(AverageValue)) %>% 
+  select(-c(StartStop, Axis, ConditionOrder, Variable, NewVariable, NormalizedTimeStep,AverageValue)) %>% 
+  pivot_wider(names_from = Side, values_from = StepLength) %>% 
+  mutate(SLR = left/right) %>% 
+  ggplot(aes(x=Period, y = SLR, group = Condition, color = Condition))+
+  geom_point()+
+  geom_line()
+  
+```
+
+# step Length in a body frame of reference
+
+```{r}
+measured_data_long %>% 
+  ungroup() %>% 
+  filter(NormalizedTimeStep==1) %>% 
+  # filter(Condition %in% c("sbt", "ubp", "upp")) %>%
+  filter(Condition %in% c("bbp", "bpp")) %>%
+  separate(VariableAxis, into = c("Variable", "Axis"), sep = "_(?=[^_]+$)", extra = "merge") %>% 
+  filter(Axis == "Y") %>% 
+  filter(Variable %in% c("RHEEL", "LHEEL", "PELVIS_COM")) %>% 
+  mutate(Variable = case_when(
+    Variable == "RHEEL" ~ "R_HEEL",
+    Variable == "LHEEL" ~ "L_HEEL",
+    TRUE ~ Variable  # This keeps all other values unchanged
+  )) %>% 
+    mutate(NewVariable = case_when(
+    Side == "left" & grepl("^(L_|Left)", Variable) ~ sub("^(L_|Left_|Left)", "IPSI_", Variable),
+    Side == "right" & grepl("^(R_|Right)", Variable) ~ sub("^(R_|Right_|Right)", "IPSI_", Variable),
+    Side == "right" & grepl("^(L_|Left)", Variable) ~ sub("^(L_|Left_|Left)", "CONTRA_", Variable),
+    Side == "left" & grepl("^(R_|Right)", Variable) ~ sub("^(R_|Right_|Right)", "CONTRA_", Variable),
+    TRUE ~ Variable # Keeps all other values unchanged
+  )) %>% 
+  select(-c(Axis, NormalizedTimeStep,StartStop, Variable, MaxSpeedDiff, ConditionOrder)) %>% 
+  pivot_wider(names_from = NewVariable, values_from = Value) %>% 
+  mutate(AnteriorStep = -(IPSI_HEEL-PELVIS_COM),
+         PosteriorStep = CONTRA_HEEL-PELVIS_COM,
+         Step = -(IPSI_HEEL - CONTRA_HEEL)) %>% 
+  select(-c(PELVIS_COM, CONTRA_HEEL, IPSI_HEEL)) %>% 
+  group_by(Condition, Side, Participant,Period) %>% 
+  summarise(AnteriorStep = mean(AnteriorStep),
+            PosteriorStep = mean(PosteriorStep),
+            Step = mean(Step)) %>% 
+  pivot_longer(cols = c(AnteriorStep, PosteriorStep, Step)) %>% 
+  ungroup() %>% 
+  ggplot(aes(x=Period, y = value, 
+             color = Condition,
+             group = Condition))+
+  geom_point()+
+  geom_line()+
+  facet_grid(cols=vars(Side), rows = vars(name),scales="free_y")
 
 ```
 
