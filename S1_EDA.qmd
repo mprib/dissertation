@@ -74,29 +74,49 @@ mean_stance_data %>%
 mean_stance_data %>% 
   filter(Period %in% c("Baseline", "PostAdapt")) %>% 
   filter(Condition %in% c("sbt", "ubp", "upp")) %>% 
+  mutate(Condition = case_when(
+    Condition == "sbt" ~ "cSBT",
+    Condition == "ubp" ~ "FastBrake",
+    Condition == "upp" ~ "FastProp"
+  )) %>% 
   filter(Axis %in% c("X")) %>% 
   # filter(NewVariable == "HEEL_DISTANCE") %>% 
   filter(NewVariable == "IPSI_ANKLE_MOMENT") %>% 
   ggplot(aes(x=NormalizedTimeStep, y = AverageValue, color=Period))+
   geom_line()+
-  facet_grid(cols = vars(Side), rows = vars(Axis, Condition,NewVariable), scales = "free_y")+
-  theme_minimal()
+  facet_grid(cols = vars(Side), rows = vars(Condition), scales = "free_y")+
+  theme_minimal()+
+  theme(legend.position = "bottom",
+        plot.caption = element_text(hjust = 0.5, size=13)) +  # Center-justify the caption
+  labs(title = "Subject 1: Ankle Torque Profile Before and After 6 Minutes of Adaptation" ,
+       subtitle = "Tested Conditions: cSBT, FastBrake, FastProp",
+       caption = str_wrap("Ankle torque on the left (altered) side is decreased following cSBT and FastBrake, but increases following adaptation to FastProp", width = 80),
+       x = "% stance",
+       y = "Torque (N.m/BW)",
+       )
 
 ```
 
 # Bilateral PDSV Impact on Ankle PF
 
 ```{r}
+
 mean_stance_data %>% 
   filter(Period %in% c("Baseline", "PostAdapt")) %>% 
   filter(Condition %in% c("bbp", "bpp")) %>% 
+  mutate(Condition = case_when(
+    Condition == "bbp" ~ "Bilateral FastBrake",
+    Condition == "bpp" ~ "Bilateral FastProp"
+  )) %>% 
   filter(Axis %in% c("X")) %>% 
-  # filter(NewVariable == "HEEL_DISTANCE") %>% 
   filter(NewVariable == "IPSI_ANKLE_MOMENT") %>% 
   ggplot(aes(x=NormalizedTimeStep, y = AverageValue, color=Period))+
   geom_line()+
-  facet_grid(cols = vars(Side), rows = vars(Axis, Condition,NewVariable), scales = "free_y")+
-  theme_minimal()
+  facet_grid(cols = vars(Side), rows = vars(Condition), scales = "free_y")+
+  theme_minimal()+
+  theme(legend.position = "bottom")+
+  labs(x="% Stance",
+       y = "Torque (N.m/BW)")
 
 ```
 
@@ -108,13 +128,24 @@ mean_stance_data %>%
   filter(Axis == "X") %>% 
   filter(NewVariable %in% c("HEEL_DISTANCE")) %>% 
   filter(Condition %in% c("sbt", "ubp", "upp")) %>% 
+  mutate(Condition = case_when(
+    Condition == "sbt" ~ "cSBT",
+    Condition == "ubp" ~ "FastBrake",
+    Condition == "upp" ~ "FastProp"
+  )) %>% 
   mutate(StepLength = abs(AverageValue)) %>% 
   select(-c(StartStop, Axis, ConditionOrder, Variable, NewVariable, NormalizedTimeStep,AverageValue)) %>% 
   pivot_wider(names_from = Side, values_from = StepLength) %>% 
   mutate(SLR = left/right) %>% 
   ggplot(aes(x=Period, y = SLR, group = Condition, color = Condition))+
   geom_point()+
-  geom_line()
+  geom_line()+
+  theme_minimal()+
+  theme(plot.title = element_text(hjust = 0.5,),
+        plot.caption = element_text(hjust = 0.5, size = 13),
+        legend.position = "bottom")+
+  labs(title = "Subject 1: SLR Across Treadmill Protocol",
+       caption = str_wrap("Ratio of left step length (altered belt speed side) to right step length (non altered belt speed side). Step Length Ratio (SLR) undergoes similar alterations during adaptation and post adaptation across each of the conditions of Aim 2", width = 80))
   
 ```
 
@@ -126,6 +157,7 @@ measured_data_long %>%
   filter(NormalizedTimeStep==1) %>% 
   # filter(Condition %in% c("sbt", "ubp", "upp")) %>%
   filter(Condition %in% c("bbp", "bpp")) %>%
+  filter(Period %in% c("Baseline", "PostAdapt")) %>% 
   separate(VariableAxis, into = c("Variable", "Axis"), sep = "_(?=[^_]+$)", extra = "merge") %>% 
   filter(Axis == "Y") %>% 
   filter(Variable %in% c("RHEEL", "LHEEL", "PELVIS_COM")) %>% 
@@ -160,5 +192,41 @@ measured_data_long %>%
   geom_line()+
   facet_grid(cols=vars(Side), rows = vars(name),scales="free_y")
 
+```
+
+```{r}
+
+
+mean_stance_data %>% 
+  filter(Period %in% c("Late Adapt")) %>% 
+  filter(Condition %in% c("sbt", "ubp", "upp")) %>% 
+  # filter(NewVariable == "HEEL_DISTANCE") %>% 
+  filter(NewVariable == "IPSI_BeltSpeed") %>% 
+  ggplot(aes(x=NormalizedTimeStep, y = AverageValue, color=Period))+
+  geom_line()+
+  facet_grid(cols = vars(Side), rows = vars(Axis, Condition,NewVariable), scales = "free_y")+
+  theme_minimal()
+
+mean_stance_data %>% 
+  filter(Period %in% c("Late Adapt")) %>% 
+  filter(Condition %in% c("sbt", "ubp", "upp")) %>% 
+  filter(Axis == "Z") %>% 
+  # filter(NewVariable == "HEEL_DISTANCE") %>% 
+  filter(NewVariable %in% c("IPSI_GRF", "CONTRA_GRF")) %>% 
+  
+  ggplot(aes(x=NormalizedTimeStep, y = AverageValue, group = NewVariable, color = NewVariable))+
+  geom_line()+
+  facet_grid(cols = vars(Side), rows = vars(Axis, Condition))+
+  theme_minimal()
+```
+```{r}
+  measured_data_long %>% 
+  filter(Period %in% c("Late Adapt")) %>% 
+  filter(Condition %in% c("sbt", "ubp", "upp")) %>% 
+  # filter(Axis == "Z") %>% 
+  # filter(Side == "left") %>% 
+  # filter(NewVariable == "HEEL_DISTANCE") %>% 
+  filter(VariableAxis %in% c("FP2_Z")) %>%
+  view()
 ```
 
