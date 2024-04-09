@@ -1,7 +1,7 @@
 ---
 title: "S1_EDA"
 format: html
-editor: visual
+editor: source
 ---
 
 # Import Long Data
@@ -10,10 +10,8 @@ editor: visual
 library(readxl)
 library(tidyverse)
 RAW_OUTPUT_FOLDER <- "C:\\Users\\Mac Prible\\OneDrive - The University of Texas at Austin\\research\\PDSV\\data\\PDVS_2024\\v3d"
-measured_data_long <- read.csv(paste0(RAW_OUTPUT_FOLDER,"\\", "S1_measured_data_long.csv"))
+measured_data_long <- read.csv(paste0(RAW_OUTPUT_FOLDER,"\\", "S2_measured_data_long.csv"))
 ```
-
-
 
 # Average normalized variables and Clean Up
 
@@ -44,7 +42,9 @@ mean_stance_data <-measured_data_long %>%
 
 # rm(measured_data_long)
 ```
+
 # Set Ipsi/Contra Language
+
 ```{r}
 # get list of variable names
 mean_stance_data %>% 
@@ -54,7 +54,6 @@ mean_stance_data %>%
   summarize(NewVariable = first(NewVariable),
             OriginalVariable = first(Variable))
 ```
-
 
 ```{r}
 
@@ -121,6 +120,7 @@ mean_stance_data %>%
 ```
 
 # SLR change across periods by condition
+
 ```{r}
 mean_stance_data %>% 
   ungroup() %>% 
@@ -204,7 +204,7 @@ mean_stance_data %>%
   filter(NewVariable == "IPSI_BeltSpeed") %>% 
   ggplot(aes(x=NormalizedTimeStep, y = AverageValue, color=Period))+
   geom_line()+
-  facet_grid(cols = vars(Side), rows = vars(Axis, Condition,NewVariable), scales = "free_y")+
+  facet_grid(cols = vars(Side), rows = vars(Axis, Condition,NewVariable))+
   theme_minimal()
 
 mean_stance_data %>% 
@@ -219,14 +219,3 @@ mean_stance_data %>%
   facet_grid(cols = vars(Side), rows = vars(Axis, Condition))+
   theme_minimal()
 ```
-```{r}
-  measured_data_long %>% 
-  filter(Period %in% c("Late Adapt")) %>% 
-  filter(Condition %in% c("sbt", "ubp", "upp")) %>% 
-  # filter(Axis == "Z") %>% 
-  # filter(Side == "left") %>% 
-  # filter(NewVariable == "HEEL_DISTANCE") %>% 
-  filter(VariableAxis %in% c("FP2_Z")) %>%
-  view()
-```
-
