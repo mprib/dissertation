@@ -1,7 +1,7 @@
 ---
 title: "S1_EDA"
 format: html
-editor: visual
+editor: source
 ---
 
 # Import Long Data
@@ -11,9 +11,8 @@ library(readxl)
 library(tidyverse)
 RAW_OUTPUT_FOLDER <- "C:\\Users\\Mac Prible\\OneDrive - The University of Texas at Austin\\research\\PDSV\\data\\PDVS_2024\\v3d"
 measured_data_long <- read.csv(paste0(RAW_OUTPUT_FOLDER,"\\", "S2_measured_data_long.csv"))
+measured_data_long <- read.csv(paste0(RAW_OUTPUT_FOLDER,"\\", "S2_measured_data_long.csv"))
 ```
-
-
 
 # Average normalized variables and Clean Up
 
@@ -44,7 +43,9 @@ mean_stance_data <-measured_data_long %>%
 
 # rm(measured_data_long)
 ```
+
 # Set Ipsi/Contra Language
+
 ```{r}
 # get list of variable names
 mean_stance_data %>% 
@@ -54,7 +55,6 @@ mean_stance_data %>%
   summarize(NewVariable = first(NewVariable),
             OriginalVariable = first(Variable))
 ```
-
 
 ```{r}
 
@@ -121,6 +121,7 @@ mean_stance_data %>%
 ```
 
 # SLR change across periods by condition
+
 ```{r}
 mean_stance_data %>% 
   ungroup() %>% 
