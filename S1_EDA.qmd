@@ -117,7 +117,39 @@ mean_stance_data %>%
   theme(legend.position = "bottom")+
   labs(x="% Stance",
        y = "Torque (N.m/BW)")
+mean_stance_data %>% 
+  filter(Period %in% c("Baseline", "PostAdapt")) %>% 
+  filter(Condition %in% c("bbp", "bpp")) %>%
+  mutate(Condition = case_when(
+    Condition == "bbp" ~ "Bilateral FastBrake",
+    Condition == "bpp" ~ "Bilateral FastProp"
+  )) %>% 
+  filter(Axis %in% c("X")) %>% 
+  filter(NewVariable == "IPSI_KNEE_MOMENT") %>% 
+  ggplot(aes(x=NormalizedTimeStep, y = AverageValue, color=Period))+
+  geom_line()+
+  facet_grid(cols = vars(Side), rows = vars(Condition))+
+  theme_minimal()+
+  theme(legend.position = "bottom")+
+  labs(x="% Stance",
+       y = "Torque (N.m/BW)")
 
+mean_stance_data %>% 
+  filter(Period %in% c("Baseline", "PostAdapt")) %>% 
+  filter(Condition %in% c("bbp", "bpp")) %>%
+  mutate(Condition = case_when(
+    Condition == "bbp" ~ "Bilateral FastBrake",
+    Condition == "bpp" ~ "Bilateral FastProp"
+  )) %>% 
+  filter(Axis %in% c("X")) %>% 
+  filter(NewVariable == "IPSI_HIP_MOMENT") %>% 
+  ggplot(aes(x=NormalizedTimeStep, y = AverageValue, color=Period))+
+  geom_line()+
+  facet_grid(cols = vars(Side), rows = vars(Condition))+
+  theme_minimal()+
+  theme(legend.position = "bottom")+
+  labs(x="% Stance",
+       y = "Torque (N.m/BW)")
 ```
 
 # SLR change across periods by condition
@@ -159,9 +191,9 @@ Reviewing this calculations I think there are some problems with the way I went 
 measured_data_long %>% 
   ungroup() %>% 
   filter(NormalizedTimeStep==1) %>% 
-  filter(Condition %in% c("sbt", "ubp", "upp")) %>%
-  # filter(Condition %in% c("bbp", "bpp")) %>%
-  filter(Period %in% c("Baseline", "PostAdapt")) %>% 
+  # filter(Condition %in% c("sbt", "ubp", "upp")) %>%
+  filter(Condition %in% c("bbp", "bpp")) %>%
+  # filter(Period %in% c("Baseline", "PostAdapt")) %>% 
   separate(VariableAxis, into = c("Variable", "Axis"), sep = "_(?=[^_]+$)", extra = "merge") %>% 
   filter(Axis == "Y") %>% 
   filter(Variable %in% c("RHEEL", "LHEEL", "PELVIS_COM")) %>% 
