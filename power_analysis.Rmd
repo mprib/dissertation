@@ -26,36 +26,36 @@ pre_means <-list(
 )
 
 post_means <-list(
-  "cSBT" = 1.4, # from lauziere et al 2014
-  "FastProp" = 1.2, # expect half impact
-  "FastBrake" = 1.2 # expect half impact
+  "cSBT" = 1.57, # from lauziere et al 2014
+  "FastProp" = 1.3, # expect ~half impact
+  "FastBrake" = 1.3 # expect ~half impact
 )
 
 # from Lauziere et al 2014
-pre_vars <-list(
-  "cSBT" = .0036,
-  "FastProp" = .0036,
-  "FastBrake" = .0036
+pre_std_devs <-list(
+  "cSBT" = .06,
+  "FastProp" = .06,
+  "FastBrake" = .06
 )
 
 # cSBT from Lauzier et al 2014
 # makes sense as greater variance expected after adaptation
-post_vars <-list(
-  "cSBT" = .067,
-  "FastProp" = .067,
-  "FastBrake" = .067
+post_std_devs <-list(
+  "cSBT" = .26,
+  "FastProp" = .26,
+  "FastBrake" = .26
 )
     
 conditions <- list( "cSBT", "FastProp", "FastBrake" )
     
-test_sample_sizes = 25:35
+test_sample_sizes = 15:20
 for (n in test_sample_sizes){
   
     num_simulations = 100
     
     # Running simulations in parallel
     aim_2_slr_results <- lapply(1:num_simulations, function(i) {
-      simulate_aim(n, conditions, pre_means, pre_vars, post_means, post_vars)
+      simulate_aim(n, conditions, pre_means, pre_std_devs, post_means, post_std_devs)
     })
     
     # Computing success count and success rate
@@ -90,14 +90,14 @@ post_means <-list(
 )
 
 # estimates based on Allen et al (2011)
-pre_vars <-list(
+pre_std_devs <-list(
   "cSBT" = 150,
   "FastProp" = 150,
   "FastBrake" = 150
 )
 
 # expecting increased variance following perturbation
-post_vars <-list(
+post_std_devs <-list(
   "cSBT" = 300,
   "FastProp" = 300,
   "FastBrake" = 300
@@ -106,14 +106,14 @@ post_vars <-list(
 conditions <- list( "cSBT", "FastProp", "FastBrake" )
     
        
-test_sample_sizes = 5:10
+test_sample_sizes = 10:20
 for (n in test_sample_sizes){
   
     num_simulations = 20
     
     # Running simulations in parallel
     aim_2_pf_results <- lapply(1:num_simulations, function(i) {
-      simulate_aim(n, conditions, pre_means, pre_vars, post_means, post_vars)
+      simulate_aim(n, conditions, pre_means, pre_std_devs, post_means, post_std_devs)
     })
     
     # Computing success count and success rate

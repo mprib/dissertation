@@ -5,9 +5,9 @@ library(emmeans)
 get_simulated_data <- function(n,
                                conditions,
                                pre_means, 
-                               pre_vars,
+                               pre_std_devs,
                                post_means,
-                               post_vars
+                               post_std_devs
                                ) {
   
   all_simulated_data = list()
@@ -23,16 +23,15 @@ get_simulated_data <- function(n,
         
         if (per == "pre") {
           means <- pre_means
-          vars <- pre_vars
+          std_devs <- pre_std_devs
         } else {
           means <- post_means
-          vars <- post_vars
+          std_devs <- post_std_devs
         }
            
         mean = means[[cond]]
-        var = vars[[cond]]
-        observation <- rnorm(n, mean = mean, sd = sqrt(var))
-        
+        std_dev = std_devs[[cond]]
+        observation <- rnorm(n, mean = mean, sd = std_dev)
         all_simulated_data[[paste(cond, per)]] = data.frame(participant,
                                                 condition,
                                                 period,
@@ -48,16 +47,17 @@ get_simulated_data <- function(n,
 }
 
 
-simulate_aim <- function(n, conditions, pre_means, pre_vars, post_means, post_vars){
+simulate_aim <- function(n, conditions, pre_means, pre_std_devs, post_means, post_std_devs){
 
     
     simulated_data = get_simulated_data(n, 
                        conditions = conditions,
                        pre_means=pre_means, 
-                       pre_vars=pre_vars,
+                       pre_std_devs=pre_std_devs,
                        post_means = post_means, 
-                       post_vars=post_vars)
-    
+                       post_std_devs=post_std_devs)
+   
+    # browser() 
     model <-  aov(observation ~ condition * period  , data = simulated_data)
     
     # ugly but this gets the results of the F test on the interaction
@@ -66,15 +66,19 @@ simulate_aim <- function(n, conditions, pre_means, pre_vars, post_means, post_va
     interaction_effect_p_value <- summary(model)[[1]]$'Pr(>F)'[3]
     
     
-    # Planned comparison: pre vs. post within each condition
+    # Check post hoc tests for interaction: pre vs. post within each condition
     emm <- emmeans(model, ~condition*period)
-    planned_comparisons <- contrast(emm, "pairwise", by = "condition") %>% 
-                           summary(adjust="bonferroni")
+    post_hoc <- summary(contrast(emm, "pairwise", by = "condition"))
     
-    planned_comparison_success = all(planned_comparisons$p.value<.05)
+    n_comparisons <- nrow(post_hoc)
+   
+    # browser()
+    # penalize with bonferonni 
+    post_hoc_adjusted_p_value <- post_hoc$p.value * n_comparisons
+    post_hoc_success = all(post_hoc_adjusted_p_value < .05)
     
     # do the check of the hypothesis
-    if (all(interaction_effect_p_value<.05,  planned_comparison_success)){
+    if (all(interaction_effect_p_value<.05,  post_hoc_success)){
       success <- TRUE
     } else {
       success <-FALSE

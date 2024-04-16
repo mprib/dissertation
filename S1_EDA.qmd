@@ -10,8 +10,8 @@ editor: source
 library(readxl)
 library(tidyverse)
 RAW_OUTPUT_FOLDER <- "C:\\Users\\Mac Prible\\OneDrive - The University of Texas at Austin\\research\\PDSV\\data\\PDVS_2024\\v3d"
-measured_data_long <- read.csv(paste0(RAW_OUTPUT_FOLDER,"\\", "S2_measured_data_long.csv"))
-measured_data_long <- read.csv(paste0(RAW_OUTPUT_FOLDER,"\\", "S2_measured_data_long.csv"))
+measured_data_long <- read.csv(paste0(RAW_OUTPUT_FOLDER,"\\", "S1_measured_data_long.csv"))
+measured_data_long <- read.csv(paste0(RAW_OUTPUT_FOLDER,"\\", "S1_measured_data_long.csv"))
 ```
 
 # Average normalized variables and Clean Up
@@ -177,6 +177,33 @@ mean_stance_data %>%
   theme(legend.position = "bottom")+
   labs(x="% Stance",
        y = "Torque (N.m/BW)")
+```
+
+# Get Normalized Stance Time
+
+```{r}
+
+stance_times <-mean_stance_data %>% 
+  ungroup() %>% 
+  filter(Axis == "X") %>% 
+  filter(NewVariable %in% c("TIME")) %>% 
+  filter(Period %in% c("Baseline", "PostAdapt")) %>%
+  group_by(Condition, Period, Side) %>% 
+  summarize(min = min(AverageValue), max = max(AverageValue)) %>%
+  mutate(stance_time = max-min)
+
+PF_impulse_time_normalized <- mean_stance_data %>% 
+  ungroup() %>% 
+  filter(Axis == "X") %>% 
+  filter(NewVariable %in% c("IPSI_ANKLE_MOMENT")) %>% 
+  filter(AverageValue < 0) %>%  # interested in PF not DF
+  filter(Period %in% c("Baseline", "PostAdapt")) %>%
+  group_by(Condition, Period, Side) %>% 
+  summarize(PF_impulse_time_norm = sum(AverageValue))
+
+stance_times %>% left_join(PF_impulse_time_normalized) %>% 
+  mutate(PF_impulse_BW_normalized =  PF_impulse_time_norm * stance_time)
+
 ```
 
 # SLR change across periods by condition
