@@ -10,7 +10,7 @@ knitr::opts_chunk$set(echo = TRUE)
 source("power_analysis_simulation.R")
 ```
 
-# Aim 2
+# Aim 1
 
 ## Hypothesis: SLR moves significantly in same direction in all conditions
 
@@ -31,27 +31,28 @@ post_means <-list(
   "FastBrake" = 1.3 # expect ~half impact
 )
 
-# from Lauziere et al 2014
+# from Lauziere et al 2014; std_dev = .06 at baseline, 0.26 at Post Adapt. Straight average method used to pool (Cumming 2012)
+std_dev <- .16
 pre_std_devs <-list(
-  "cSBT" = .06,
-  "FastProp" = .06,
-  "FastBrake" = .06
+  "cSBT" = std_dev,
+  "FastProp" = std_dev,
+  "FastBrake" = std_dev
 )
 
 # cSBT from Lauzier et al 2014
 # makes sense as greater variance expected after adaptation
 post_std_devs <-list(
-  "cSBT" = .26,
-  "FastProp" = .26,
-  "FastBrake" = .26
+  "cSBT" = std_dev,
+  "FastProp" = std_dev,
+  "FastBrake" = std_dev
 )
     
 conditions <- list( "cSBT", "FastProp", "FastBrake" )
     
-test_sample_sizes = 15:20
+test_sample_sizes = 10:15
 for (n in test_sample_sizes){
   
-    num_simulations = 100
+    num_simulations = 10
     
     # Running simulations in parallel
     aim_2_slr_results <- lapply(1:num_simulations, function(i) {
@@ -82,34 +83,34 @@ pre_means <-list(
   "FastBrake" = 450
 )
 
-# subject 1: PF impulse decrease in cSBT (as with Lauziere 2014) and fastBrake, increased with FastProp
+# subject 1: PF impulse  decrease in cSBT (as with Lauziere 2014) and fastBrake, increased with FastProp
 post_means <-list(
-  "cSBT" = 425,
-  "FastProp" = 475,
-  "FastBrake" = 425
+  "cSBT" = 288,
+  "FastProp" = 484, 
+  "FastBrake" = 279
 )
 
 # estimates based on Allen et al (2011)
+std_dev <- 50
 pre_std_devs <-list(
-  "cSBT" = 150,
-  "FastProp" = 150,
-  "FastBrake" = 150
+  "cSBT" = std_dev,
+  "FastProp" = std_dev,
+  "FastBrake" = std_dev
 )
 
-# expecting increased variance following perturbation
 post_std_devs <-list(
-  "cSBT" = 300,
-  "FastProp" = 300,
-  "FastBrake" = 300
+  "cSBT" = std_dev,
+  "FastProp" = std_dev,
+  "FastBrake" = std_dev
 )
 
 conditions <- list( "cSBT", "FastProp", "FastBrake" )
     
        
-test_sample_sizes = 10:20
+test_sample_sizes = 20:25
 for (n in test_sample_sizes){
   
-    num_simulations = 20
+    num_simulations = 10
     
     # Running simulations in parallel
     aim_2_pf_results <- lapply(1:num_simulations, function(i) {
@@ -142,28 +143,29 @@ pre_means <-list(
 
 # subject 1: PF impulse decrease in cSBT (as with Lauziere 2014) and fastBrake, increased with FastProp
 post_means <-list(
-  "FastProp" = 475,
-  "FastBrake" = 425
+  "FastProp" = 535,
+  "FastBrake" = 400
 )
 
 # estimates based on Allen et al (2011)
+std_dev <- 50
 pre_vars <-list(
-  "FastProp" = 150,
-  "FastBrake" = 150
+  "FastProp" = std_dev,
+  "FastBrake" = std_dev
 )
 
 # expecting increased variance following perturbation
 post_vars <-list(
-  "FastProp" = 300,
-  "FastBrake" = 300
+  "FastProp" = std_dev,
+  "FastBrake" = std_dev
 )
     
 conditions <- list( "FastProp", "FastBrake" )
     
-test_sample_sizes = 5:10
+test_sample_sizes = 20:25
 for (n in test_sample_sizes){
   
-    num_simulations = 20
+    num_simulations = 10
     
     # Running simulations in parallel
     aim_3_pf_results <- lapply(1:num_simulations, function(i) {

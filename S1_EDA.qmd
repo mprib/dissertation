@@ -202,8 +202,13 @@ PF_impulse_time_normalized <- mean_stance_data %>%
   summarize(PF_impulse_time_norm = sum(AverageValue))
 
 stance_times %>% left_join(PF_impulse_time_normalized) %>% 
-  mutate(PF_impulse_BW_normalized =  PF_impulse_time_norm * stance_time)
-
+  ungroup() %>% 
+  mutate(PF_impulse_BW_normalized =  PF_impulse_time_norm * stance_time) %>% 
+  filter(Side=="left") %>% 
+  select(Condition, Period, PF_impulse_BW_normalized) %>% 
+  mutate(PF_impulse_time_normalized=abs(PF_impulse_BW_normalized)) %>% 
+  pivot_wider(id_cols=Condition, values_from = PF_impulse_time_normalized, names_from = Period) %>% 
+  mutate(pct_change = (PostAdapt-Baseline)/Baseline)
 ```
 
 # SLR change across periods by condition
