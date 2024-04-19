@@ -5,7 +5,7 @@ from plotnine import ggplot, aes, geom_line, facet_wrap, themes
 
 output_folder = Path(r"C:\Users\Mac Prible\OneDrive - The University of Texas at Austin\research\PDSV\data\pilot\v3d_output\gait_cycle_data")
 
-subject = 2
+subject = 1
 side = "right"
 side = "left"
 

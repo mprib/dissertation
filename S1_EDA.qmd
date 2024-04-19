@@ -199,7 +199,7 @@ PF_impulse_time_normalized <- mean_stance_data %>%
   filter(AverageValue < 0) %>%  # interested in PF not DF
   filter(Period %in% c("Baseline", "PostAdapt")) %>%
   group_by(Condition, Period, Side) %>% 
-  summarize(PF_impulse_time_norm = sum(AverageValue))
+  summarize(PF_impulse_time_norm = sum(AverageValue/100))
 
 stance_times %>% left_join(PF_impulse_time_normalized) %>% 
   ungroup() %>% 
@@ -214,6 +214,25 @@ stance_times %>% left_join(PF_impulse_time_normalized) %>%
 # SLR change across periods by condition
 
 ```{r}
+
+
+mean_stance_data %>% 
+  ungroup() %>% 
+  filter(NormalizedTimeStep==1) %>% 
+  filter(Axis == "X") %>% 
+  filter(NewVariable %in% c("HEEL_DISTANCE")) %>% 
+  filter(Period %in% c("PostAdapt")) %>% 
+  filter(Condition %in% c("sbt", "ubp", "upp")) %>% 
+  mutate(Condition = case_when(
+    Condition == "sbt" ~ "cSBT",
+    Condition == "ubp" ~ "FastBrake",
+    Condition == "upp" ~ "FastProp"
+  )) %>% 
+  mutate(StepLength = abs(AverageValue)) %>% 
+  select(-c(StartStop, Axis, ConditionOrder, Variable, NewVariable, NormalizedTimeStep,AverageValue)) %>% 
+  pivot_wider(names_from = Side, values_from = StepLength) %>% 
+  mutate(SLR = left/right) %>% view()
+
 mean_stance_data %>% 
   ungroup() %>% 
   filter(NormalizedTimeStep==1) %>% 

@@ -78,20 +78,21 @@ Powered to distinguish differences in interaction effect (i.e. PDSV may have hal
 
 # estimates here taken from subject 1 values; time normalized impulse across stance
 pre_means <-list(
-  "cSBT" = 450,
-  "FastProp" = 450,
-  "FastBrake" = 450
+  "cSBT" = .415,
+  "FastProp" = .415,
+  "FastBrake" = 415
 )
 
 # subject 1: PF impulse  decrease in cSBT (as with Lauziere 2014) and fastBrake, increased with FastProp
 post_means <-list(
-  "cSBT" = 288,
-  "FastProp" = 484, 
-  "FastBrake" = 279
+  "cSBT" = .274,
+  "FastProp" = .472, 
+  "FastBrake" = .294
 )
 
 # estimates based on Allen et al (2011)
-std_dev <- 50
+std_dev <- .0384
+
 pre_std_devs <-list(
   "cSBT" = std_dev,
   "FastProp" = std_dev,
@@ -105,12 +106,11 @@ post_std_devs <-list(
 )
 
 conditions <- list( "cSBT", "FastProp", "FastBrake" )
-    
        
-test_sample_sizes = 20:25
+test_sample_sizes = 10:15
 for (n in test_sample_sizes){
   
-    num_simulations = 10
+    num_simulations = 100
     
     # Running simulations in parallel
     aim_2_pf_results <- lapply(1:num_simulations, function(i) {
