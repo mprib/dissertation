@@ -223,7 +223,7 @@ def get_gait_cycle_periods(belt_speed_data:pl.DataFrame, steady_state_diff = 0.3
 if __name__ == "__main__":
 
     #%%    
-    subject = 2
+    subject = 3
 
     left_data_long = import_long_data(subject, "left")
     right_data_long = import_long_data(subject, "right")

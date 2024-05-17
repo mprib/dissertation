@@ -7,11 +7,11 @@ editor: source
 # Import Long Data
 
 ```{r}
+# note that measured_data_long.csv is created by a python script `v3d_import.py`
 library(readxl)
 library(tidyverse)
 RAW_OUTPUT_FOLDER <- "C:\\Users\\Mac Prible\\OneDrive - The University of Texas at Austin\\research\\PDSV\\data\\PDVS_2024\\v3d"
-measured_data_long <- read.csv(paste0(RAW_OUTPUT_FOLDER,"\\", "S1_measured_data_long.csv"))
-measured_data_long <- read.csv(paste0(RAW_OUTPUT_FOLDER,"\\", "S1_measured_data_long.csv"))
+measured_data_long <- read.csv(paste0(RAW_OUTPUT_FOLDER,"\\", "S3_measured_data_long.csv"))
 ```
 
 # Average normalized variables and Clean Up
@@ -231,7 +231,7 @@ mean_stance_data %>%
   mutate(StepLength = abs(AverageValue)) %>% 
   select(-c(StartStop, Axis, ConditionOrder, Variable, NewVariable, NormalizedTimeStep,AverageValue)) %>% 
   pivot_wider(names_from = Side, values_from = StepLength) %>% 
-  mutate(SLR = left/right) %>% view()
+  mutate(SLR = left/right)
 
 mean_stance_data %>% 
   ungroup() %>% 
@@ -269,8 +269,8 @@ Reviewing this calculations I think there are some problems with the way I went 
 measured_data_long %>% 
   ungroup() %>% 
   filter(NormalizedTimeStep==1) %>% 
-  filter(Condition %in% c("sbt", "ubp", "upp")) %>%
-  # filter(Condition %in% c("bbp", "bpp")) %>%
+  # filter(Condition %in% c("sbt", "ubp", "upp")) %>%
+  filter(Condition %in% c("bbp", "bpp")) %>%
   filter(Period %in% c("Baseline", "PostAdapt")) %>%
   separate(VariableAxis, into = c("Variable", "Axis"), sep = "_(?=[^_]+$)", extra = "merge") %>% 
   filter(Axis == "Y") %>% 
@@ -312,7 +312,9 @@ measured_data_long %>%
 
 
 mean_stance_data %>% 
-  filter(Period %in% c("Late Adapt")) %>% 
+  filter(Period %in% c("Late Adapt")) %>%
+  # filter(Period %in% c("Early Adapt")) %>%
+  # filter(Period %in% c("PostAdapt")) %>% 
   # filter(Condition %in% c("sbt", "ubp", "upp")) %>% 
   # filter(NewVariable == "HEEL_DISTANCE") %>% 
   filter(NewVariable == "IPSI_BeltSpeed") %>% 
@@ -338,7 +340,8 @@ mean_stance_data %>%
        caption = str_wrap("Actual belt speed captured using retroreflective markers attached to the belt. Speed change triggered when leading limb vertical GRF exceeds trailing limb vertical GRF. Belt acceleration capped at 3 m/(s^2).", width = 80))
 
 mean_stance_data %>% 
-  filter(Period %in% c("Late Adapt")) %>% 
+  filter(Period %in% c("Late Adapt")) %>%
+  # filter(Period %in% c("PostAdapt")) %>% 
   # filter(Condition %in% c("sbt", "ubp", "upp")) %>% 
   filter(Axis == "Z") %>% 
   # filter(NewVariable == "HEEL_DISTANCE") %>% 
