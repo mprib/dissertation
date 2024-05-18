@@ -290,7 +290,7 @@ all_normalized_stance_data %>%
   filter(Period %in% c("Late Adapt")) %>%
   filter(NewVariable == "IPSI_BeltSpeed") %>% 
   mutate(Condition = factor(Condition, levels = c("cSBT", "U. FastBrake", "U. FastProp", "B. FastBrake", "B. FastProp"))) %>% 
-  ggplot(aes(x=NormalizedTimeStep, y = AverageValue, color=Period))+
+  ggplot(aes(x=NormalizedTimeStep, y = AverageValue, color=Side))+
   geom_line()+
   facet_grid(cols = vars(Participant, Side), rows = vars(Condition))+
   theme_minimal()+
@@ -306,8 +306,8 @@ all_normalized_stance_data %>%
   filter(Participant==1) %>% 
   filter(Period %in% c("Late Adapt")) %>%
   filter(Axis == "Z") %>% 
-  filter(NewVariable %in% c("IPSI_GRF", "CONTRA_GRF")) %>% 
-  ggplot(aes(x=NormalizedTimeStep, y = AverageValue, group = NewVariable, color = NewVariable))+
+  filter(Variable %in% c("Right_GRF", "Left_GRF")) %>% 
+  ggplot(aes(x=NormalizedTimeStep, y = AverageValue, group = Variable, color = Variable))+
   geom_line()+
   facet_grid(cols = vars(Participant,Side), rows = vars( Condition))+
   theme_minimal() +
