@@ -71,7 +71,7 @@ all_normalized_stance_data <- all_data_long %>%
   )) 
 
 
-# rm(list=setdiff(ls(), "all_normalized_stance_data"))
+rm(list=setdiff(ls(), "all_normalized_stance_data"))
 ```
 
 # Check Ipsi/Contra Language
@@ -169,6 +169,21 @@ PF_impulse_by_condition_participant <-stance_times %>% left_join(PF_impulse_time
 
 
 ```
+# Changes in stance times
+
+```{r}
+
+stance_times %>% 
+  filter(Aim==1) %>% 
+  ggplot(aes(x = Period, y = stance_time, color=factor(Participant), group=Participant))+
+  geom_point()+
+  geom_line()+
+  facet_grid(cols=vars(Side), rows = vars(Condition))
+
+```
+
+
+
 # Plot PF Impulse
 
 ```{r}
@@ -231,6 +246,7 @@ all_normalized_stance_data %>%
   filter(Axis == "X") %>% 
   filter(NewVariable %in% c("HEEL_DISTANCE")) %>% 
   filter(Aim == 1) %>% 
+  # filter(Period %in% c("Baseline", "PostAdapt")) %>% 
   mutate(StepLength = abs(AverageValue)) %>% 
   select(-c(StartStop, Axis, ConditionOrder, Variable, NewVariable, NormalizedTimeStep,AverageValue)) %>% 
   pivot_wider(names_from = Side, values_from = StepLength) %>% 
@@ -286,6 +302,11 @@ all_normalized_stance_data %>%
 
 ```{r}
 all_normalized_stance_data %>% 
+  filter(Condition %in% c(
+                          "cSBT",
+                          "U. FastBrake",
+                          "U. FastProp"
+                          )) %>% 
   filter(Participant==1) %>% 
   filter(Period %in% c("Late Adapt")) %>%
   filter(NewVariable == "IPSI_BeltSpeed") %>% 
@@ -297,12 +318,18 @@ all_normalized_stance_data %>%
   theme( legend.position = "none",
         strip.text.y = element_text( angle=0))+
   labs(title = "Belt Speed Across Stance Phase By Condition",
-       subtitle = "Adaptation Belt Speeds for Aims 1 and 2",
+       # subtitle = "Adaptation Belt Speeds for Aims 1 and 2",
        x = "% Stance",
        y = "Belt Speed (m/s)",
-  )
+  ) +
+  scale_color_manual(values=c("left"="blue", "right"="red"))
 
 all_normalized_stance_data %>% 
+  filter(Condition %in% c(
+                          "cSBT",
+                          # "U. FastBrake", 
+                          "U. FastProp"
+                          )) %>% 
   filter(Participant==1) %>% 
   filter(Period %in% c("Late Adapt")) %>%
   filter(Axis == "Z") %>% 
@@ -312,6 +339,12 @@ all_normalized_stance_data %>%
   facet_grid(cols = vars(Participant,Side), rows = vars( Condition))+
   theme_minimal() +
   theme( legend.position = "none",
-        strip.text.y = element_text( angle=0))
+        strip.text.y = element_text( angle=0)) + 
+  labs(title = "Vertical GRF Across Stance Phase By Condition",
+       # subtitle = "Adaptation Belt Speeds for Aims 1 and 2",
+       x = "% Stance",
+       y = "VGRF (N)",
+  ) +
+  scale_color_manual(values=c("Left_GRF"="blue", "Right_GRF"="red"))
 ```
 

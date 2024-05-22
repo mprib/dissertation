@@ -1,0 +1,74 @@
+---
+title: "lmer"
+format: html
+editor: source
+---
+
+# Simulate Data
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+source("power_analysis_simulation.R")
+```
+
+```{r}
+
+# healthy population...anticipate symmetry
+pre_means <-list(
+  "cSBT" = 1,
+  "FastProp" = 1,
+  "FastBrake" = 1
+)
+
+post_means <-list(
+  "cSBT" = 1.488, 
+  "FastProp" = 1.336, 
+  "FastBrake" = 1.277 
+)
+
+std_dev <- .245
+pre_std_devs <-list(
+  "cSBT" = std_dev,
+  "FastProp" = std_dev,
+  "FastBrake" = std_dev
+)
+
+# makes sense as greater variance expected after adaptation
+post_std_devs <-list(
+  "cSBT" = std_dev,
+  "FastProp" = std_dev,
+  "FastBrake" = std_dev
+)
+    
+conditions <- list( "cSBT", "FastProp", "FastBrake" )
+
+SLR_data <-get_simulated_data(10,
+                              conditions, 
+                              pre_means = pre_means,
+                              pre_std_devs = pre_std_devs, 
+                              post_means=post_means,
+                              post_std_devs = post_std_devs)
+    
+```
+
+# Run `lmer` on Data
+
+
+```{r}
+library(lme4)
+
+model <- lmer(observation ~ condition * period + (1 | participant), data = SLR_data)
+
+summary(model)
+
+```
+
+```{r}
+
+library(emmeans)
+
+emmeans(model, pairwise ~ condition * period)
+
+```
+
+
