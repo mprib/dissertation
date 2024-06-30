@@ -56,7 +56,7 @@ conditions <- list( "cSBT", "FastProp", "FastBrake" )
 test_sample_sizes = 14:17
 for (n in test_sample_sizes){
   
-    num_simulations = 100
+    num_simulations = 1000
     
     # Running simulations in parallel
     aim_2_slr_results <- lapply(1:num_simulations, function(i) {
@@ -111,10 +111,10 @@ post_std_devs <-list(
 
 conditions <- list( "cSBT", "FastProp", "FastBrake" )
        
-test_sample_sizes = 8:10
+test_sample_sizes = 8:11
 for (n in test_sample_sizes){
   
-    num_simulations = 100
+    num_simulations = 1000
     
     # Running simulations in parallel
     aim_2_pf_results <- lapply(1:num_simulations, function(i) {

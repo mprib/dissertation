@@ -10,7 +10,7 @@ get_simulated_data <- function(n,
                                pre_std_devs,
                                post_means,
                                post_std_devs,
-                               correlation = 0.7
+                               correlation = 0.6
                                ) {
   
   all_simulated_data = list()
