@@ -13,7 +13,8 @@ knitr::opts_chunk$set(echo = TRUE)
 source("power_analysis_simulation.R")
 ```
 
-# Aim 1
+# Aim 2
+Note that "Aim 2" refers to what I plan for my main dissertation and not comps
 
 ## Hypothesis: SLR moves significantly in same direction in all conditions
 
@@ -52,10 +53,10 @@ post_std_devs <-list(
     
 conditions <- list( "cSBT", "FastProp", "FastBrake" )
     
-test_sample_sizes = 15:21
+test_sample_sizes = 14:17
 for (n in test_sample_sizes){
   
-    num_simulations = 40
+    num_simulations = 1000
     
     # Running simulations in parallel
     aim_2_slr_results <- lapply(1:num_simulations, function(i) {
@@ -81,20 +82,20 @@ Powered to distinguish differences in interaction effect (i.e. PDSV may have hal
 
 # estimates here taken from subject 1 values; time normalized impulse across stance
 pre_means <-list(
-  "cSBT" = .415,
-  "FastProp" = .415,
-  "FastBrake" = 415
+  "cSBT" = .406,
+  "FastProp" = .406,
+  "FastBrake" = 406
 )
 
 # subject 1: PF impulse  decrease in cSBT (as with Lauziere 2014) and fastBrake, increased with FastProp
 post_means <-list(
-  "cSBT" = .274,
-  "FastProp" = .473, 
-  "FastBrake" = .294
+  "cSBT" = .299,
+  "FastProp" = .463, 
+  "FastBrake" = .326
 )
 
 # estimates based on Allen et al (2011)
-std_dev <- .038
+std_dev <- .039
 
 pre_std_devs <-list(
   "cSBT" = std_dev,
@@ -110,10 +111,10 @@ post_std_devs <-list(
 
 conditions <- list( "cSBT", "FastProp", "FastBrake" )
        
-test_sample_sizes = 8:12
+test_sample_sizes = 8:11
 for (n in test_sample_sizes){
   
-    num_simulations = 20
+    num_simulations = 1000
     
     # Running simulations in parallel
     aim_2_pf_results <- lapply(1:num_simulations, function(i) {
@@ -127,6 +128,155 @@ for (n in test_sample_sizes){
     print(paste("For n = ", n, ", success rate is ", success_rate, " after ", num_simulations, " simulations."))
   
 }
+
+```
+
+# Comps Aim
+
+## Paretic PlantarFlexion: LNPS only
+
+```{r}
+
+pre_means <-list(
+  "FastProp" = .260,
+  "cSBT" = .260 
+)
+
+post_means <-list(
+  "FastProp" = .297,
+  "cSBT" = .221
+)
+
+std_dev <- .07
+
+pre_std_devs <-list(
+  "FastProp" = std_dev,
+  "cSBT" = std_dev
+)
+
+post_std_devs <-list(
+  "FastProp" = std_dev,
+  "cSBT" = std_dev
+)
+
+conditions <- list( "FastProp", "cSBT" )
+       
+test_sample_sizes = 60:62
+for (n in test_sample_sizes){
+  
+    num_simulations = 40
+    
+    # Running simulation  s in parallel
+    aim_2_pf_results <- lapply(1:num_simulations, function(i) {
+      simulate_aim(n, conditions, pre_means, pre_std_devs, post_means, post_std_devs, effect_name = "condition")
+    })
+    
+    # Computing success count and success rate
+    success_count <- sum(unlist(aim_2_pf_results))
+    success_rate <- success_count / num_simulations
+    
+    print(paste("For n = ", n, ", success rate is ", success_rate, " after ", num_simulations, " simulations."))
+  
+}
+
+
+```
+
+
+## Paretic PlantarFlexion: LPS and LNPS
+
+```{r}
+
+pre_means <-list(
+  "FastProp" = .260,
+  "FastBrake" = .225
+)
+
+post_means <-list(
+  "FastProp" = .297, 
+  "FastBrake" = .259
+)
+
+std_dev <- .07
+
+pre_std_devs <-list(
+  "FastProp" = std_dev,
+  "FastBrake" = std_dev
+)
+
+post_std_devs <-list(
+  "FastProp" = std_dev,
+  "FastBrake" = std_dev
+)
+
+conditions <- list( "FastProp", "FastBrake" )
+       
+test_sample_sizes = 60:65
+for (n in test_sample_sizes){
+  
+    num_simulations = 40
+    
+    # Running simulation  s in parallel
+    aim_2_pf_results <- lapply(1:num_simulations, function(i) {
+      simulate_aim(n, conditions, pre_means, pre_std_devs, post_means, post_std_devs, effect_name = "period")
+    })
+    
+    # Computing success count and success rate
+    success_count <- sum(unlist(aim_2_pf_results))
+    success_rate <- success_count / num_simulations
+    
+    print(paste("For n = ", n, ", success rate is ", success_rate, " after ", num_simulations, " simulations."))
+  
+}
+
+
+```
+## Paretic PlantarFlexion: LPS and LNPS
+
+```{r}
+
+pre_means <-list(
+  "FastProp" = .260,
+  "FastBrake" = .225
+)
+
+post_means <-list(
+  "FastProp" = .297, 
+  "FastBrake" = .259
+)
+
+std_dev <- .07
+
+pre_std_devs <-list(
+  "FastProp" = std_dev,
+  "FastBrake" = std_dev
+)
+
+post_std_devs <-list(
+  "FastProp" = std_dev,
+  "FastBrake" = std_dev
+)
+
+conditions <- list( "FastProp", "FastBrake" )
+       
+test_sample_sizes = 60:65
+for (n in test_sample_sizes){
+  
+    num_simulations = 40
+    
+    # Running simulation  s in parallel
+    aim_2_pf_results <- lapply(1:num_simulations, function(i) {
+      simulate_aim(n, conditions, pre_means, pre_std_devs, post_means, post_std_devs, effect_name = "period")
+    })
+    
+    # Computing success count and success rate
+    success_count <- sum(unlist(aim_2_pf_results))
+    success_rate <- success_count / num_simulations
+    
+    print(paste("For n = ", n, ", success rate is ", success_rate, " after ", num_simulations, " simulations."))
+  
+}
+
 
 ```
 

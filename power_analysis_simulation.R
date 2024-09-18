@@ -2,41 +2,49 @@
 library(dplyr)
 library(emmeans)
 library(car)
+library(MASS)
 
 get_simulated_data <- function(n,
                                conditions,
                                pre_means, 
                                pre_std_devs,
                                post_means,
-                               post_std_devs
+                               post_std_devs,
+                               correlation = 0.6
                                ) {
   
   all_simulated_data = list()
  
 
   for (cond in conditions) {
-    for (per in list("pre", "post")) {
+    # Generate correlated pre and post data
+    means <- c(pre_means[[cond]], post_means[[cond]])
+    std_devs <- c(pre_std_devs[[cond]], post_std_devs[[cond]])
     
-        # Generate data
-        condition <- as.factor(rep(cond, n))
-        period <- as.factor(rep(per,n))
-        participant <- seq_len(n)
-        
-        if (per == "pre") {
-          means <- pre_means
-          std_devs <- pre_std_devs
-        } else {
-          means <- post_means
-          std_devs <- post_std_devs
-        }
-           
-        mean = means[[cond]]
-        std_dev = std_devs[[cond]]
-        observation <- rnorm(n, mean = mean, sd = std_dev)
-        all_simulated_data[[paste(cond, per)]] = data.frame(participant,
-                                                condition,
-                                                period,
-                                                observation )
+    sigma <- matrix(c(std_devs[1]^2, correlation * std_devs[1] * std_devs[2],
+                      correlation * std_devs[1] * std_devs[2], std_devs[2]^2),
+                    nrow = 2, byrow = TRUE)
+    
+    obs_data <- mvrnorm(n, mu = means, Sigma = sigma)
+    
+    
+    for (per in list("pre", "post")) {
+      # Generate data
+      condition <- as.factor(rep(cond, n))
+      period <- as.factor(rep(per, n))
+      participant <- seq_len(n)
+      
+      if (per == "pre") {
+        observation <- obs_data[, 1]
+      } else {
+        observation <- obs_data[, 2]
+      }
+      
+      all_simulated_data[[paste(cond, per)]] = data.frame(participant,
+                                                          condition,
+                                                          period,
+                                                          observation)
+      
     }
     
   }
