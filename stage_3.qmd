@@ -36,7 +36,7 @@ Averages across relevant stance phases. Rename variables so that they are in ter
 ```{r}
 all_normalized_stance_data <- all_data_long %>% 
   ungroup() %>% 
-  # select(-MaxSpeedDiff) %>% 
+  select(-MaxSpeedDiff) %>% 
   mutate(Participant = parse_number(Participant)) %>% 
   group_by(Condition, Side, Participant, StartStop, Period, ConditionOrder, VariableAxis, NormalizedTimeStep) %>% 
   summarize(AverageValue = mean(Value, na.rm=TRUE)) %>% 
@@ -56,11 +56,11 @@ all_normalized_stance_data <- all_data_long %>%
     TRUE ~ Variable # Keeps all other values unchanged
   ))  %>% 
   mutate(Aim = case_when(
-    Condition == "sbt" ~ 1,
-    Condition == "ubp" ~ 1,
-    Condition == "upp" ~ 1,
-    Condition == "bbp" ~ 2,
-    Condition == "bpp" ~ 2
+    Condition == "sbt" ~ 2,
+    Condition == "ubp" ~ 2,
+    Condition == "upp" ~ 2,
+    Condition == "bbp" ~ 3,
+    Condition == "bpp" ~ 3
   )) %>% 
   mutate(Condition = case_when(
     Condition == "sbt" ~ "cSBT",
@@ -71,7 +71,20 @@ all_normalized_stance_data <- all_data_long %>%
   )) 
 
 
-# rm(list=setdiff(ls(), "all_normalized_stance_data"))
+rm(list=setdiff(ls(), "all_normalized_stance_data"))
+```
+
+# Check Ipsi/Contra Language
+
+
+```{r}
+# get list of variable names
+all_normalized_stance_data %>% 
+  ungroup() %>% 
+  select(NewVariable, Side, Variable) %>% 
+  group_by(NewVariable, Side) %>% 
+  summarize(NewVariable = first(NewVariable),
+            OriginalVariable = first(Variable))
 ```
 
 
@@ -81,12 +94,6 @@ all_normalized_stance_data <- all_data_long %>%
 figure_participant <- 1
 
 all_normalized_stance_data %>% 
-  mutate(Condition = case_when(
-    Condition == "cSBT" ~ "cSBT",
-    Condition == "U. FastBrake" ~ "FastBrake",
-    Condition == "U. FastProp" ~ "FastProp",
-    TRUE ~ Condition
-  )) %>%  
   filter(Participant == figure_participant) %>%  
   filter(Period %in% c("Baseline", "PostAdapt")) %>% 
   filter(Aim==1) %>% 
@@ -99,9 +106,9 @@ all_normalized_stance_data %>%
   theme_minimal()+
   theme(legend.position = "bottom",
         plot.caption = element_text(hjust = 0.5, size=13)) +  # Center-justify the caption
-  labs(title = paste0("Figure 4: Ankle Torque Profile Before and After 6 Minutes of Adaptation") ,
-       subtitle = paste0("Subject ", figure_participant, " across all 3 conditions of Aim 1"),
-       # caption = str_wrap("Ankle torque on the left (altered) side is decreased following cSBT and FastBrake, but increases following adaptation to FastProp", width = 80),
+  labs(title = paste0("Subject ", figure_participant, ": Ankle Torque Profile Before and After 6 Minutes of Adaptation") ,
+       subtitle = "Tested Conditions: cSBT, FastBrake, FastProp",
+       caption = str_wrap("Ankle torque on the left (altered) side is decreased following cSBT and FastBrake, but increases following adaptation to FastProp", width = 80),
        x = "% stance",
        y = "Torque (N.m/BW)",
        )
@@ -126,6 +133,11 @@ all_normalized_stance_data %>%
   theme_minimal()+
   theme(legend.position = "bottom")+
   labs(x="% Stance",
+       y = "Torque (N.m/BW)") +
+  labs(title = paste0("Subject ", figure_participant, ": Ankle Torque Profile Before and After 6 Minutes of Adaptation") ,
+       subtitle = "Tested Conditions: B. FastBrake, B. FastProp",
+       caption = str_wrap("Ankle torque on the left (altered) side is decreased following cSBT and FastBrake, but increases following adaptation to FastProp", width = 80),
+       x = "% stance",
        y = "Torque (N.m/BW)")
 ```
 
@@ -152,10 +164,10 @@ PF_impulse_time_normalized <- all_normalized_stance_data %>%
   summarize(PF_impulse_time_norm = sum(AverageValue/100))
 
 PF_impulse_by_condition_participant <-stance_times %>% left_join(PF_impulse_time_normalized) %>% 
-  ungroup() %>% 
+  ungroup() %>%
   mutate(PF_impulse_BW_normalized =  PF_impulse_time_norm * stance_time) %>% 
   # filter(Side=="left") %>% 
-  # select(Aim, Participant,Side, Condition, Period, PF_impulse_BW_normalized) %>% view()
+  select(Aim, Participant,Side, Condition, Period, PF_impulse_BW_normalized) %>% 
   mutate(PF_impulse_time_normalized=abs(PF_impulse_BW_normalized)) %>% 
   pivot_wider(id_cols=c(Aim, Participant, Side, Condition), values_from = PF_impulse_time_normalized, names_from = Period) %>% 
   mutate(pct_change = (PostAdapt-Baseline)/Baseline)
@@ -181,10 +193,11 @@ stance_times %>%
 
 ```{r}
 
+# repivot data
 PF_impulse_plot_data <- PF_impulse_by_condition_participant %>%
   pivot_longer(cols = c(Baseline, PostAdapt), names_to = "Period", values_to = "PF_Impulse")
 
-
+# Left
 ggplot(PF_impulse_plot_data %>% 
          filter(Aim==1) %>% 
          filter(Side=="left"), 
@@ -192,9 +205,23 @@ ggplot(PF_impulse_plot_data %>%
   geom_point(size = 3) +
   geom_line() +
   facet_grid(cols=vars(Condition)) +
-  labs(x = "Period", y = "Left PF Impulse (N.m.s/BW)", title = "Aim 1: Left PF Impulse by Period and Condition", color = "Participant") +
+  labs(x = "Period", y = "Left PF Impulse (N.m.s/BW)", title = "Aim 2: Left PF Impulse by Period and Condition", color = "Participant") +
   theme_minimal() +
   theme(legend.position = "bottom")
+
+
+# Right
+ggplot(PF_impulse_plot_data %>% 
+         filter(Aim==1) %>% 
+         filter(Side=="right"), 
+       aes(x = Period, y = PF_Impulse, color = factor(Participant), group = Participant)) +
+  geom_point(size = 3) +
+  geom_line() +
+  facet_grid(cols=vars(Condition)) +
+  labs(x = "Period", y = "Right PF Impulse (N.m.s/BW)", title = "Aim 2: Right PF Impulse by Period and Condition", color = "Participant") +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
 
 bilateral_PF_impulse_plot_data <- PF_impulse_plot_data %>%
   ungroup() %>% 
@@ -208,7 +235,7 @@ ggplot(bilateral_PF_impulse_plot_data  ,
   geom_point(size = 3) +
   geom_line() +
   facet_grid(cols=vars(Condition)) +
-  labs(x = "Period", y = "Average PF Impulse (N.m.s/BW)", title = "Aim 2: Mean PF Impulse by Period and Condition", color = "Participant") +
+  labs(x = "Period", y = "Average PF Impulse (N.m.s/BW)", title = "Aim 3: Mean PF Impulse by Period and Condition", color = "Participant") +
   theme_minimal() +
   theme(legend.position = "bottom")
 
@@ -253,31 +280,8 @@ all_normalized_stance_data %>%
   theme(plot.title = element_text(hjust = 0.5,),
         plot.caption = element_text(hjust = 0.5, size = 13),
         legend.position = "bottom")+
-  labs(title = "Figure 3: SLR Across Treadmill Protocol",
-       subtitle = "")
+  labs(title = "SLR Across Treadmill Protocol")
   
-all_normalized_stance_data %>% 
-  ungroup() %>% 
-  filter(NormalizedTimeStep==1) %>% 
-  filter(Axis == "X") %>% 
-  filter(NewVariable %in% c("HEEL_DISTANCE")) %>% 
-  filter(Aim == 1) %>% 
-  filter(Participant ==1) %>% 
-  # filter(Period %in% c("Baseline", "PostAdapt")) %>% 
-  mutate(StepLength = abs(AverageValue)) %>% 
-  select(-c(StartStop, Axis, ConditionOrder, Variable, NewVariable, NormalizedTimeStep,AverageValue)) %>% 
-  pivot_wider(names_from = Side, values_from = StepLength) %>% 
-  mutate(SLR = left/right) %>% 
-  ggplot(aes(x=Period, y = SLR,  color=Condition, group = Condition))+
-  geom_point()+
-  geom_line()+
-  geom_hline(yintercept =1, linetype="dashed")+
-  # facet_grid(cols=vars(Condition))+
-  theme_minimal()+
-  theme(plot.caption = element_text(hjust = 0.5, size = 13),
-        legend.position = "bottom")+
-  labs(title = "Figure 3: SLR Across Treadmill Protocol",
-       subtitle = "Subject 1")
 ```
 
 # step Length in a body frame of reference
@@ -317,47 +321,31 @@ all_normalized_stance_data %>%
 ```
 
 ```{r}
+displayed_aim = 2
+
 all_normalized_stance_data %>% 
-  filter(Condition %in% c(
-                          "cSBT",
-                          "U. FastBrake",
-                          "U. FastProp"
-                          )) %>% 
+  filter(Aim==displayed_aim) %>% 
   filter(Participant==1) %>% 
   filter(Period %in% c("Late Adapt")) %>%
   filter(NewVariable == "IPSI_BeltSpeed") %>% 
   mutate(Condition = factor(Condition, levels = c("cSBT", "U. FastBrake", "U. FastProp", "B. FastBrake", "B. FastProp"))) %>% 
-  mutate(Condition = case_when(
-            Condition == "U. FastBrake" ~ "FastBrake",
-            Condition == "U. FastProp" ~ "FastProp",
-            TRUE ~ Condition)
-  ) %>% 
   ggplot(aes(x=NormalizedTimeStep, y = AverageValue, color=Side))+
   geom_line()+
   facet_grid(cols = vars(Participant, Side), rows = vars(Condition))+
   theme_minimal()+
   theme( legend.position = "none",
         strip.text.y = element_text( angle=0))+
-  labs(title = "Figure 2: Belt Speed Across Stance Phase By Condition",
-       subtitle = "Recorded belt speeds of Subject 1",
+  labs(title = "Adaptation Belt Speed Across Stance Phase By Condition",
        x = "% Stance",
        y = "Belt Speed (m/s)",
   ) +
   scale_color_manual(values=c("left"="blue", "right"="red"))
 
 all_normalized_stance_data %>% 
-  mutate(Condition = case_when(
-            Condition == "U. FastBrake" ~ "FastBrake",
-            Condition == "U. FastProp" ~ "FastProp",
-            TRUE ~ Condition)
-  ) %>% 
-  filter(Condition %in% c(
-                          "cSBT",
-                          "FastBrake",
-                          "FastProp"
-                          )) %>% 
+  filter(Aim==2) %>% 
   filter(Participant==1) %>% 
-  filter(Period %in% c("Late Adapt")) %>%
+  # filter(Period %in% c("Late Adapt")) %>%
+  filter(Period %in% c("PostAdapt")) %>%
   filter(Axis == "Z") %>% 
   filter(Variable %in% c("Right_GRF", "Left_GRF")) %>% 
   ggplot(aes(x=NormalizedTimeStep, y = AverageValue, group = Variable, color = Variable))+
