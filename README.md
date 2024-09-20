@@ -1,7 +1,15 @@
-Current Goals:
 
-I have some initial text output from visual 3d and I'm seeking to organize a workflow that will allow me to pull granular gait data into "Python world" where it can be summarized for statistical analysis in R. 
+# Introduction
 
-The next step now is to get a single data file with basic belt speed data between gait events and import it. I believe this data is not yet in a preferred format because it really needs to have all data in a given file represent time series data between events. 
-In a way, I don't really even need to tag the "start_adapt" and "end_adapt" instances. I should be able to see that within the footfall data. This may also provide a place for flagging individual steps as "bad".
+This work space is the primary location for data processing scripts associated with my dissertation.
+This README is intended to document the steps of data processing that take place to serve as a reminder for future me.
+
+# Stage 1: Vicon Output
+
+Vicon data for each subject is stored within research/PDSV/data/PDVS_2024/S#.
+This is data that has been fully cleaned with one file each for the start and stop of all adaptation trials.
+Additionally, there are going to be a couple of calibration files 
+
+
+# Stage 2: Visual 3D pipeline output
 
