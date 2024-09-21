@@ -1,7 +1,3 @@
-"""
-Having created a hacky script to import data and summarize it, I'm going to now attempt to wrap it up in some 
-more stable functions that will make things easier to grok and maintain.
-"""
 
 
 #%%
@@ -223,7 +219,7 @@ def get_gait_cycle_periods(belt_speed_data:pl.DataFrame, steady_state_diff = 0.3
 if __name__ == "__main__":
 
     #%%    
-    subject = 3
+    subject = 4
 
     left_data_long = import_long_data(subject, "left")
     right_data_long = import_long_data(subject, "right")
