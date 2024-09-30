@@ -217,7 +217,7 @@ all_normalized_stance_data %>%
 
 all_normalized_stance_data %>% 
   filter(Period %in% c("Baseline", "PostAdapt")) %>% 
-  filter(Aim==3) %>% 
+  filter(Aim==2) %>% 
   filter(Axis %in% c("X")) %>% 
   filter(NewVariable == "IPSI_ANKLE_MOMENT") %>% 
   group_by(Condition, Side, StartStop, Period, Variable, Axis, NormalizedTimeStep) %>% 
@@ -296,7 +296,7 @@ anova_result <- ezANOVA(
 )
 
 # Print the ANOVA results
-print(anova_result)
+anova_result
 
 # Conduct planned comparisons (pre to post within each condition)
 planned_comparisons <- Aim2_PF_Impulse %>%
@@ -324,9 +324,6 @@ planned_comparisons <- planned_comparisons %>%
 print(planned_comparisons)
 
 ```
-
-
-
 
 #### Assumption Check
 
@@ -359,7 +356,8 @@ print(overall_shapiro_test)
 
 # Aim 3: Bilateral PDSV
 
-## Sample Participant 
+## Ankle Torque
+### Sample Participant 
 
 ```{r}
 figure_participant <-2
@@ -386,7 +384,7 @@ all_normalized_stance_data %>%
 
 
 
-
+### All participants
 ```{r}
 
 all_normalized_stance_data %>% 
@@ -412,14 +410,9 @@ all_normalized_stance_data %>%
 ```
 
 
-
-
 # Plot PF Impulse
 
 ```{r}
-
-
-
 
 bilateral_PF_impulse_plot_data <- PF_impulse_by_condition_participant%>%
   ungroup() %>% 
@@ -471,8 +464,6 @@ bilateral_PF_impulse_plot_data %>%
   # Ungroup to remove grouping structure
   ungroup()
 
-# View the results
-print(correlation_results)
 
 ```
 
