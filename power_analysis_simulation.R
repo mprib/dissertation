@@ -10,7 +10,7 @@ get_simulated_data <- function(n,
                                pre_std_devs,
                                post_means,
                                post_std_devs,
-                               correlation = 0.6
+                               correlation = 0.9
                                ) {
   
   all_simulated_data = list()
@@ -84,7 +84,7 @@ simulate_aim <- function(n, conditions, pre_means, pre_std_devs, post_means, pos
     emm <- emmeans(model, ~condition*period)
     post_hoc <- summary(contrast(emm, "pairwise", by = "condition"))
     p_values <- post_hoc$p.value
-    adjusted_p_values <- p.adjust(p_values, method = "bonferroni")
+    adjusted_p_values <- p.adjust(p_values, method = "holm")
    
     post_hoc_success = all(adjusted_p_values < .05)
     

@@ -219,20 +219,26 @@ def get_gait_cycle_periods(belt_speed_data:pl.DataFrame, steady_state_diff = 0.3
 if __name__ == "__main__":
 
     #%%    
-    subject = 4
-
+    subject = 5
+    print(f"Processing subject {subject}")
+    print("Importing left side data")
     left_data_long = import_long_data(subject, "left")
+    print("Importing right side data")
     right_data_long = import_long_data(subject, "right")
+
+    print("Merging data")
     data_long = pl.concat([left_data_long,right_data_long])
 
+    print("Calculating belt speed difference")
     belt_speed_data = get_max_belt_speed_diff(data_long)
     #%%
+    print("Determinining cycles to process....")
     measured_gait_cycles = get_gait_cycle_periods(belt_speed_data)
 
     #%%
     join_columns = ["Condition", "Side", "Participant", "GaitCycle", "StartStop"]
     measured_data_long = measured_gait_cycles.join(data_long,on=join_columns)
-    
+    print("Saving output")
     measured_data_long.write_csv(Path(RAW_OUTPUT_FOLDER, f"S{subject}_measured_data_long.csv"))
 
 
