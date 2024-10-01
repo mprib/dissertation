@@ -66,36 +66,45 @@ simulate_aim <- function(n, conditions, pre_means, pre_std_devs, post_means, pos
                        post_means = post_means, 
                        post_std_devs=post_std_devs
                        )
-   
-    # browser()
     
-    model <-  aov(observation ~ condition * period  , data = simulated_data)
     
-    anova_table = summary(model)[[1]]
+    # Prepare data for ezANOVA
+    simulated_data$participant <- factor(simulated_data$participant)
+    simulated_data$condition <- factor(simulated_data$condition)
+    simulated_data$period <- factor(simulated_data$period)
     
-    # Find the row corresponding to the effect name
-    effect_row <- trimws(rownames(anova_table)) == effect_name
+    # Perform ezANOVA
+    ez_result <- ezANOVA(
+      data = simulated_data,
+      dv = observation,
+      wid = participant,
+      within = period,
+      between = condition,
+      detailed = TRUE
+    )
     
-    # Extract the p-value for the effect
-    effect_p_value <- anova_table[effect_row, "Pr(>F)"]
+    browser()
     
-    # browser()
-    # Check post hoc tests for interaction: pre vs. post within each condition
-    emm <- emmeans(model, ~condition*period)
+    # Extract p-value for the interaction effect
+    interaction_p <- ez_result$ANOVA[ez_result$ANOVA$Effect == "condition:period", "p"]
+    
+    # Perform post-hoc tests
+    emm <- emmeans(lmer(observation ~ condition * period + (1|participant), data = simulated_data), 
+                   ~condition*period)
     post_hoc <- summary(contrast(emm, "pairwise", by = "condition"))
-    p_values <- post_hoc$p.value
-    adjusted_p_values <- p.adjust(p_values, method = "holm")
-   
-    post_hoc_success = all(adjusted_p_values < .05)
+    adjusted_p_values <- p.adjust(post_hoc$p.value, method = "holm")
     
-    # do the check of the hypothesis
-    if (all(effect_p_value < 0.05,  post_hoc_success)){
-        success <- TRUE
+    post_hoc_success <- all(adjusted_p_values < .05)
+    
+    # Check hypothesis
+    if (interaction_p < 0.05 && post_hoc_success) {
+      success <- TRUE
     } else {
-      success <-FALSE
+      success <- FALSE
     }
     
     return(success)
-
 }
+
+
 

@@ -53,10 +53,10 @@ post_std_devs <-list(
     
 conditions <- list( "cSBT", "FastProp", "FastBrake" )
     
-test_sample_sizes = 14:17
+test_sample_sizes = 10:15
 for (n in test_sample_sizes){
   
-    num_simulations = 100
+    num_simulations = 20
     
     # Running simulations in parallel
     aim_2_slr_results <- lapply(1:num_simulations, function(i) {

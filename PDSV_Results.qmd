@@ -14,6 +14,10 @@ library(tidyverse)
 library(ez) # for stats
 library(ggpubr)
 library(car)
+library(emmeans)
+library(lme4)
+library(lmerTest)
+
 RAW_OUTPUT_FOLDER <- "C:\\Users\\Mac Prible\\OneDrive - The University of Texas at Austin\\research\\PDSV\\data\\PDVS_2024\\v3d"
 
 participant_count <- 5
@@ -78,6 +82,13 @@ all_normalized_stance_data <- all_data_long %>%
 rm(list=setdiff(ls(), "all_normalized_stance_data"))
 ```
 
+
+## Back Up
+```{r}
+all_normalized_stance_data %>%  write_csv2("all_normalized_stance_data.csv")
+all_normalized_stance_data <- read_csv2("all_normalized_stance_data.csv")
+```
+
 ## Time Normalize PF Impulse
 
 ```{r}
@@ -87,7 +98,7 @@ stance_times <-all_normalized_stance_data %>%
   filter(Axis == "X") %>% 
   filter(NewVariable %in% c("TIME")) %>% 
   filter(Period %in% c("Baseline", "PostAdapt")) %>%
-  group_by(Aim, Participant, Condition, Period, Side) %>% 
+  group_by(Aim, Participant, Condition, Period, Side) %>% view()
   summarize(min = min(AverageValue), max = max(AverageValue)) %>%
   mutate(stance_time = max-min)
 
@@ -101,7 +112,7 @@ PF_impulse_time_normalized <- all_normalized_stance_data %>%
   summarize(PF_impulse_time_norm = sum(AverageValue/100))
 
 PF_impulse_by_condition_participant <-stance_times %>% left_join(PF_impulse_time_normalized) %>% 
-  ungroup() %>%
+  ungroup() %>% view()
   mutate(PF_impulse_BW_normalized =  PF_impulse_time_norm * stance_time) %>% 
   select(Aim, Participant,Side, Condition, Period, PF_impulse_BW_normalized) %>% 
   mutate(PF_impulse_time_normalized=abs(PF_impulse_BW_normalized)) %>% 
@@ -110,6 +121,8 @@ PF_impulse_by_condition_participant <-stance_times %>% left_join(PF_impulse_time
 
 
 ```
+
+
 
 
 # Aim 2: Unilateral PDSV
@@ -126,7 +139,8 @@ Aim2_SLR <- all_normalized_stance_data %>%
   mutate(StepLength = abs(AverageValue)) %>% 
   select(-c(StartStop, Axis, ConditionOrder, Variable, NewVariable, NormalizedTimeStep,AverageValue)) %>% 
   pivot_wider(names_from = Side, values_from = StepLength) %>% 
-  mutate(SLR = left/right) 
+  mutate(SLR = left/right)
+
   
 Aim2_SLR %>%  
   ggplot(aes(x=Period, y = SLR, group = Participant, color=factor(Participant)))+
@@ -141,48 +155,122 @@ Aim2_SLR %>%
   labs(title = "SLR Across Treadmill Protocol")
   
 ```
-### Repeated Measures ANOVA
 
+
+### Linear Mixed Model and Post Hoc Tests
 ```{r}
+# Fit a linear mixed model
+model <- lmer(SLR ~ Period * Condition + (1|Participant), data = aim2_SLR_PrePost)
+model_summary <- summary(model)
 
-Aim2_SLR %>% 
+# Print the fixed effects table
+print(model_summary$coefficients)
+
+# Likelihood ratio test for the full model against the null model
+null_model <- lmer(SLR ~ 1 + (1|Participant), data = aim2_SLR_PrePost)
+anova_result <- anova(null_model, model)
+
+print(anova_result)
+
+# Compute estimated marginal means
+emm <- emmeans(model, specs = ~ Period | Condition)
+
+# 1. Pairwise comparisons of Period within each Condition
+period_comparisons <- pairs(emm, simple = "Period", adjust="holm")
+print(period_comparisons)
+
+
+# Assuming period_comparisons is already available from your previous analysis
+# Extract p-values and format them for plotting
+pvalue_data <- period_comparisons %>%
+  as_tibble() %>%
+  mutate(Condition = sub("Condition=(.*)", "\\1", Condition),
+         p.value.label = paste("p =", sprintf("%.3f", p.value))) %>%
+  group_by(Condition) %>%
+  summarize(p.value.label = first(p.value.label))  # Use first p-value for each condition
+
+# Calculate y-position for p-values
+y_max <- Aim2_SLR %>%
+  filter(Period %in% c("Baseline", "PostAdapt")) %>%
+  group_by(Condition) %>%
+  summarize(max_SLR = max(SLR)) %>%
+  pull(max_SLR) %>%
+  max()
+
+y_position <- y_max + 0.1  # Adjust this value as needed
+
+# Add x-position for p-values
+pvalue_data <- pvalue_data %>%
+  mutate(x = 1.5,  # Midpoint between Baseline (1) and PostAdapt (2)
+         y = y_position)
+
+# Create the plot with p-values
+plot <- Aim2_SLR %>%  
   filter(Period %in% c("Baseline", "PostAdapt")) %>% 
-  mutate(Condition = factor(Condition),
-         Period = factor(Period, levels = c("Baseline", "PostAdapt")),
-         Participant = factor(Participant)) %>% 
-  ezANOVA(
-    dv = .(SLR),
-    wid = .(Participant),
-    within = .(Period, Condition),
-    detailed = TRUE
-  ) 
-  
-
-```
-
-A repeated measures ANOVA was conducted to examine the effects of period (Baseline vs. Post Adaptation) and condition (cSBT, U. FastBrake, and U. FastProp) on Step Length Ratio (SLR). Results revealed a significant main effect of period, F(1, 4) = 10.77, p = .030, ηp² = .43, indicating a substantial change in SLR from Baseline to Post Adaptation across all conditions. Neither the main effect of condition (F(2, 8) = 1.28, p = .33) nor the interaction between period and condition (F(2, 8) = 0.61, p = .57) reached statistical significance. These findings support the hypothesis that SLR changes significantly from Baseline to Post Adaptation regardless of the intervention type. 
-
-
-### Change in SLR from Baseline to Post Adaptation
-
-```{r}
-
-Aim2_SLR %>% 
-  filter(Period %in% c("Baseline", "PostAdapt")) %>% 
-  mutate(Condition = factor(Condition),
-         Period = factor(Period, levels = c("Baseline", "PostAdapt")),
-         Participant = factor(Participant)) %>% 
-ggplot(aes(x = Period, y = SLR, color = Condition, group = Condition)) +
-  stat_summary(fun = mean, geom = "point", size = 3) +
-  stat_summary(fun = mean, geom = "line") +
-  stat_summary(fun.data = mean_se, geom = "errorbar", width = 0.2) +
+  ggplot(aes(x = Period, y = SLR, group = Participant, color = factor(Participant))) +
+  geom_point() +
+  geom_line() +
+  geom_hline(yintercept = 1, linetype = "dashed") +
+  facet_grid(cols = vars(Condition)) +
+  geom_text(data = pvalue_data, 
+            aes(x = x, y = y, label = p.value.label),
+            inherit.aes = FALSE,
+            show.legend = FALSE) +
   theme_minimal() +
-  labs(title = "Change in SLR from Baseline to PostAdapt",
+  theme(plot.title = element_text(hjust = 0.5),
+        plot.caption = element_text(hjust = 0.5, size = 13),
+        legend.position = "bottom") +
+  labs(title = "SLR Across Treadmill Protocol",
+       caption = "Holm adjusted p-values ",
        x = "Period",
-       y = "SLR")
+       y = "SLR",
+       color = "Participant")
+
+# Display the plot
+print(plot)
 
 ```
 
+### Numbers for Power Analysis
+
+```{r}
+
+aim2_SLR_PrePost %>% 
+  ungroup() %>% 
+  group_by(Condition, Period) %>% 
+  summarize(std_dev_SLR = sd(SLR),
+            mean_SLR = mean(SLR))
+
+aim2_SLR_PrePost %>% 
+  ungroup() %>% 
+  group_by(Condition) %>% 
+  summarize(std_dev_SLR = sd(SLR),
+            mean_SLR = mean(SLR))
+
+bilateral_PF_impulse_plot_data %>% 
+  group_by(Condition, Period) %>% 
+  summarize(mean_PF_Impulse= mean(PF_Impulse))
+
+# Assuming your dataframe is called 'df'
+bilateral_PF_impulse_plot_data %>% 
+  # Reshape the data to wide format
+  pivot_wider(
+    id_cols = c(Participant, Condition),
+    names_from = Period,
+    values_from = PF_Impulse
+  ) %>% 
+  # Group by Condition
+  group_by(Condition) %>%
+  # Calculate correlation for each Condition
+  summarise(
+    correlation = cor(Baseline, PostAdapt, use = "pairwise.complete.obs"),
+    p_value = cor.test(Baseline, PostAdapt)$p.value
+  ) %>%
+  # Ungroup to remove grouping structure
+  ungroup()
+
+
+```
 
 ## Ankle PF Impulse
 ### Sample Participant Ankle Torque Profile
@@ -216,7 +304,8 @@ all_normalized_stance_data %>%
 ```{r}
 
 all_normalized_stance_data %>% 
-  filter(Period %in% c("Baseline", "PostAdapt")) %>% 
+  filter(Period %in% c("Baseline", "PostAdapt")) %>%
+  # filter(Period %in% c("Baseline", "Late Adapt")) %>%
   filter(Aim==2) %>% 
   filter(Axis %in% c("X")) %>% 
   filter(NewVariable == "IPSI_ANKLE_MOMENT") %>% 
@@ -225,13 +314,13 @@ all_normalized_stance_data %>%
 
   ggplot(aes(x=NormalizedTimeStep, y = AverageValue, color=Period))+
   geom_line()+
-  facet_grid(cols = vars(Side), rows = vars(Condition), scales = "free_y")+
+  facet_grid(cols = vars(Side), rows = vars(Condition))+
   theme_minimal()+
   theme(legend.position = "bottom")+
   labs(x="% Stance",
        y = "Torque (N.m/BW)") +
   labs(title = "All Subjects: Ankle Torque Profile Before and After 6 Minutes of Adaptation" ,
-       subtitle = "Tested Conditions: B. FastBrake, B. FastProp",
+       subtitle = "Tested Conditions: U. FastBrake, U. FastProp",
        x = "% stance",
        y = "Torque (N.m/BW)")
 
@@ -280,78 +369,77 @@ PF_impulse_by_condition_participant %>%
 
 ```
 
-### Repeated Measures ANOVA
+### Linear Mixed Model and Post Hoc Tests
 ```{r}
+# Fit a linear mixed model
+model <- lmer(PF_Impulse ~ Period * Condition + (1|Participant), data = Aim2_PF_Impulse)
+model_summary <- summary(model)
 
-print(Aim2_PF_Impulse)
+# Print the fixed effects table
+print(model_summary$coefficients)
 
-# Perform Repeated Measures ANOVA
-anova_result <- ezANOVA(
-  data = Aim2_PF_Impulse,
-  dv = PF_Impulse,
-  wid = Participant,
-  within = c(Condition, Period),
-  detailed = TRUE,
-  type = 3
-)
+# Likelihood ratio test for the full model against the null model
+null_model <- lmer(PF_Impulse ~ 1 + (1|Participant), data = Aim2_PF_Impulse)
+anova_result <- anova(null_model, model)
 
-# Print the ANOVA results
-anova_result
+print(anova_result)
 
-# Conduct planned comparisons (pre to post within each condition)
-planned_comparisons <- Aim2_PF_Impulse %>%
+# Compute estimated marginal means
+emm <- emmeans(model, specs = ~ Period | Condition)
+
+# 1. Pairwise comparisons of Period within each Condition
+period_comparisons <- pairs(emm, simple = "Period", adjust="holm")
+print(period_comparisons)
+
+
+# Assuming period_comparisons is already available from your previous analysis
+# Extract p-values and format them for plotting
+pvalue_data <- period_comparisons %>%
+  as_tibble() %>%
+  mutate(Condition = sub("Condition=(.*)", "\\1", Condition),
+         p.value.label = paste("p =", sprintf("%.3f", p.value))) %>%
   group_by(Condition) %>%
-  summarise(
-    t_stat = t.test(PF_Impulse[Period == "Baseline"], 
-                    PF_Impulse[Period == "PostAdapt"], 
-                    paired = TRUE)$statistic,
-    p_value = t.test(PF_Impulse[Period == "Baseline"], 
-                     PF_Impulse[Period == "PostAdapt"], 
-                     paired = TRUE)$p.value
-  )
+  summarize(p.value.label = first(p.value.label))  # Use first p-value for each condition
 
+# Calculate y-position for p-values
+y_max <- Aim2_PF_Impulse %>%
+  filter(Period %in% c("Baseline", "PostAdapt")) %>%
+  group_by(Condition) %>%
+  summarize(max_PF_Impulse = max(PF_Impulse)) %>%
+  pull(max_PF_Impulse) %>%
+  max()
 
-# Adjust p-values using multiple methods
-planned_comparisons <- planned_comparisons %>%
-  mutate(
-    p_bonferroni = p.adjust(p_value, method = "bonferroni"),
-    p_holm = p.adjust(p_value, method = "holm"),
-    p_hochberg = p.adjust(p_value, method = "hochberg"),
-    p_fdr = p.adjust(p_value, method = "fdr")
-  )
+y_position <- y_max + 0.1  # Adjust this value as needed
 
-# Print planned comparisons results with adjusted p-values
-print(planned_comparisons)
+# Add x-position for p-values
+pvalue_data <- pvalue_data %>%
+  mutate(x = 1.5,  # Midpoint between Baseline (1) and PostAdapt (2)
+         y = y_position)
 
-```
-
-#### Assumption Check
-
-```{r}
-
-Aim2_PF_Impulse %>% 
-  group_by(Condition, Period) %>% 
-  summarize(
-    shapiro_statistic = shapiro.test(PF_Impulse)$statistic,
-    shapiro_p_value = shapiro.test(PF_Impulse)$p.value,
-    .groups = "drop"
-  )
-
-# Create Q-Q plot for all data
-qq_plot <- ggplot(Aim2_PF_Impulse, aes(sample = PF_Impulse)) +
-  stat_qq() +
-  stat_qq_line() +
-  labs(title = "Q-Q Plot of PF_Impulse Across All Conditions and Periods",
-       x = "Theoretical Quantiles",
-       y = "Sample Quantiles") +
-  theme_minimal()
+# Create the plot with p-values
+plot <- Aim2_PF_Impulse %>%  
+  filter(Period %in% c("Baseline", "PostAdapt")) %>% 
+  ggplot(aes(x = Period, y = PF_Impulse, group = Participant, color = factor(Participant))) +
+  geom_point() +
+  geom_line() +
+  facet_grid(cols = vars(Condition)) +
+  geom_text(data = pvalue_data, 
+            aes(x = x, y = y, label = p.value.label),
+            inherit.aes = FALSE,
+            show.legend = FALSE) +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5),
+        plot.caption = element_text(hjust = 0.5, size = 13),
+        legend.position = "bottom") +
+  labs(title = "PF Impulse Across Treadmill Protocol",
+       caption = "Holm adjusted p-values ",
+       x = "Period",
+       y = "SLR",
+       color = "Participant")
 
 # Display the plot
-print(qq_plot)
+print(plot)
 
-# Optional: Shapiro-Wilk test on all data
-overall_shapiro_test <- shapiro.test(Aim2_PF_Impulse$PF_Impulse)
-print(overall_shapiro_test)
 ```
 
 # Aim 3: Bilateral PDSV
@@ -360,24 +448,24 @@ print(overall_shapiro_test)
 ### Sample Participant 
 
 ```{r}
-figure_participant <-2
+figure_participant <-3
 
 all_normalized_stance_data %>% 
   filter(Participant == figure_participant) %>%  
-  filter(Period %in% c("Baseline", "PostAdapt")) %>% 
+  filter(Period %in% c("Baseline", "PostAdapt")) %>%
+  # filter(Period %in% c("Baseline", "Late Adapt")) %>%
   filter(Aim==3) %>% 
   filter(Axis %in% c("X")) %>% 
   filter(NewVariable == "IPSI_ANKLE_MOMENT") %>% 
   ggplot(aes(x=NormalizedTimeStep, y = AverageValue, color=Period))+
   geom_line()+
-  facet_grid(cols = vars(Side), rows = vars(Condition), scales = "free_y")+
+  facet_grid(cols = vars(Side), rows = vars(Condition))+
   theme_minimal()+
   theme(legend.position = "bottom")+
   labs(x="% Stance",
        y = "Torque (N.m/BW)") +
   labs(title = paste0("Subject ", figure_participant, ": Ankle Torque Profile Before and After 6 Minutes of Adaptation") ,
        subtitle = "Tested Conditions: B. FastBrake, B. FastProp",
-       caption = str_wrap("Ankle torque on the left (altered) side is decreased following cSBT and FastBrake, but increases following adaptation to FastProp", width = 80),
        x = "% stance",
        y = "Torque (N.m/BW)")
 ```               
@@ -388,7 +476,8 @@ all_normalized_stance_data %>%
 ```{r}
 
 all_normalized_stance_data %>% 
-  filter(Period %in% c("Baseline", "PostAdapt")) %>% 
+  filter(Period %in% c("Baseline", "PostAdapt")) %>%
+  # filter(Period %in% c("Baseline", "Late Adapt")) %>%
   filter(Aim==3) %>% 
   filter(Axis %in% c("X")) %>% 
   filter(NewVariable == "IPSI_ANKLE_MOMENT") %>% 
@@ -397,7 +486,7 @@ all_normalized_stance_data %>%
 
   ggplot(aes(x=NormalizedTimeStep, y = AverageValue, color=Period))+
   geom_line()+
-  facet_grid(cols = vars(Side), rows = vars(Condition), scales = "free_y")+
+  facet_grid(cols = vars(Side), rows = vars(Condition))+
   theme_minimal()+
   theme(legend.position = "bottom")+
   labs(x="% Stance",
@@ -409,29 +498,87 @@ all_normalized_stance_data %>%
 
 ```
 
-
-# Plot PF Impulse
+### Linear Mixed Effects Model
 
 ```{r}
-
 bilateral_PF_impulse_plot_data <- PF_impulse_by_condition_participant%>%
   ungroup() %>% 
   filter(Aim==3) %>% 
   group_by(Participant, Condition, Period) %>% 
   summarize(PF_Impulse = mean(PF_Impulse))
-  
-bilateral_PF_impulse_plot_data %>% 
-ggplot(aes(x = Period, y = PF_Impulse, color = factor(Participant), group = Participant)) +
-  geom_point(size = 3) +
+
+
+model <- lmer(PF_Impulse ~ Period * Condition + (1|Participant), data = bilateral_PF_impulse_plot_data)
+model_summary <- summary(model)
+print(model_summary)
+
+# Print the fixed effects table
+print(model_summary$coefficients)
+
+# Likelihood ratio test for the full model against the null model
+null_model <- lmer(PF_Impulse ~ 1 + (1|Participant), data = bilateral_PF_impulse_plot_data)
+anova_result <- anova(null_model, model)
+
+print(anova_result)
+
+# Compute estimated marginal means
+emm <- emmeans(model, specs = ~ Period | Condition)
+
+# 1. Pairwise comparisons of Period within each Condition
+period_comparisons <- pairs(emm, simple = "Period", adjust="holm")
+print(period_comparisons)
+
+
+# Assuming period_comparisons is already available from your previous analysis
+# Extract p-values and format them for plotting
+pvalue_data <- period_comparisons %>%
+  as_tibble() %>%
+  mutate(Condition = sub("Condition=(.*)", "\\1", Condition),
+         p.value.label = paste("p =", sprintf("%.3f", p.value))) %>%
+  group_by(Condition) %>%
+  summarize(p.value.label = first(p.value.label))  # Use first p-value for each condition
+
+# Calculate y-position for p-values
+y_max <- bilateral_PF_impulse_plot_data %>%
+  filter(Period %in% c("Baseline", "PostAdapt")) %>%
+  group_by(Condition) %>%
+  summarize(max_PF_Impulse = max(PF_Impulse)) %>%
+  pull(max_PF_Impulse) %>%
+  max()
+
+y_position <- y_max + 0.1  # Adjust this value as needed
+
+# Add x-position for p-values
+pvalue_data <- pvalue_data %>%
+  mutate(x = 1.5,  # Midpoint between Baseline (1) and PostAdapt (2)
+         y = y_position)
+
+# Create the plot with p-values
+plot <- bilateral_PF_impulse_plot_data %>%  
+  filter(Period %in% c("Baseline", "PostAdapt")) %>% 
+  ggplot(aes(x = Period, y = PF_Impulse, group = Participant, color = factor(Participant))) +
+  geom_point() +
   geom_line() +
-  facet_grid(cols=vars(Condition)) +
-  labs(x = "Period", y = "Average PF Impulse (N.m.s/BW)", title = "Aim 3: Mean PF Impulse by Period and Condition", color = "Participant") +
+  facet_grid(cols = vars(Condition)) +
+  geom_text(data = pvalue_data, 
+            aes(x = x, y = y, label = p.value.label),
+            inherit.aes = FALSE,
+            show.legend = FALSE) +
   theme_minimal() +
-  theme(legend.position = "bottom")
+  theme(plot.title = element_text(hjust = 0.5),
+        plot.caption = element_text(hjust = 0.5, size = 13),
+        legend.position = "bottom") +
+  labs(title = "PF Impulse Across Treadmill Protocol",
+       caption = "Holm adjusted p-values ",
+       x = "Period",
+       y = "SLR",
+       color = "Participant")
 
-
+# Display the plot
+print(plot)
 ```
-## Assumptions for Power Analysis
+
+### Assumptions for Power Analysis
 
 ```{r}
 bilateral_PF_impulse_plot_data %>% 
@@ -444,8 +591,6 @@ bilateral_PF_impulse_plot_data %>%
   group_by(Condition, Period) %>% 
   summarize(mean_PF_Impulse= mean(PF_Impulse))
 
-  
-  
 # Assuming your dataframe is called 'df'
 bilateral_PF_impulse_plot_data %>% 
   # Reshape the data to wide format
@@ -467,7 +612,7 @@ bilateral_PF_impulse_plot_data %>%
 
 ```
 
-# step Length in a body frame of reference
+## step Length in a body frame of reference
 
 Reviewing this calculations I think there are some problems with the way I went about it. Definitely want to go over these calcs with a fine-toothed comb.
 
@@ -504,11 +649,11 @@ StepLength_BodyFrameOfReference %>%
   facet_grid(rows=vars(Condition), cols = vars(name))
 
 ```
-
+# Belt Speed Check
 ```{r}
 all_normalized_stance_data %>% 
-  filter(Aim==3) %>% 
-  filter(Participant==3) %>% 
+  # filter(Aim==3) %>% 
+  filter(Participant==4) %>% 
   filter(Period %in% c("Late Adapt")) %>%
   filter(NewVariable == "IPSI_BeltSpeed") %>% 
   mutate(Condition = factor(Condition, levels = c("cSBT", "U. FastBrake", "U. FastProp", "B. FastBrake", "B. FastProp"))) %>% 
@@ -527,3 +672,17 @@ all_normalized_stance_data %>%
 
 ```
 
+# Stance Times
+
+
+
+```{r}
+stance_times %>%
+  ggplot( aes(x = Period, y = stance_time, color = factor(Participant), group = Participant)) +
+  geom_point(size = 3) +
+  geom_line() +
+  facet_grid(cols=vars(Condition),rows=vars(Side)) +
+  labs(x = "Period", y = "Stance Time (s)", title = "Aim 2: Right PF Impulse by Period and Condition", color = "Participant") +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+```
