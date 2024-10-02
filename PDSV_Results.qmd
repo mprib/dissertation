@@ -10,12 +10,17 @@ editor: source
 ```{r}
 # note that measured_data_long.csv is created by a python script `v3d_import.py`
 library(readxl)
-library(tidyverse)
 library(ggpubr)
 library(car)
 library(emmeans)
 library(lme4)
 library(lmerTest)
+library(tidyverse)
+library(conflicted)
+
+conflict_prefer("select", "dplyr")
+conflict_prefer("filter", "dplyr")
+conflict_prefer("lmer", "lme4")
 
 RAW_OUTPUT_FOLDER <- "C:\\Users\\Mac Prible\\OneDrive - The University of Texas at Austin\\research\\PDSV\\data\\PDVS_2024\\v3d"
 
@@ -43,7 +48,7 @@ Averages across relevant stance phases. Rename variables so that they are in ter
 ```{r}
 all_normalized_stance_data <- all_data_long %>% 
   ungroup() %>% 
-  select(-MaxSpeedDiff) %>% 
+  select(-MaxSpeedDiff) %>%
   mutate(Participant = parse_number(Participant)) %>% 
   group_by(Condition, Side, Participant, StartStop, Period, ConditionOrder, VariableAxis, NormalizedTimeStep) %>% 
   summarize(AverageValue = mean(Value, na.rm=TRUE)) %>% 
@@ -254,8 +259,32 @@ aim2_SLR_PrePost %>%
 
 aim2_SLR_PrePost %>% 
   ungroup() %>% 
+  group_by(Period) %>% 
+    summarize(std_dev_SLR = sd(SLR),
+              mean_SLR = mean(SLR))
+
+aim2_SLR_PrePost %>% 
+  ungroup() %>% 
   summarize(std_dev_SLR = sd(SLR),
             mean_SLR = mean(SLR))
+
+# Assuming your dataframe is called 'df'
+aim2_SLR_PrePost %>% 
+  # Reshape the data to wide format
+  pivot_wider(
+    id_cols = c(Participant, Condition),
+    names_from = Period,
+    values_from = SLR
+  ) %>% 
+  # Group by Condition
+  group_by(Condition) %>%
+  # Calculate correlation for each Condition
+  summarise(
+    correlation = cor(Baseline, PostAdapt, use = "pairwise.complete.obs"),
+  ) %>%
+  # Ungroup to remove grouping structure
+  ungroup()
+
 ```
 
 
@@ -359,6 +388,8 @@ PF_impulse_by_condition_participant %>%
 
 ### Linear Mixed Model and Post Hoc Tests
 ```{r}
+
+
 # Fit a linear mixed model
 model <- lmer(PF_Impulse ~ Period * Condition + (1|Participant), data = Aim2_PF_Impulse)
 model_summary <- summary(model)
@@ -411,7 +442,7 @@ plot <- Aim2_PF_Impulse %>%
   geom_point() +
   geom_line() +
   facet_grid(cols = vars(Condition)) +
-  geom_text(data = pvalue_data, 
+  geom_text(data = pvalue_data,
             aes(x = x, y = y, label = p.value.label),
             inherit.aes = FALSE,
             show.legend = FALSE) +
@@ -430,7 +461,47 @@ print(plot)
 
 ```
 
-##FDDFFDFfdfdfdfdffdFDFDFDFD
+### Assumptions for Power Analysis
+
+```{r}
+
+Aim2_PF_Impulse %>% 
+  ungroup() %>% 
+  group_by(Condition, Period) %>% 
+  summarize(std_dev = sd(PF_Impulse),
+            mean_PF_Impulse = mean(PF_Impulse))
+
+Aim2_PF_Impulse %>% 
+  group_by( Period) %>% 
+  summarize(std_dev = sd(PF_Impulse),
+            mean_PF_Impulse = mean(PF_Impulse))
+
+
+Aim2_PF_Impulse %>% 
+  ungroup() %>% 
+  summarize(std_dev = sd(PF_Impulse),
+            mean_PF_Impulse = mean(PF_Impulse))
+
+# Assuming your dataframe is called 'df'
+Aim2_PF_Impulse %>% 
+  # Reshape the data to wide format
+  pivot_wider(
+    id_cols = c(Participant, Condition),
+    names_from = Period,
+    values_from = PF_Impulse
+  ) %>% 
+  # Group by Condition
+  group_by(Condition) %>%
+  # Calculate correlation for each Condition
+  summarise(
+    correlation = cor(Baseline, PostAdapt, use = "pairwise.complete.obs"),
+  ) %>%
+  # Ungroup to remove grouping structure
+  ungroup()
+
+
+```
+
 
 # Aim 3: Bilateral PDSV
 
@@ -487,6 +558,9 @@ all_normalized_stance_data %>%
        y = "Torque (N.m/BW)")
 
 ```
+
+
+
 
 ### Linear Mixed Effects Model
 
@@ -578,7 +652,7 @@ bilateral_PF_impulse_plot_data %>%
             mean_PF_Impulse = mean(PF_Impulse))
 
 bilateral_PF_impulse_plot_data %>% 
-  group_by(Condition, Period) %>% 
+  group_by(Period) %>% 
   summarize(std_dev = sd(PF_Impulse),
             mean_PF_Impulse = mean(PF_Impulse))
 
