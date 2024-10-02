@@ -11,7 +11,6 @@ editor: source
 # note that measured_data_long.csv is created by a python script `v3d_import.py`
 library(readxl)
 library(tidyverse)
-library(ez) # for stats
 library(ggpubr)
 library(car)
 library(emmeans)
@@ -98,7 +97,7 @@ stance_times <-all_normalized_stance_data %>%
   filter(Axis == "X") %>% 
   filter(NewVariable %in% c("TIME")) %>% 
   filter(Period %in% c("Baseline", "PostAdapt")) %>%
-  group_by(Aim, Participant, Condition, Period, Side) %>% view()
+  group_by(Aim, Participant, Condition, Period, Side) %>% 
   summarize(min = min(AverageValue), max = max(AverageValue)) %>%
   mutate(stance_time = max-min)
 
@@ -112,7 +111,7 @@ PF_impulse_time_normalized <- all_normalized_stance_data %>%
   summarize(PF_impulse_time_norm = sum(AverageValue/100))
 
 PF_impulse_by_condition_participant <-stance_times %>% left_join(PF_impulse_time_normalized) %>% 
-  ungroup() %>% view()
+  ungroup() %>% 
   mutate(PF_impulse_BW_normalized =  PF_impulse_time_norm * stance_time) %>% 
   select(Aim, Participant,Side, Condition, Period, PF_impulse_BW_normalized) %>% 
   mutate(PF_impulse_time_normalized=abs(PF_impulse_BW_normalized)) %>% 
@@ -127,7 +126,7 @@ PF_impulse_by_condition_participant <-stance_times %>% left_join(PF_impulse_time
 
 # Aim 2: Unilateral PDSV
 ## Step Length Ratio (SLR)
-### Plot
+### Raw Plot
 ```{r}
 
 Aim2_SLR <- all_normalized_stance_data %>% 
@@ -153,12 +152,18 @@ Aim2_SLR %>%
         plot.caption = element_text(hjust = 0.5, size = 13),
         legend.position = "bottom")+
   labs(title = "SLR Across Treadmill Protocol")
+
+
   
 ```
 
 
 ### Linear Mixed Model and Post Hoc Tests
 ```{r}
+
+aim2_SLR_PrePost <- Aim2_SLR %>% 
+  filter(Period %in% c("Baseline", "PostAdapt"))
+
 # Fit a linear mixed model
 model <- lmer(SLR ~ Period * Condition + (1|Participant), data = aim2_SLR_PrePost)
 model_summary <- summary(model)
@@ -247,30 +252,13 @@ aim2_SLR_PrePost %>%
   summarize(std_dev_SLR = sd(SLR),
             mean_SLR = mean(SLR))
 
-bilateral_PF_impulse_plot_data %>% 
-  group_by(Condition, Period) %>% 
-  summarize(mean_PF_Impulse= mean(PF_Impulse))
-
-# Assuming your dataframe is called 'df'
-bilateral_PF_impulse_plot_data %>% 
-  # Reshape the data to wide format
-  pivot_wider(
-    id_cols = c(Participant, Condition),
-    names_from = Period,
-    values_from = PF_Impulse
-  ) %>% 
-  # Group by Condition
-  group_by(Condition) %>%
-  # Calculate correlation for each Condition
-  summarise(
-    correlation = cor(Baseline, PostAdapt, use = "pairwise.complete.obs"),
-    p_value = cor.test(Baseline, PostAdapt)$p.value
-  ) %>%
-  # Ungroup to remove grouping structure
-  ungroup()
-
-
+aim2_SLR_PrePost %>% 
+  ungroup() %>% 
+  summarize(std_dev_SLR = sd(SLR),
+            mean_SLR = mean(SLR))
 ```
+
+
 
 ## Ankle PF Impulse
 ### Sample Participant Ankle Torque Profile
@@ -442,6 +430,8 @@ print(plot)
 
 ```
 
+##FDDFFDFfdfdfdfdffdFDFDFDFD
+
 # Aim 3: Bilateral PDSV
 
 ## Ankle Torque
@@ -589,7 +579,13 @@ bilateral_PF_impulse_plot_data %>%
 
 bilateral_PF_impulse_plot_data %>% 
   group_by(Condition, Period) %>% 
-  summarize(mean_PF_Impulse= mean(PF_Impulse))
+  summarize(std_dev = sd(PF_Impulse),
+            mean_PF_Impulse = mean(PF_Impulse))
+
+bilateral_PF_impulse_plot_data %>% 
+  ungroup() %>% 
+  summarize(std_dev = sd(PF_Impulse),
+            mean_PF_Impulse = mean(PF_Impulse))
 
 # Assuming your dataframe is called 'df'
 bilateral_PF_impulse_plot_data %>% 
@@ -604,7 +600,6 @@ bilateral_PF_impulse_plot_data %>%
   # Calculate correlation for each Condition
   summarise(
     correlation = cor(Baseline, PostAdapt, use = "pairwise.complete.obs"),
-    p_value = cor.test(Baseline, PostAdapt)$p.value
   ) %>%
   # Ungroup to remove grouping structure
   ungroup()
