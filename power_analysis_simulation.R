@@ -112,7 +112,7 @@ old_simulate_aim <- function(n, conditions, pre_means, pre_std_devs, post_means,
 
 
 
-simulate_aim <- function(n, conditions, pre_means, pre_std_devs, post_means, post_std_devs, correlation, study){
+simulate_aim <- function(n, conditions, pre_means, pre_std_devs, post_means, post_std_devs, correlation, FastPropOnly){
 
     
     simulated_data = get_simulated_data(n, 
@@ -140,7 +140,7 @@ simulate_aim <- function(n, conditions, pre_means, pre_std_devs, post_means, pos
     period_comparisons <- pairs(emm, simple = "period", adjust="holm")
    
     
-    if (study == 3) {
+    if (FastPropOnly) {
       fastprop_comparison <- subset(period_comparisons, condition == "FastProp")
       summary(fastprop_comparison)
       successful_simulation <-  summary(subset(period_comparisons, condition == "FastProp"))$p.value < 0.5

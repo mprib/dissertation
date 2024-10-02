@@ -27,22 +27,20 @@ pre_means <-list(
 )
 
 post_means <-list(
-  "cSBT" = 1.472,
-  "FastProp" = 1.262, 
-  "FastBrake" = 1.317 
+  "cSBT" = 1.49,
+  "FastProp" = 1.26, 
+  "FastBrake" = 1.31 
 )
 
 
-std_dev <- .0456
+std_dev <- .045
 pre_std_devs <-list(
   "cSBT" = std_dev,
   "FastProp" = std_dev,
   "FastBrake" = std_dev
 )
 
-# cSBT from Lauzier et al 2014
-# makes sense as greater variance expected after adaptation
-std_dev <- 0.314
+std_dev <- 0.32
 post_std_devs <-list(
   "cSBT" = std_dev,
   "FastProp" = std_dev,
@@ -54,11 +52,11 @@ conditions <- list( "cSBT", "FastProp", "FastBrake" )
 test_sample_sizes = 10:15
 for (n in test_sample_sizes){
   
-    num_simulations = 100
+    num_simulations = 20
     
     # Running simulations in parallel
     aim_2_slr_results <- lapply(1:num_simulations, function(i) {
-      simulate_aim(n, conditions, pre_means, pre_std_devs, post_means, post_std_devs, correlation = 0.5, study = 2)
+      simulate_aim(n, conditions, pre_means, pre_std_devs, post_means, post_std_devs, correlation = 0.5, FastPropOnly = FALSE)
     })
     
     # Computing success count and success rate
@@ -77,7 +75,7 @@ for (n in test_sample_sizes){
 Powered to distinguish differences in interaction effect (i.e. PDSV may have half impact on SLR)
 ```{r}
 
-baseline_mean <- 0.38
+baseline_mean <- 0.415
 pre_means <-list(
   "cSBT" = baseline_mean,
   "FastProp" = baseline_mean,
@@ -85,19 +83,19 @@ pre_means <-list(
 )
 
 post_means <-list(
-  "cSBT" = .31,
-  "FastProp" = .41, 
-  "FastBrake" = .29
+  "cSBT" = .32,
+  "FastProp" = .44, 
+  "FastBrake" = .30
 )
 
-std_dev <- .07
+std_dev <- .023
 pre_std_devs <-list(
   "cSBT" = std_dev,
   "FastProp" = std_dev,
   "FastBrake" = std_dev
 )
 
-std_dev <- .10
+std_dev <- .068
 post_std_devs <-list(
   "cSBT" = std_dev,
   "FastProp" = std_dev,
@@ -106,14 +104,14 @@ post_std_devs <-list(
 
 conditions <- list( "cSBT", "FastProp", "FastBrake" )
        
-test_sample_sizes = 15:20
+test_sample_sizes = 12:16
 for (n in test_sample_sizes){
   
-    num_simulations = 100
+    num_simulations = 20
     
     # Running simulations in parallel
     aim_2_pf_results <- lapply(1:num_simulations, function(i) {
-      simulate_aim(n, conditions, pre_means, pre_std_devs, post_means, post_std_devs, correlation=0.85, study=3)
+      simulate_aim(n, conditions, pre_means, pre_std_devs, post_means, post_std_devs, correlation=0.5, FastPropOnly = TRUE)
     })
     
     # Computing success count and success rate
@@ -136,38 +134,38 @@ for (n in test_sample_sizes){
 
 # estimates here taken from subject 1 values; time normalized impulse across stance
 pre_means <-list(
-  "FastProp" = .373,
-  "FastBrake" = .373
+  "FastProp" = .40,
+  "FastBrake" = .40
 )
 
 # subject 1: PF impulse decrease in cSBT (as with Lauziere 2014) and fastBrake, increased with FastProp
 post_means <-list(
-  "FastProp" = 0.46,
-  "FastBrake" = 0.33
+  "FastProp" = 0.50,
+  "FastBrake" = 0.36
 )
 
 # estimates based on preliminary data (5 subjects)
 pre_vars <-list(
-  "FastProp" = .07,
-  "FastBrake" = .07
+  "FastProp" = .032,
+  "FastBrake" = .032
 )
 
 # expecting increased variance following perturbation
 post_vars <-list(
-  "FastProp" = .12,
-  "FastBrake" = .12
+  "FastProp" = .087,
+  "FastBrake" = .087
 )
     
 conditions <- list( "FastProp", "FastBrake" )
     
-test_sample_sizes = 3:6
+test_sample_sizes = 5:8
 for (n in test_sample_sizes){
   
     num_simulations = 20
     
     # Running simulations in parallel
     aim_3_pf_results <- lapply(1:num_simulations, function(i) {
-      simulate_aim(n, conditions, pre_means, pre_vars, post_means, post_vars, correlation = 0.8, study=3)
+      simulate_aim(n, conditions, pre_means, pre_vars, post_means, post_vars, correlation = 0.0, FastPropOnly = TRUE)
     })
     
     # Computing success count and success rate

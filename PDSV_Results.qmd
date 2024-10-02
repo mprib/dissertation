@@ -253,6 +253,15 @@ aim2_SLR_PrePost %>%
 
 aim2_SLR_PrePost %>% 
   ungroup() %>% 
+  group_by(Condition, Period) %>% 
+  summarize(std_dev_SLR = sd(SLR),
+            mean_SLR = mean(SLR)) %>% 
+  ungroup() %>% 
+  group_by(Period) %>% 
+  summarize(mean_std_dev_SLR = mean(std_dev_SLR))
+  
+aim2_SLR_PrePost %>% 
+  ungroup() %>% 
   group_by(Condition) %>% 
   summarize(std_dev_SLR = sd(SLR),
             mean_SLR = mean(SLR))
@@ -472,6 +481,16 @@ Aim2_PF_Impulse %>%
             mean_PF_Impulse = mean(PF_Impulse))
 
 Aim2_PF_Impulse %>% 
+  ungroup() %>% 
+  group_by(Condition, Period) %>% 
+  summarize(std_dev_PF = sd(PF_Impulse),
+            mean_PF = mean(PF_Impulse)) %>% 
+  ungroup() %>% 
+  group_by(Period) %>% 
+  summarize(mean_std_dev_PF = mean(std_dev_PF),
+            mean_mean_PF = mean(mean_PF))
+
+Aim2_PF_Impulse %>% 
   group_by( Period) %>% 
   summarize(std_dev = sd(PF_Impulse),
             mean_PF_Impulse = mean(PF_Impulse))
@@ -655,6 +674,13 @@ bilateral_PF_impulse_plot_data %>%
   group_by(Period) %>% 
   summarize(std_dev = sd(PF_Impulse),
             mean_PF_Impulse = mean(PF_Impulse))
+
+# bilateral_PF_impulse_plot_data %>% 
+#   group_by(Period) %>% 
+#   summarize(std_dev = sd(PF_Impulse),
+#             mean_PF_Impulse = mean(PF_Impulse)) %>% 
+#   summarize(mean_std_dev_PF = mean(std_dev),
+#             mean_mean_PF = mean(mean_PF_Impulse))
 
 bilateral_PF_impulse_plot_data %>% 
   ungroup() %>% 
