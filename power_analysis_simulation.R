@@ -59,57 +59,6 @@ get_simulated_data <- function(n,
 }
 
 
-old_simulate_aim <- function(n, conditions, pre_means, pre_std_devs, post_means, post_std_devs, effect_name){
-
-    
-    simulated_data = get_simulated_data(n, 
-                       conditions = conditions,
-                       pre_means=pre_means, 
-                       pre_std_devs=pre_std_devs,
-                       post_means = post_means, 
-                       post_std_devs=post_std_devs
-                       )
-    
-    
-    # Prepare data for ezANOVA
-    simulated_data$participant <- factor(simulated_data$participant)
-    simulated_data$condition <- factor(simulated_data$condition)
-    simulated_data$period <- factor(simulated_data$period)
-    
-    browser()
-    # Perform ezANOVA
-    ez_result <- ezANOVA(
-      data = simulated_data,
-      dv = observation,
-      wid = participant,
-      within = period,
-      between = condition,
-      detailed = TRUE
-    )
-    
-    
-    # Extract p-value for the interaction effect
-    interaction_p <- ez_result$ANOVA[ez_result$ANOVA$Effect == "condition:period", "p"]
-    
-    # Perform post-hoc tests
-    emm <- emmeans(lmer(observation ~ condition * period + (1|participant), data = simulated_data), 
-                   ~condition*period)
-    post_hoc <- summary(contrast(emm, "pairwise", by = "condition"))
-    adjusted_p_values <- p.adjust(post_hoc$p.value, method = "holm")
-    
-    post_hoc_success <- all(adjusted_p_values < .05)
-    
-    # Check hypothesis
-    if (interaction_p < 0.05 && post_hoc_success) {
-      success <- TRUE
-    } else {
-      success <- FALSE
-    }
-    
-    return(success)
-}
-
-
 
 
 simulate_aim <- function(n, conditions, pre_means, pre_std_devs, post_means, post_std_devs, correlation, FastPropOnly){
@@ -125,7 +74,7 @@ simulate_aim <- function(n, conditions, pre_means, pre_std_devs, post_means, pos
                        )
     
     
-    # Prepare data for ezANOVA
+    # Prepare data for lmer
     simulated_data$participant <- factor(simulated_data$participant)
     simulated_data$condition <- factor(simulated_data$condition)
     simulated_data$period <- factor(simulated_data$period)
@@ -143,8 +92,8 @@ simulate_aim <- function(n, conditions, pre_means, pre_std_devs, post_means, pos
     if (FastPropOnly) {
       fastprop_comparison <- subset(period_comparisons, condition == "FastProp")
       summary(fastprop_comparison)
-      successful_simulation <-  summary(subset(period_comparisons, condition == "FastProp"))$p.value < 0.5
-      
+      successful_simulation <-  summary(subset(period_comparisons, condition == "FastProp"))$p.value < 0.05
+      # browser()
     } else {
       # Extract p-values 
       p_values <- summary(period_comparisons)$p.value

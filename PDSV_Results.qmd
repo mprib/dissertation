@@ -5,8 +5,7 @@ editor: source
 ---
 
 # Data Prep
-## Import All Long Data 
-
+## 
 ```{r}
 # note that measured_data_long.csv is created by a python script `v3d_import.py`
 library(readxl)
@@ -21,6 +20,19 @@ library(conflicted)
 conflict_prefer("select", "dplyr")
 conflict_prefer("filter", "dplyr")
 conflict_prefer("lmer", "lme4")
+
+gg_to_clipboard <- function(plot = last_plot(), width = 1000, height = 600, pointsize = 40){
+    win.graph(width = width, height = height, pointsize = pointsize)
+    plot %>% print()
+    savePlot("clipboard", type = "wmf")
+    dev.off()
+}
+
+```
+
+## Import All Long Data 
+
+```{r}
 
 RAW_OUTPUT_FOLDER <- "C:\\Users\\Mac Prible\\OneDrive - The University of Texas at Austin\\research\\PDSV\\data\\PDVS_2024\\v3d"
 
@@ -155,6 +167,7 @@ Aim2_SLR %>%
   theme_minimal()+
   theme(plot.title = element_text(hjust = 0.5,),
         plot.caption = element_text(hjust = 0.5, size = 13),
+        axis.text.x = element_text(angle = 45, hjust = 1),   # Add this line
         legend.position = "bottom")+
   labs(title = "SLR Across Treadmill Protocol")
 
@@ -302,7 +315,7 @@ aim2_SLR_PrePost %>%
 ### Sample Participant Ankle Torque Profile
 
 ```{r }
-figure_participant <- 4
+figure_participant <- 1
 
 all_normalized_stance_data %>% 
   filter(Participant == figure_participant) %>%  
@@ -327,7 +340,7 @@ all_normalized_stance_data %>%
 ```
 
 ### All Participants Ankle Torque Profile
-```{r}
+```{r,fig.width=6, fig.height=10 }
 
 all_normalized_stance_data %>% 
   filter(Period %in% c("Baseline", "PostAdapt")) %>%
@@ -339,14 +352,17 @@ all_normalized_stance_data %>%
     summarize(AverageValue = mean(AverageValue)) %>% 
 
   ggplot(aes(x=NormalizedTimeStep, y = AverageValue, color=Period))+
-  geom_line()+
+  geom_line(size=1.5)+
   facet_grid(cols = vars(Side), rows = vars(Condition))+
   theme_minimal()+
-  theme(legend.position = "bottom")+
+  theme(legend.position = "bottom",
+        strip.text = element_text(size = 14, face = "bold"),
+         axis.title = element_text(size = 14, face = "bold"),
+        axis.text = element_text(size = 12))+
   labs(x="% Stance",
        y = "Torque (N.m/BW)") +
-  labs(title = "All Subjects: Ankle Torque Profile Before and After 6 Minutes of Adaptation" ,
-       subtitle = "Tested Conditions: U. FastBrake, U. FastProp",
+  labs(title = "All Subjects: Ankle Torque Profile Before and After \n6 Minutes of Adaptation" ,
+       # subtitle = "Tested Conditions: U. FastBrake, U. FastProp",
        x = "% stance",
        y = "Torque (N.m/BW)")
 
@@ -371,11 +387,21 @@ Aim2_PF_Impulse <- Aim2_PF_Impulse %>%
 
 # Left
 Aim2_PF_Impulse %>% 
-  ggplot( aes(x = Period, y = PF_Impulse, color = factor(Participant), group = Participant)) +
-  geom_point(size = 3) +
-  geom_line() +
-  facet_grid(cols=vars(Condition)) +
-  labs(x = "Period", y = "Left PF Impulse (N.m.s/BW)", title = "Aim 2: Left PF Impulse by Period and Condition", color = "Participant") +
+  ggplot(aes(x = Period, y = PF_Impulse, color = factor(Participant), group = Participant)) +
+  geom_point(size = 2, width = 0.2, height = 0) +  # Added jitter
+  geom_line() +  # Made lines slightly transparent
+  stat_summary(aes(group = 1), fun = mean, geom = "line", color = "black", size = 0.8, linetype = "dashed", alpha=.6) +  # Thinner, dashed mean line
+  stat_summary(aes(group = 1), fun = mean, geom = "point", color = "black", size = 3, shape = 18) +  # Smaller mean points
+  geom_text(stat = "summary", fun = mean,
+            aes(label = sprintf("%.2f", ..y..), group = 1,
+                hjust = ifelse(Period %in% c("Baseline"), 1.5, -1)),
+            color = "black", vjust = -0.5, size = 4, fontface = "bold",
+            bg.color = "white", bg.r = 0.15) +
+  
+  facet_grid(cols = vars(Condition)) +
+  labs(x = "Period", y = "Left PF Impulse (N.m.s/BW)", 
+       title = "Aim 2: Left PF Impulse by Period and Condition", 
+       color = "Participant") +
   theme_minimal() +
   theme(legend.position = "bottom")
 
@@ -747,7 +773,7 @@ StepLength_BodyFrameOfReference %>%
 # Belt Speed Check
 ```{r}
 all_normalized_stance_data %>% 
-  # filter(Aim==3) %>% 
+  filter(Aim==2) %>%
   filter(Participant==4) %>% 
   filter(Period %in% c("Late Adapt")) %>%
   filter(NewVariable == "IPSI_BeltSpeed") %>% 
