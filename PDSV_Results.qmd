@@ -16,8 +16,8 @@ library(car)
 library(emmeans)
 library(lme4)
 library(lmerTest)
-library(tidyverse)
 library(gtsummary)
+library(tidyverse)
 library(conflicted)
 
 conflict_prefer("select", "dplyr")
@@ -48,7 +48,7 @@ if (RefreshData) {
   
   all_data_long <- bind_rows(data_list)
   
-  rm(list=setdiff(ls(), "all_data_long"))
+  rm(list=setdiff(ls(), "all_data_long", RefreshData))
 }
 
 ```
@@ -96,7 +96,7 @@ if (RefreshData) {
     )) 
   
   
-  rm(list=setdiff(ls(), "all_normalized_stance_data"))
+  rm(list=setdiff(ls(), "all_normalized_stance_data", RefreshData))
 }
 ```
 
@@ -185,13 +185,13 @@ Aim2_SLR %>%
 
 ```{r}
 
-Aim2_SLR %>% 
-  ungroup() %>% 
-  group_by(Condition, Period) %>% 
-  summarize(SLR_mean = mean(SLR),
-            SLR_sd = sd(SLR)) %>% 
-  pivot_wider(names_from = Condition, values_from = c(SLR_mean,SLR_sd)) %>% 
-  kable(format = "html") 
+# Aim2_SLR %>% 
+#   ungroup() %>% 
+#   group_by(Condition, Period) %>% 
+#   summarize(SLR_mean = mean(SLR),
+#             SLR_sd = sd(SLR)) %>% 
+#   pivot_wider(names_from = Condition, values_from = c(SLR_mean,SLR_sd)) %>% 
+#   kable(format = "html") 
             
 
 ```
@@ -511,7 +511,7 @@ plot <- Aim2_PF_Impulse %>%
   labs(title = "PF Impulse Across Treadmill Protocol",
        caption = "Holm adjusted p-values ",
        x = "Period",
-       y = "SLR",
+       y = "PF Impulse (N.m.s/BW)",
        color = "Participant")
 
 # Display the plot
