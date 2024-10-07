@@ -158,7 +158,7 @@ post_std_devs <-list(
     
 conditions <- list( "FastProp", "FastBrake" )
     
-test_sample_sizes = 12:18
+test_sample_sizes = 16:17
 for (n in test_sample_sizes){
   
     num_simulations = 500

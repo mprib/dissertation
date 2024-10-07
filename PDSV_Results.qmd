@@ -5,7 +5,9 @@ editor: source
 ---
 
 # Data Prep
+
 ## 
+
 ```{r}
 # note that measured_data_long.csv is created by a python script `v3d_import.py`
 library(readxl)
@@ -15,22 +17,17 @@ library(emmeans)
 library(lme4)
 library(lmerTest)
 library(tidyverse)
+library(gtsummary)
 library(conflicted)
 
 conflict_prefer("select", "dplyr")
 conflict_prefer("filter", "dplyr")
 conflict_prefer("lmer", "lme4")
 
-gg_to_clipboard <- function(plot = last_plot(), width = 1000, height = 600, pointsize = 40){
-    win.graph(width = width, height = height, pointsize = pointsize)
-    plot %>% print()
-    savePlot("clipboard", type = "wmf")
-    dev.off()
-}
 
 ```
 
-## Import All Long Data 
+## Import All Long Data
 
 ```{r}
 
@@ -40,69 +37,77 @@ participant_count <- 5
 # Create an empty list to store individual data tables
 data_list <- list()
 
+RefreshData <- FALSE
 
-for (i in 1:participant_count) {
-  print(paste0("Processing output for participant ", i))
-  measured_data_long <- read.csv(paste0(RAW_OUTPUT_FOLDER,"\\", "S",i,"_measured_data_long.csv"))
-  data_list[[i]] <- measured_data_long
+if (RefreshData) {
+  for (i in 1:participant_count) {
+    print(paste0("Processing output for participant ", i))
+    measured_data_long <- read.csv(paste0(RAW_OUTPUT_FOLDER,"\\", "S",i,"_measured_data_long.csv"))
+    data_list[[i]] <- measured_data_long
+  }
+  
+  all_data_long <- bind_rows(data_list)
+  
+  rm(list=setdiff(ls(), "all_data_long"))
 }
 
-all_data_long <- bind_rows(data_list)
-
-rm(list=setdiff(ls(), "all_data_long"))
 ```
-
 
 ## Average normalized variables and Clean Up
 
 Averages across relevant stance phases. Rename variables so that they are in terms of "ipsilateral" and "contralateral" to ease downstream processing.
 
 ```{r}
-all_normalized_stance_data <- all_data_long %>% 
-  ungroup() %>% 
-  select(-MaxSpeedDiff) %>%
-  mutate(Participant = parse_number(Participant)) %>% 
-  group_by(Condition, Side, Participant, StartStop, Period, ConditionOrder, VariableAxis, NormalizedTimeStep) %>% 
-  summarize(AverageValue = mean(Value, na.rm=TRUE)) %>% 
-  separate(VariableAxis, into = c("Variable", "Axis"), sep = "_(?=[^_]+$)", extra = "merge") %>% 
-  mutate(Variable = case_when(
-    Variable == "RHEEL" ~ "R_HEEL",
-    Variable == "LHEEL" ~ "L_HEEL",
-    Variable == "FP1" ~ "Left_GRF",
-    Variable == "FP2" ~ "Right_GRF",
-    TRUE ~ Variable  # This keeps all other values unchanged
-  )) %>% 
-    mutate(NewVariable = case_when(
-    Side == "left" & grepl("^(L_|Left)", Variable) ~ sub("^(L_|Left_|Left)", "IPSI_", Variable),
-    Side == "right" & grepl("^(R_|Right)", Variable) ~ sub("^(R_|Right_|Right)", "IPSI_", Variable),
-    Side == "right" & grepl("^(L_|Left)", Variable) ~ sub("^(L_|Left_|Left)", "CONTRA_", Variable),
-    Side == "left" & grepl("^(R_|Right)", Variable) ~ sub("^(R_|Right_|Right)", "CONTRA_", Variable),
-    TRUE ~ Variable # Keeps all other values unchanged
-  ))  %>% 
-  mutate(Aim = case_when(
-    Condition == "sbt" ~ 2,
-    Condition == "ubp" ~ 2,
-    Condition == "upp" ~ 2,
-    Condition == "bbp" ~ 3,
-    Condition == "bpp" ~ 3
-  )) %>% 
-  mutate(Condition = case_when(
-    Condition == "sbt" ~ "cSBT",
-    Condition == "ubp" ~ "U. FastBrake",
-    Condition == "upp" ~ "U. FastProp",
-    Condition == "bbp" ~ "B. FastBrake",
-    Condition == "bpp" ~ "B. FastProp"
-  )) 
-
-
-rm(list=setdiff(ls(), "all_normalized_stance_data"))
+if (RefreshData) {
+  all_normalized_stance_data <- all_data_long %>% 
+    ungroup() %>% 
+    select(-MaxSpeedDiff) %>%
+    mutate(Participant = parse_number(Participant)) %>% 
+    group_by(Condition, Side, Participant, StartStop, Period, ConditionOrder, VariableAxis, NormalizedTimeStep) %>% 
+    summarize(AverageValue = mean(Value, na.rm=TRUE)) %>% 
+    separate(VariableAxis, into = c("Variable", "Axis"), sep = "_(?=[^_]+$)", extra = "merge") %>% 
+    mutate(Variable = case_when(
+      Variable == "RHEEL" ~ "R_HEEL",
+      Variable == "LHEEL" ~ "L_HEEL",
+      Variable == "FP1" ~ "Left_GRF",
+      Variable == "FP2" ~ "Right_GRF",
+      TRUE ~ Variable  # This keeps all other values unchanged
+    )) %>% 
+      mutate(NewVariable = case_when(
+      Side == "left" & grepl("^(L_|Left)", Variable) ~ sub("^(L_|Left_|Left)", "IPSI_", Variable),
+      Side == "right" & grepl("^(R_|Right)", Variable) ~ sub("^(R_|Right_|Right)", "IPSI_", Variable),
+      Side == "right" & grepl("^(L_|Left)", Variable) ~ sub("^(L_|Left_|Left)", "CONTRA_", Variable),
+      Side == "left" & grepl("^(R_|Right)", Variable) ~ sub("^(R_|Right_|Right)", "CONTRA_", Variable),
+      TRUE ~ Variable # Keeps all other values unchanged
+    ))  %>% 
+    mutate(Aim = case_when(
+      Condition == "sbt" ~ 2,
+      Condition == "ubp" ~ 2,
+      Condition == "upp" ~ 2,
+      Condition == "bbp" ~ 3,
+      Condition == "bpp" ~ 3
+    )) %>% 
+    mutate(Condition = case_when(
+      Condition == "sbt" ~ "cSBT",
+      Condition == "ubp" ~ "U. FastBrake",
+      Condition == "upp" ~ "U. FastProp",
+      Condition == "bbp" ~ "B. FastBrake",
+      Condition == "bpp" ~ "B. FastProp"
+    )) 
+  
+  
+  rm(list=setdiff(ls(), "all_normalized_stance_data"))
+}
 ```
 
-
 ## Back Up
+
 ```{r}
-all_normalized_stance_data %>%  write_csv2("all_normalized_stance_data.csv")
-all_normalized_stance_data <- read_csv2("all_normalized_stance_data.csv")
+if (!RefreshData) {
+  print("Loading all normalized stance data")
+  all_normalized_stance_data %>%  write_csv2("all_normalized_stance_data.csv")
+  all_normalized_stance_data <- read_csv2("all_normalized_stance_data.csv")
+}
 ```
 
 ## Time Normalize PF Impulse
@@ -138,16 +143,19 @@ PF_impulse_by_condition_participant <-stance_times %>% left_join(PF_impulse_time
 
 ```
 
-
-
-
 # Aim 2: Unilateral PDSV
+
 ## Step Length Ratio (SLR)
+
 ### Raw Plot
+
 ```{r}
 
 Aim2_SLR <- all_normalized_stance_data %>% 
   ungroup() %>% 
+  mutate(Period = factor(Period, levels = c("Baseline", "Early Adapt", "Late Adapt", "PostAdapt")),
+         Condition = factor(Condition, levels = c("cSBT", "U. FastBrake", "U. FastProp"))
+         ) %>% 
   filter(NormalizedTimeStep==1) %>% 
   filter(Axis == "X") %>% 
   filter(NewVariable %in% c("HEEL_DISTANCE")) %>% 
@@ -175,8 +183,21 @@ Aim2_SLR %>%
   
 ```
 
+```{r}
+
+Aim2_SLR %>% 
+  ungroup() %>% 
+  group_by(Condition, Period) %>% 
+  summarize(SLR_mean = mean(SLR),
+            SLR_sd = sd(SLR)) %>% 
+  pivot_wider(names_from = Condition, values_from = c(SLR_mean,SLR_sd)) %>% 
+  kable(format = "html") 
+            
+
+```
 
 ### Linear Mixed Model and Post Hoc Tests
+
 ```{r}
 
 aim2_SLR_PrePost <- Aim2_SLR %>% 
@@ -309,9 +330,8 @@ aim2_SLR_PrePost %>%
 
 ```
 
-
-
 ## Ankle PF Impulse
+
 ### Sample Participant Ankle Torque Profile
 
 ```{r }
@@ -340,6 +360,7 @@ all_normalized_stance_data %>%
 ```
 
 ### All Participants Ankle Torque Profile
+
 ```{r,fig.width=6, fig.height=10 }
 
 all_normalized_stance_data %>% 
@@ -367,6 +388,7 @@ all_normalized_stance_data %>%
        y = "Torque (N.m/BW)")
 
 ```
+
 ### PF Impulse By Period and Condition
 
 ```{r}
@@ -422,6 +444,7 @@ PF_impulse_by_condition_participant %>%
 ```
 
 ### Linear Mixed Model and Post Hoc Tests
+
 ```{r}
 
 
@@ -547,14 +570,14 @@ Aim2_PF_Impulse %>%
 
 ```
 
-
 # Aim 3: Bilateral PDSV
 
 ## Ankle Torque
-### Sample Participant 
+
+### Sample Participant
 
 ```{r}
-figure_participant <-3
+figure_participant <-1
 
 all_normalized_stance_data %>% 
   filter(Participant == figure_participant) %>%  
@@ -571,14 +594,15 @@ all_normalized_stance_data %>%
   labs(x="% Stance",
        y = "Torque (N.m/BW)") +
   labs(title = paste0("Subject ", figure_participant, ": Ankle Torque Profile Before and After 6 Minutes of Adaptation") ,
-       subtitle = "Tested Conditions: B. FastBrake, B. FastProp",
+       # subtitle = "Tested Conditions: B. FastBrake, B. FastProp",
        x = "% stance",
        y = "Torque (N.m/BW)")
-```               
 
-
+ggsave("C:\\Users\\Mac Prible\\OneDrive - The University of Texas at Austin\\research\\dissertation_proposal\\study 3\\ankle_torque_single_subject.png")
+```
 
 ### All participants
+
 ```{r}
 
 all_normalized_stance_data %>% 
@@ -598,14 +622,14 @@ all_normalized_stance_data %>%
   labs(x="% Stance",
        y = "Torque (N.m/BW)") +
   labs(title = "All Subjects: Ankle Torque Profile Before and After 6 Minutes of Adaptation" ,
-       subtitle = "Tested Conditions: B. FastBrake, B. FastProp",
+       # subtitle = "Tested Conditions: B. FastBrake, B. FastProp",
        x = "% stance",
        y = "Torque (N.m/BW)")
 
+
+ggsave("C:\\Users\\Mac Prible\\OneDrive - The University of Texas at Austin\\research\\dissertation_proposal\\study 3\\ankle_torque_all_subjects.png")
+
 ```
-
-
-
 
 ### Linear Mixed Effects Model
 
@@ -687,6 +711,38 @@ plot <- bilateral_PF_impulse_plot_data %>%
 print(plot)
 ```
 
+### PF Impulse By Period and Condition
+
+```{r}
+
+
+
+
+# Left
+bilateral_PF_impulse_plot_data %>% 
+  ggplot(aes(x = Period, y = PF_Impulse, color = factor(Participant), group = Participant)) +
+  geom_point(size = 2, width = 0.2, height = 0) +  # Added jitter
+  geom_line() +  # Made lines slightly transparent
+  stat_summary(aes(group = 1), fun = mean, geom = "line", color = "black", size = 0.8, linetype = "dashed", alpha=.6) +  # Thinner, dashed mean line
+  stat_summary(aes(group = 1), fun = mean, geom = "point", color = "black", size = 3, shape = 18) +  # Smaller mean points
+  geom_text(stat = "summary", fun = mean,
+            aes(label = sprintf("%.2f", ..y..), group = 1,
+                hjust = ifelse(Period %in% c("Baseline"), 1.5, -1)),
+            color = "black", vjust = -0.5, size = 4, fontface = "bold",
+            bg.color = "white", bg.r = 0.15) +
+  
+  facet_grid(cols = vars(Condition)) +
+  labs(x = "Period", y = "Mean PF Impulse (N.m.s/BW)", 
+       title = "Study 3: Mean Bilateral PF Impulse by Period and Condition", 
+       color = "Participant") +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
+
+
+ggsave("C:\\Users\\Mac Prible\\OneDrive - The University of Texas at Austin\\research\\dissertation_proposal\\study 3\\PF_impulse_Period_x_Condition.png")
+
+```
 ### Assumptions for Power Analysis
 
 ```{r}
@@ -737,7 +793,6 @@ bilateral_PF_impulse_plot_data %>%
 
 Reviewing this calculations I think there are some problems with the way I went about it. Definitely want to go over these calcs with a fine-toothed comb.
 
-
 ```{r}
 StepLength_BodyFrameOfReference <- all_normalized_stance_data %>% 
   ungroup() %>% 
@@ -770,7 +825,9 @@ StepLength_BodyFrameOfReference %>%
   facet_grid(rows=vars(Condition), cols = vars(name))
 
 ```
+
 # Belt Speed Check
+
 ```{r}
 all_normalized_stance_data %>% 
   filter(Aim==2) %>%
@@ -794,8 +851,6 @@ all_normalized_stance_data %>%
 ```
 
 # Stance Times
-
-
 
 ```{r}
 stance_times %>%
