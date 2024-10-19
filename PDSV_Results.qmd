@@ -757,13 +757,6 @@ bilateral_PF_impulse_plot_data %>%
   summarize(std_dev = sd(PF_Impulse),
             mean_PF_Impulse = mean(PF_Impulse))
 
-# bilateral_PF_impulse_plot_data %>% 
-#   group_by(Period) %>% 
-#   summarize(std_dev = sd(PF_Impulse),
-#             mean_PF_Impulse = mean(PF_Impulse)) %>% 
-#   summarize(mean_std_dev_PF = mean(std_dev),
-#             mean_mean_PF = mean(mean_PF_Impulse))
-
 bilateral_PF_impulse_plot_data %>% 
   ungroup() %>% 
   summarize(std_dev = sd(PF_Impulse),

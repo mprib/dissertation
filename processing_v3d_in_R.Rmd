@@ -1,0 +1,76 @@
+---
+title: "Processing V3D Data in R"
+author: "Mac Prible"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+source("v3d_to_tidy.R")
+```
+
+# Reproducible Research
+
+
+You want to be able to recreate your entire pipeline of data processing from raw data to statistical results with minimial one-off adjustments.
+
+Avoid doing things by hand with the idea that you'll do it once and be done with it. 
+You will always have to go back to revise.
+Hand edits will be forgotten.
+Automate everything and make it explicit.
+
+You want to be able to rerun the processing pipeline with your original data and get the same results.
+If you do things by hand or in excel, then you cannot do that.
+You also cannot scale it. 
+
+```{r}
+# Load required libraries
+library(tidyverse)
+
+# Set up variables
+data_directory <- "C:\\Users\\Mac Prible\\OneDrive - The University of Texas at Austin\\research\\PDSV\\data\\PDVS_2024\\v3d"
+file_name <- "left_v3d_in_R_gait_cycle_data.tsv"
+output_name <- "processed_gait_cycle_data.csv"
+
+# Construct the full path
+input_path <- file.path(data_directory, file_name)
+output_path <- file.path(data_directory, output_name)
+
+# tidy_data <- tsv_to_tidy(data_directory, file_name, output_name)
+# here I begin again by loading in the 
+tidy_data <- read_csv(output_path)
+```
+
+```{r}
+
+tidy_data %>% 
+  select(File)
+
+```
+
+```{r}
+
+tidy_data <- tidy_data %>% 
+  separate(File, into = c("Subject", "Order", "Condition", "StartStop"), sep = "_", remove = FALSE) %>%
+  mutate(StartStop = str_remove(StartStop, "\\.c3d$")) 
+
+tidy_data
+
+```
+
+
+```{r}
+
+tidy_data %>% 
+  filter(str_detect(Measurement,"BeltSpeed"))
+
+```
+
+
+
+```{r}
+
+
+
+```
