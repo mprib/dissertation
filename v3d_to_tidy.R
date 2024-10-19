@@ -10,10 +10,9 @@ stance_side <- "left"
 file_name <- "left_v3d_in_R_gait_cycle_data.tsv"
 output_name <- "processed_gait_cycle_data.csv"
 
-tsv_to_tidy <- function(data_directory, file_name, output_name) {
+tsv_to_tidy <- function(data_directory, file_name, stance_side) {
   # Construct the full path
   input_path <- file.path(data_directory, file_name)
-  output_path <- file.path(data_directory, output_name)
   
   tic <- Sys.time()
   print(paste("Import started at", tic))
@@ -40,7 +39,7 @@ tsv_to_tidy <- function(data_directory, file_name, output_name) {
     mutate(column_number = row_number()) %>% 
     slice(-1) # first column (now row) is just NA
 
-  # Step 4: Clean up variable names to 
+  # Step 4: Clean up variable names to make side reflect IPSI or CONTRA in terms of stance side frame of reference.
   metadata <- metadata %>% 
     mutate(stance_side = stance_side) %>% 
     mutate(variable = case_when(
@@ -90,7 +89,7 @@ tsv_to_tidy <- function(data_directory, file_name, output_name) {
   
   # 4. Clean up and arrange the final dataset
   final_data <- combined_data %>%
-    select(subject, order, condition, start_stop, stance_side, variable,  axis, step, value) 
+    select(subject, order, condition, start_stop, stance_side, variable,  axis, step, normalized_time, value) 
   
   
   toc <- Sys.time()
