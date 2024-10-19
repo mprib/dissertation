@@ -24,7 +24,7 @@ You want to be able to rerun the processing pipeline with your original data and
 If you do things by hand or in excel, then you cannot do that.
 You also cannot scale it. 
 
-```{r}
+```{r, warning=FALSE}
 # Load required libraries
 library(tidyverse)
 
@@ -37,15 +37,17 @@ output_name <- "processed_gait_cycle_data.csv"
 input_path <- file.path(data_directory, file_name)
 output_path <- file.path(data_directory, output_name)
 
-# tidy_data <- tsv_to_tidy(data_directory, file_name, output_name)
+tidy_data <- tsv_to_tidy(data_directory, file_name, output_name)
 # here I begin again by loading in the 
-tidy_data <- read_csv(output_path)
+# tidy_data <- read_csv(output_path)
 ```
 
 ```{r}
 
 tidy_data %>% 
-  select(File)
+  # head(20) %>% 
+  separate(col=filename, into = c("subject", "order", "condition", "start_stop"), sep = "_") %>%
+  mutate(start_stop = str_replace(start_stop, ".c3d","")) %>% view()
 
 ```
 
