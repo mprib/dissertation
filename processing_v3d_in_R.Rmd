@@ -10,18 +10,6 @@ knitr::opts_chunk$set(echo = TRUE)
 source("v3d_to_tidy.R")
 ```
 
-# Reproducible Research
-
-You want to be able to recreate your entire pipeline of data processing from raw data to statistical results with minimial one-off adjustments.
-
-Avoid doing things by hand with the idea that you'll do it once and be done with it. 
-You will always have to go back to revise.
-Hand edits will be forgotten.
-Automate everything and make it explicit.
-
-You want to be able to rerun the processing pipeline with your original data and get the same results.
-If you do things by hand or in excel, then you cannot do that.
-You also cannot scale it. 
 
 # Clean up Header to Long Metadata
 ```{r, warning=FALSE}
