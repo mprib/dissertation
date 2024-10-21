@@ -28,9 +28,12 @@ You also cannot scale it.
 # Load required libraries
 library(tidyverse)
 
+# Increase the connection buffer size
+Sys.setenv("VROOM_CONNECTION_SIZE" = 10000000)
+
 # Set up variables
-data_directory <- "C:\\Users\\Mac Prible\\OneDrive - The University of Texas at Austin\\research\\PDSV\\data\\PDVS_2024\\v3d"
-file_name <- "left_v3d_in_R_gait_cycle_data.tsv"
+data_directory <- "C:\\Users\\Mac Prible\\OneDrive - The University of Texas at Austin\\research\\PDSV\\data\\PDVS_2024\\v3d\\output"
+file_name <- "S5_left_v3d_in_R_gait_cycle_data.tsv"
 stance_side <- "left"
 
 input_path <- file.path(data_directory, file_name)
@@ -41,7 +44,7 @@ input_path <- file.path(data_directory, file_name)
 # Step 1: Read the metadata
 metadata <- read_tsv(input_path, n_max = 5, col_names = FALSE, show_col_types = FALSE)
 
-view(metadata)
+# view(metadata)
 # Step 2: Transpose the metadata
 metadata <- metadata %>%
   t() %>%
@@ -49,14 +52,14 @@ metadata <- metadata %>%
   setNames(c("filename", "raw_variable", "type", "origin", "axis")) %>% 
   select(-type, -origin) # cannot see a use for these
 
-view(metadata)
+# view(metadata)
 
 # Step 3: Track column order and clean up cruff (can't have sorted data up to this point)
 metadata <- metadata %>%
   mutate(column_number = row_number()) %>% 
   slice(-1) # first column (now row) is just NA
 
-view(metadata)
+# view(metadata)
 
 # Step 4: Clean up variable names to make side reflect IPSI or CONTRA in terms of stance side frame of reference.
 metadata <- metadata %>% 
@@ -76,7 +79,7 @@ metadata <- metadata %>%
     TRUE ~ variable # Keeps all other values unchanged
   ))  
 
-view(metadata)
+# view(metadata)
 
 # Step 5: Sort by combined header data and column number, then assign step count
 metadata <- metadata %>%
@@ -87,21 +90,21 @@ metadata <- metadata %>%
   ungroup() %>% 
   select(-combined_header_data)
 
-view(metadata)
+# view(metadata)
 
 # Step 6: unpack filename into meaningful columns
 metadata <- metadata %>% 
   separate(col=filename, into = c("subject", "order", "condition", "start_stop"), sep = "_") %>%
   mutate(start_stop = str_replace(start_stop, ".c3d","")) 
 
-view(metadata)
+# view(metadata)
 
 # Step 7: Map to Raw Data Column Names
 metadata <- metadata %>%
   select(subject, order, condition, start_stop, stance_side, variable, axis, column_number, step) %>%
   mutate(column_id = paste0("X", column_number)) 
 
-view(metadata)
+# view(metadata)
 
 ```
 
@@ -116,24 +119,29 @@ raw_data <- read_tsv(input_path,
                      skip = 5, 
                      show_col_types = FALSE,
                      col_types = cols(.default = col_double()))
-view(raw_data)
+# view(raw_data)
 # 2. Reshape the raw data
 long_data <- raw_data %>%
   rename(normalized_time = X1) %>% 
   pivot_longer(cols = -normalized_time, names_to = "column_id", values_to = "value") 
 
-view(long_data)
+# view(long_data)
 
 # 3. Join the metadata with the reshaped raw data
 combined_data <- long_data %>%
   left_join(metadata, by = "column_id")
 
-view(combined_data)
+# view(combined_data)
 
 # 4. Clean up and arrange the final dataset
 tidy_data <- combined_data %>%
   select(subject, order, condition, start_stop, stance_side, variable,  axis, step, normalized_time, value) 
+```
 
+
+Clean up the environment variables
+```{r}
+rm(list=setdiff(ls(), "tidy_data"))
 ```
 
 
@@ -146,25 +154,29 @@ tidy_data <- combined_data %>%
 belt_speeds <- tidy_data %>% 
   ungroup() %>% 
   filter(str_detect(variable, "Belt")) %>% 
-  mutate(value = 1000*value) %>% # correct scale
+  filter(axis=="X") %>% 
   pivot_wider(names_from = variable, values_from = value) %>% 
   mutate(speed_difference = IPSI_BeltSpeed- CONTRA_BeltSpeed,
          abs_speed_difference = abs(speed_difference))
 
   
+
 belt_speeds %>% 
+  filter(stance_side=="left") %>% 
   ggplot(aes(x = normalized_time, y = IPSI_BeltSpeed, group=step))+
   geom_line()+
-  facet_grid(rows=vars(condition), cols = vars(start_stop))
-
+  facet_grid(rows=vars(condition), cols = vars( start_stop))
 ```
 
-## Get max speed difference per step
+## Assign steps to periods
+
+Get max speed difference per step and use this to flag the transition points.
+
 ```{r}
 
 max_speed_diff <- belt_speeds %>% 
   group_by(subject, order,condition,start_stop, stance_side,axis, step) %>% 
-  summarize(max_speed_diff = max(abs_speed_difference)) 
+  summarize(max_speed_diff = max(abs_speed_difference))
 
 max_speed_diff %>%  
   ggplot(aes(x = step, y = max_speed_diff))+
@@ -175,7 +187,6 @@ max_speed_diff %>%
 
 ## Find when change occurs
 ```{r}
-
 
 find_change_point <- function(data, window_size = 5) {
   n <- nrow(data)
@@ -200,8 +211,10 @@ speed_change_steps <- max_speed_diff %>%
   summarize(change_point = find_change_point(cur_data())) %>% 
   ungroup()
 
-# Add the change points to the original plot
-steps_by_period %>%
+max_speed_diff %>%
+  ungroup() %>% 
+  select(-axis) %>%  
+  left_join(speed_change_steps, by = c("condition", "start_stop")) %>%
   ggplot(aes(x = step, y = max_speed_diff)) +
   geom_point() +
   geom_vline(data = speed_change_steps, aes(xintercept = change_point), color = "red", linetype = "dashed") +
@@ -210,7 +223,6 @@ steps_by_period %>%
        x = "Step",
        y = "Max Speed Difference")+
   theme(legend.position = "bottom") 
-
 
 ```
 
