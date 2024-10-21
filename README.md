@@ -15,13 +15,14 @@ Additionally, there are going to be a couple of calibration files (S#\_static an
 3.  Add `.mdh` file from PDVS_2024: `lower_extremity.mdh`
 4.  Click "Skeleton Sword" button to calibrate functional knee and hip
 5.  Run Pipelines
-    0.  Filter Signals and Detect Events
-    1.  Get Subject Mass (Update mass in model tab)
-    2.  Compute Model Based Data (i.e. joint torques)
-    3.  Export data
 
-Pipeline `3` will create `left_gait_cycle_data.tsv` and `right_gait_cycle_data.tsv` within the `v3d` subfolder.
-These must be manually renamed to `S#_left_gait_cycle_data.tsv` and `S#_right_gait_cycle.tsv`.
+    0.Filter Signals and Detect Events
+    1.Get Subject Mass (Update mass in model tab)
+    2.Compute Model Based Data (i.e. joint torques)
+    3.Clean up BeltSpeed data
+    4.Export normalized calculations
+
+Pipeline `4` will create `S#_left_gait_cycle_data.tsv` and `S#_right_gait_cycle_data.tsv` within the `v3d\output` subfolder.
 These two files are the inputs of the next stage
 
 # Stage 3: Rolling up with Python

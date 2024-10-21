@@ -33,7 +33,7 @@ Sys.setenv("VROOM_CONNECTION_SIZE" = 10000000)
 
 # Set up variables
 data_directory <- "C:\\Users\\Mac Prible\\OneDrive - The University of Texas at Austin\\research\\PDSV\\data\\PDVS_2024\\v3d\\output"
-file_name <- "S5_left_v3d_in_R_gait_cycle_data.tsv"
+file_name <- "s1_left_v3d_in_R_gait_cycle_data.tsv"
 stance_side <- "left"
 
 input_path <- file.path(data_directory, file_name)
