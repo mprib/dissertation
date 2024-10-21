@@ -15,7 +15,6 @@ Additionally, there are going to be a couple of calibration files (S#\_static an
 3.  Add `.mdh` file from PDVS_2024: `lower_extremity.mdh`
 4.  Click "Skeleton Sword" button to calibrate functional knee and hip
 5.  Run Pipelines
-
     0.Filter Signals and Detect Events
     1.Get Subject Mass (Update mass in model tab)
     2.Compute Model Based Data (i.e. joint torques)
