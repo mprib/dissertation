@@ -17,9 +17,6 @@ tsv_to_tidy <- function(data_directory, file_name, stance_side) {
   tic <- Sys.time()
   print(paste("Import started at", tic))
   
-  # Read the raw data
-  raw_data <- read_tsv(input_path, col_names = FALSE, skip = 5, show_col_types = FALSE)
-  
   
   print("Metadata and raw data read in")
   ############# Stage 1: Organize Metadata Header and get step count
@@ -57,26 +54,34 @@ tsv_to_tidy <- function(data_directory, file_name, stance_side) {
       TRUE ~ variable # Keeps all other values unchanged
     ))  
  
-  # Step 4: Sort by combined header data and column number, then assign step count
+  # Step 5: Sort by combined header data and column number, then assign step count
   metadata <- metadata %>%
-    mutate(combined_header_data = paste0(filename, variable, axis)) %>% 
+    mutate(combined_header_data = paste0(filename, variable, axis, stance_side)) %>% 
     arrange(combined_header_data, column_number) %>%
     group_by(combined_header_data) %>%
     mutate(step = row_number()) %>%
     ungroup() %>% 
     select(-combined_header_data)
   
-  # Step 1: unpack filename into meaningful columns
+  # Step 6: unpack filename into meaningful columns
   metadata <- metadata %>% 
     separate(col=filename, into = c("subject", "order", "condition", "start_stop"), sep = "_") %>%
     mutate(start_stop = str_replace(start_stop, ".c3d","")) 
   
-  print("Metadata organized for join")  
-  ################ Stage 2: Join tidy metadata with value data ###################### 
-  # 1. Prepare the metadata
+  # Step 7: Map to Raw Data Column Names
   metadata <- metadata %>%
     select(subject, order, condition, start_stop, stance_side, variable, axis, column_number, step) %>%
     mutate(column_id = paste0("X", column_number)) 
+  
+  print("Metadata organized for join")  
+  ################ Stage 2: Join tidy metadata with value data ###################### 
+  
+  # 1. Read the raw data
+  raw_data <- read_tsv(input_path, 
+                       col_names = FALSE, 
+                       skip = 5, 
+                       show_col_types = FALSE,
+                       col_types = cols(.default = col_double()))
   
   # 2. Reshape the raw data
   long_data <- raw_data %>%
@@ -88,7 +93,7 @@ tsv_to_tidy <- function(data_directory, file_name, stance_side) {
     left_join(metadata, by = "column_id")
   
   # 4. Clean up and arrange the final dataset
-  final_data <- combined_data %>%
+  tidy_data <- combined_data %>%
     select(subject, order, condition, start_stop, stance_side, variable,  axis, step, normalized_time, value) 
   
   
@@ -99,6 +104,6 @@ tsv_to_tidy <- function(data_directory, file_name, stance_side) {
   elapsed_time = toc - tic
   print(paste("Total time to import:", elapsed_time))
   
-  return(final_data)
+  return(tidy_data)
   
   }
