@@ -33,11 +33,13 @@ conflict_prefer("lmer", "lme4")
 
 RAW_OUTPUT_FOLDER <- "C:\\Users\\Mac Prible\\OneDrive - The University of Texas at Austin\\research\\PDSV\\data\\PDVS_2024\\v3d"
 
+figure_folder <-"C:\\Users\\Mac Prible\\OneDrive - The University of Texas at Austin\\research\\PDSV\\presentations\\dissertation_proposal" 
+
 participant_count <- 5
 # Create an empty list to store individual data tables
 data_list <- list()
 
-RefreshData <- FALSE
+RefreshData <- FALSE 
 
 if (RefreshData) {
   for (i in 1:participant_count) {
@@ -48,7 +50,7 @@ if (RefreshData) {
   
   all_data_long <- bind_rows(data_list)
   
-  rm(list=setdiff(ls(), "all_data_long", RefreshData))
+  rm(list=setdiff(ls(), c("all_data_long", "RefreshData", "figure_folder")))
 }
 
 ```
@@ -96,7 +98,7 @@ if (RefreshData) {
     )) 
   
   
-  rm(list=setdiff(ls(), "all_normalized_stance_data", RefreshData))
+  rm(list=setdiff(ls(), c("all_normalized_stance_data", "RefreshData", "figure_folder")))
 }
 ```
 
@@ -105,7 +107,7 @@ if (RefreshData) {
 ```{r}
 if (!RefreshData) {
   print("Loading all normalized stance data")
-  all_normalized_stance_data %>%  write_csv2("all_normalized_stance_data.csv")
+  # all_normalized_stance_data %>%  write_csv2("all_normalized_stance_data.csv")
   all_normalized_stance_data <- read_csv2("all_normalized_stance_data.csv")
 }
 ```
@@ -179,8 +181,51 @@ Aim2_SLR %>%
         legend.position = "bottom")+
   labs(title = "SLR Across Treadmill Protocol")
 
+ggsave(file.path(figure_folder, "aim2_SLR.png"))
 
+
+Aim2_SLR %>%  
+  filter(Period %in% c("Baseline", "PostAdapt")) %>% 
+  ggplot(aes(x=Period, y = SLR, group = Participant, color=factor(Participant)))+
+  geom_point()+
+  geom_line()+
+  geom_hline(yintercept =1, linetype="dashed")+
+  stat_summary(aes(group = 1), fun = mean, geom = "line", color = "black", size = 0.8, linetype = "dashed", alpha=.6) +  # Thinner, dashed mean line
+  stat_summary(aes(group = 1), fun = mean, geom = "point", color = "black", size = 3, shape = 18) +  # Smaller mean points
+  geom_text(stat = "summary", fun = mean,
+            aes(label = sprintf("%.2f", ..y..), group = 1,
+                hjust = ifelse(Period %in% c("Baseline"), 1.5, -1)),
+            color = "black", vjust = -0.5, size = 4, fontface = "bold",
+            bg.color = "white", bg.r = 0.15) +
+  facet_grid(cols=vars(Condition))+
+  theme_minimal()+
+  theme(plot.title = element_text(hjust = 0.5,),
+        plot.caption = element_text(hjust = 0.5, size = 13),
+        axis.text.x = element_text(angle = 45, hjust = 1),   # Add this line
+        legend.position = "bottom")+
+  labs(title = "SLR Across Treadmill Protocol")
+
+ggsave(file.path(figure_folder, "aim2_SLR_brief.png"))
+
+
+Aim2_PF_Impulse %>% 
+  ggplot(aes(x = Period, y = PF_Impulse, color = factor(Participant), group = Participant)) +
+  geom_point(size = 2, width = 0.2, height = 0) +  # Added jitter
+  geom_line() +  # Made lines slightly transparent
+  stat_summary(aes(group = 1), fun = mean, geom = "line", color = "black", size = 0.8, linetype = "dashed", alpha=.6) +  # Thinner, dashed mean line
+  stat_summary(aes(group = 1), fun = mean, geom = "point", color = "black", size = 3, shape = 18) +  # Smaller mean points
+  geom_text(stat = "summary", fun = mean,
+            aes(label = sprintf("%.2f", ..y..), group = 1,
+                hjust = ifelse(Period %in% c("Baseline"), 1.5, -1)),
+            color = "black", vjust = -0.5, size = 4, fontface = "bold",
+            bg.color = "white", bg.r = 0.15) +
   
+  facet_grid(cols = vars(Condition)) +
+  labs(x = "Period", y = "Left PF Impulse (N.m.s/BW)", 
+       title = "Aim 2: Left PF Impulse by Period and Condition", 
+       color = "Participant") +
+  theme_minimal() +
+  theme(legend.position = "bottom")
 ```
 
 ```{r}
@@ -357,6 +402,7 @@ all_normalized_stance_data %>%
        y = "Torque (N.m/BW)",
        )
 
+ggsave(file.path(figure_folder, "subject1_pf_torque.png"))
 ```
 
 ### All Participants Ankle Torque Profile
@@ -387,6 +433,7 @@ all_normalized_stance_data %>%
        x = "% stance",
        y = "Torque (N.m/BW)")
 
+ggsave(file.path(figure_folder, "all_subjects_pf_torque.png"))
 ```
 
 ### PF Impulse By Period and Condition
@@ -427,6 +474,7 @@ Aim2_PF_Impulse %>%
   theme_minimal() +
   theme(legend.position = "bottom")
 
+ggsave(file.path(figure_folder, "aim1_all_subjects_pf_impulse.png"))
 
 # Right
 PF_impulse_by_condition_participant %>% 
