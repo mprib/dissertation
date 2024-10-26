@@ -208,24 +208,6 @@ Aim2_SLR %>%
 ggsave(file.path(figure_folder, "aim2_SLR_brief.png"))
 
 
-Aim2_PF_Impulse %>% 
-  ggplot(aes(x = Period, y = PF_Impulse, color = factor(Participant), group = Participant)) +
-  geom_point(size = 2, width = 0.2, height = 0) +  # Added jitter
-  geom_line() +  # Made lines slightly transparent
-  stat_summary(aes(group = 1), fun = mean, geom = "line", color = "black", size = 0.8, linetype = "dashed", alpha=.6) +  # Thinner, dashed mean line
-  stat_summary(aes(group = 1), fun = mean, geom = "point", color = "black", size = 3, shape = 18) +  # Smaller mean points
-  geom_text(stat = "summary", fun = mean,
-            aes(label = sprintf("%.2f", ..y..), group = 1,
-                hjust = ifelse(Period %in% c("Baseline"), 1.5, -1)),
-            color = "black", vjust = -0.5, size = 4, fontface = "bold",
-            bg.color = "white", bg.r = 0.15) +
-  
-  facet_grid(cols = vars(Condition)) +
-  labs(x = "Period", y = "Left PF Impulse (N.m.s/BW)", 
-       title = "Aim 2: Left PF Impulse by Period and Condition", 
-       color = "Participant") +
-  theme_minimal() +
-  theme(legend.position = "bottom")
 ```
 
 ```{r}
@@ -474,7 +456,7 @@ Aim2_PF_Impulse %>%
   theme_minimal() +
   theme(legend.position = "bottom")
 
-ggsave(file.path(figure_folder, "aim1_all_subjects_pf_impulse.png"))
+ggsave(file.path(figure_folder, "aim2_all_subjects_pf_impulse.png"))
 
 # Right
 PF_impulse_by_condition_participant %>% 
@@ -488,6 +470,7 @@ PF_impulse_by_condition_participant %>%
   theme_minimal() +
   theme(legend.position = "bottom")
 
+ggsave(file.path(figure_folder, "subject1_pf_torque.png"))
 
 ```
 
@@ -675,8 +658,37 @@ all_normalized_stance_data %>%
        y = "Torque (N.m/BW)")
 
 
-ggsave("C:\\Users\\Mac Prible\\OneDrive - The University of Texas at Austin\\research\\dissertation_proposal\\study 3\\ankle_torque_all_subjects.png")
+ggsave(file.path(figure_folder, "aim_3_subject1_pf_torque.png"))
 
+```
+
+```{r}
+
+all_normalized_stance_data %>% 
+  filter(Period %in% c("Baseline", "PostAdapt")) %>%
+  # filter(Period %in% c("Baseline", "Late Adapt")) %>%
+  filter(Aim==3) %>% 
+  filter(Axis %in% c("X")) %>% 
+  filter(NewVariable == "IPSI_ANKLE_MOMENT") %>% 
+  group_by(Condition, Side, StartStop, Period, Variable, Axis, NormalizedTimeStep) %>% 
+    summarize(AverageValue = mean(AverageValue)) %>% 
+
+  ggplot(aes(x=NormalizedTimeStep, y = AverageValue, color=Period))+
+  geom_line(size=1.5)+
+  facet_grid(cols = vars(Side), rows = vars(Condition))+
+  theme_minimal()+
+  theme(legend.position = "bottom",
+        strip.text = element_text(size = 14, face = "bold"),
+         axis.title = element_text(size = 14, face = "bold"),
+        axis.text = element_text(size = 12))+
+  labs(x="% Stance",
+       y = "Torque (N.m/BW)") +
+  labs(title = "All Subjects: Ankle Torque Profile Before and After \n6 Minutes of Adaptation" ,
+       # subtitle = "Tested Conditions: U. FastBrake, U. FastProp",
+       x = "% stance",
+       y = "Torque (N.m/BW)")
+
+ggsave(file.path(figure_folder, "Aim3_all_subjects_pf_torque.png"))
 ```
 
 ### Linear Mixed Effects Model
@@ -755,6 +767,7 @@ plot <- bilateral_PF_impulse_plot_data %>%
        y = "SLR",
        color = "Participant")
 
+
 # Display the plot
 print(plot)
 ```
@@ -787,8 +800,8 @@ bilateral_PF_impulse_plot_data %>%
   theme(legend.position = "bottom")
 
 
+ggsave(file.path(figure_folder, "aim_3_pf_impulse.png"))
 
-ggsave("C:\\Users\\Mac Prible\\OneDrive - The University of Texas at Austin\\research\\dissertation_proposal\\study 3\\PF_impulse_Period_x_Condition.png")
 
 ```
 ### Assumptions for Power Analysis
