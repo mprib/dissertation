@@ -79,14 +79,18 @@ simulate_aim <- function(n, conditions, pre_means, pre_std_devs, post_means, pos
     simulated_data$condition <- factor(simulated_data$condition)
     simulated_data$period <- factor(simulated_data$period)
     
-    # browser()
-    model = lmer(observation ~ period * condition + (1|participant), data = simulated_data)
+    model <- lmer(observation ~ period * condition + (1|participant), 
+                 data = simulated_data)
     
     # Compute estimated marginal means
     emm <- emmeans(model, specs = ~ period | condition)
     
-    # 1. Pairwise comparisons of Period within each Condition
+    # Pairwise comparisons of Period within each Condition
     period_comparisons <- pairs(emm, simple = "period", adjust="holm")
+    #p_values <- summary(period_comparisons)$p.value
+    
+    # Check if all pairwise comparisons are significant (p < 0.05)
+    #successful_simulation <- all(p_values < 0.05) 
    
     
     if (FastPropOnly) {
