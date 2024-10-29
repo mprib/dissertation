@@ -8,6 +8,8 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 source("v3d_to_tidy.R")
+
+figure_folder <-"C:\\Users\\Mac Prible\\OneDrive - The University of Texas at Austin\\research\\PDSV\\presentations\\dissertation_proposal" 
 ```
 
 
@@ -154,6 +156,8 @@ belt_speeds %>%
   ggplot(aes(x = normalized_time, y = IPSI_BeltSpeed, group=step))+
   geom_line()+
   facet_grid(rows=vars(condition), cols = vars( start_stop))
+
+ggsave(file.path(figure_folder,"belt_speeds_all.png"))
 ```
 
 ## Assign steps to periods
@@ -171,6 +175,9 @@ max_speed_diff %>%
   geom_point()+
   facet_grid(rows=vars(condition), cols = vars(start_stop))
 
+
+
+ggsave(file.path(figure_folder,"belt_speed_diff_all.png"))
 ```
 
 ## Find when change occurs
@@ -211,6 +218,9 @@ max_speed_diff %>%
        x = "Step",
        y = "Max Speed Difference")+
   theme(legend.position = "bottom") 
+
+
+ggsave(file.path(figure_folder,"belt_speed_change_point_all.png"))
 
 ```
 
@@ -254,6 +264,7 @@ steps_by_period %>%
                    na.value = "grey") +  # Add this line
   theme(legend.position = "bottom") 
 
+ggsave(file.path(figure_folder,"steps_by_period.png"))
 ```
 
 # Filter tidy_data
@@ -279,6 +290,8 @@ tidy_data_by_period %>%
   geom_path()+
   facet_grid(cols = vars(period), rows = vars(condition))
 
+ggsave(file.path(figure_folder,"pf_torque_5.png"))
+
 tidy_data_by_period %>% 
   group_by(subject, order, condition, start_stop,stance_side,variable,axis,period, normalized_time) %>% 
   summarise(value = mean(value)) %>% 
@@ -287,6 +300,7 @@ tidy_data_by_period %>%
   ggplot(aes(x = normalized_time,y=value))+
   geom_path()+
   facet_grid(cols = vars(period), rows = vars(condition))
+ggsave(file.path(figure_folder,"pf_torque_avg.png"))
 
 ```
 

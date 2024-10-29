@@ -629,38 +629,11 @@ all_normalized_stance_data %>%
        x = "% stance",
        y = "Torque (N.m/BW)")
 
-ggsave("C:\\Users\\Mac Prible\\OneDrive - The University of Texas at Austin\\research\\dissertation_proposal\\study 3\\ankle_torque_single_subject.png")
+ggsave(file.path(figure_folder, "ankle_torque_single_subject.png"))
 ```
 
 ### All participants
 
-```{r}
-
-all_normalized_stance_data %>% 
-  filter(Period %in% c("Baseline", "PostAdapt")) %>%
-  # filter(Period %in% c("Baseline", "Late Adapt")) %>%
-  filter(Aim==3) %>% 
-  filter(Axis %in% c("X")) %>% 
-  filter(NewVariable == "IPSI_ANKLE_MOMENT") %>% 
-  group_by(Condition, Side, StartStop, Period, Variable, Axis, NormalizedTimeStep) %>% 
-    summarize(AverageValue = mean(AverageValue)) %>% 
-
-  ggplot(aes(x=NormalizedTimeStep, y = AverageValue, color=Period))+
-  geom_line()+
-  facet_grid(cols = vars(Side), rows = vars(Condition))+
-  theme_minimal()+
-  theme(legend.position = "bottom")+
-  labs(x="% Stance",
-       y = "Torque (N.m/BW)") +
-  labs(title = "All Subjects: Ankle Torque Profile Before and After 6 Minutes of Adaptation" ,
-       # subtitle = "Tested Conditions: B. FastBrake, B. FastProp",
-       x = "% stance",
-       y = "Torque (N.m/BW)")
-
-
-ggsave(file.path(figure_folder, "aim_3_subject1_pf_torque.png"))
-
-```
 
 ```{r}
 
@@ -902,6 +875,8 @@ all_normalized_stance_data %>%
   ) +
   scale_color_manual(values=c("left"="blue", "right"="red"))
 
+
+ggsave(file.path(figure_folder, "Study_2_belt_speeds.png"))
 ```
 
 # Stance Times
