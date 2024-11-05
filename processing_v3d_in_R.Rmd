@@ -3,324 +3,176 @@ title: "Processing V3D Data in R"
 author: "Mac Prible"
 date: "`r Sys.Date()`"
 output: html_document
+params:
+  subject: "s1"
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-source("v3d_to_tidy.R")
-
-figure_folder <-"C:\\Users\\Mac Prible\\OneDrive - The University of Texas at Austin\\research\\PDSV\\presentations\\dissertation_proposal" 
-```
 
 
-# Clean up Header to Long Metadata
-```{r, warning=FALSE}
-# Load required libraries
-library(tidyverse)
-
-# Increase the connection buffer size
-Sys.setenv("VROOM_CONNECTION_SIZE" = 10000000)
+# knitr::opts_chunk$set(echo = TRUE)
+source("tidy_v3d.R")
 
 # Set up variables
-data_directory <- "C:\\Users\\Mac Prible\\OneDrive - The University of Texas at Austin\\research\\PDSV\\data\\PDVS_2024\\v3d\\output"
-file_name <- "s1_left_v3d_in_R_gait_cycle_data.tsv"
-stance_side <- "left"
+raw_data_directory <- "C:\\Users\\Mac Prible\\OneDrive - The University of Texas at Austin\\research\\PDSV\\data\\PDVS_2024\\v3d\\raw_v3d_output"
+tidy_data_directory <- "C:\\Users\\Mac Prible\\OneDrive - The University of Texas at Austin\\research\\PDSV\\data\\PDVS_2024\\v3d\\tidy_output"
+subject_reports <- "C:\\Users\\Mac Prible\\OneDrive - The University of Texas at Austin\\research\\PDSV\\data\\PDVS_2024\\v3d\\subject_reports"
 
-input_path <- file.path(data_directory, file_name)
+# Define function to process single file with side information
+process_side_file <- function(data_directory, subject_id, side) {
+  file_name <- str_glue("{subject_id}_{side}.tsv")
+  
+  tidy_data <- tsv_to_tidy(data_directory = data_directory, 
+                           file_name = file_name) %>%
+                  tidy_by_period() 
+  
+  return(tidy_data)
+  
+}
 
-#tidy_data <- tsv_to_tidy(data_directory, file_name, stance_side="left")
+# Process both sides and combine
+process_both_sides <- function(data_directory, subject_id) {
+  sides <- c("left", "right")
+  
+  combined <- map_df(sides, 
+                     ~process_side_file(data_directory = data_directory,
+                                        subject_id = subject_id,
+                                        side = .x)) 
+  
+  return(combined)
+}
 
-############# Stage 1: Organize Metadata Header and get step count
-# Step 1: Read the metadata
-metadata <- read_tsv(input_path, n_max = 5, col_names = FALSE, show_col_types = FALSE)
 
-# view(metadata)
-# Step 2: Transpose the metadata
-metadata <- metadata %>%
-  t() %>%
-  as_tibble(.name_repair = "unique") %>%
-  setNames(c("filename", "raw_variable", "type", "origin", "axis")) %>% 
-  select(-type, -origin) # cannot see a use for these
-
-# view(metadata)
-
-# Step 3: Track column order and clean up cruff (can't have sorted data up to this point)
-metadata <- metadata %>%
-  mutate(column_number = row_number()) %>% 
-  slice(-1) # first column (now row) is just NA
-
-# view(metadata)
-
-# Step 4: Clean up variable names to make side reflect IPSI or CONTRA in terms of stance side frame of reference.
-metadata <- metadata %>% 
-  mutate(stance_side = stance_side) %>% 
-  mutate(variable = case_when(
-         raw_variable == "RHEEL" ~ "R_HEEL",
-         raw_variable == "LHEEL" ~ "L_HEEL",
-         raw_variable == "FP1" ~ "Left_GRF",
-         raw_variable == "FP2" ~ "Right_GRF",
-         TRUE ~ raw_variable  # This keeps all other values unchanged
-       ))  %>% 
-  mutate(variable = case_when(
-    stance_side == "left" & grepl("^(L_|Left)", variable) ~ sub("^(L_|Left_|Left)", "IPSI_", variable),
-    stance_side == "right" & grepl("^(R_|Right)", variable) ~ sub("^(R_|Right_|Right)", "IPSI_", variable),
-    stance_side == "right" & grepl("^(L_|Left)", variable) ~ sub("^(L_|Left_|Left)", "CONTRA_", variable),
-    stance_side == "left" & grepl("^(R_|Right)", variable) ~ sub("^(R_|Right_|Right)", "CONTRA_", variable),
-    TRUE ~ variable # Keeps all other values unchanged
-  ))  
-
-# view(metadata)
-
-# Step 5: Sort by combined header data and column number, then assign step count
-metadata <- metadata %>%
-  mutate(combined_header_data = paste0(filename, variable, axis, stance_side)) %>% 
-  arrange(combined_header_data, column_number) %>%
-  group_by(combined_header_data) %>%
-  mutate(step = row_number()) %>%
-  ungroup() %>% 
-  select(-combined_header_data)
-
-# view(metadata)
-
-# Step 6: unpack filename into meaningful columns
-metadata <- metadata %>% 
-  separate(col=filename, into = c("subject", "order", "condition", "start_stop"), sep = "_") %>%
-  mutate(start_stop = str_replace(start_stop, ".c3d","")) 
-
-# view(metadata)
-
-# Step 7: Map to Raw Data Column Names
-metadata <- metadata %>%
-  select(subject, order, condition, start_stop, stance_side, variable, axis, column_number, step) %>%
-  mutate(column_id = paste0("X", column_number)) 
-
-# view(metadata)
+# tidy up subject's raw data
+combined_data <- process_both_sides(raw_data_directory, params$subject)
 
 ```
 
 
-# Fold Raw Data into Long Metadata
+# Assignment of Periods
+
 
 ```{r}
-
-# 1. Read the raw data
-raw_data <- read_tsv(input_path, 
-                     col_names = FALSE, 
-                     skip = 5, 
-                     show_col_types = FALSE,
-                     col_types = cols(.default = col_double()))
-# view(raw_data)
-# 2. Reshape the raw data
-long_data <- raw_data %>%
-  rename(normalized_time = X1) %>% 
-  pivot_longer(cols = -normalized_time, names_to = "column_id", values_to = "value") 
-
-# view(long_data)
-
-# 3. Join the metadata with the reshaped raw data
-combined_data <- long_data %>%
-  left_join(metadata, by = "column_id")
-
-# view(combined_data)
-
-# 4. Clean up and arrange the final dataset
-tidy_data <- combined_data %>%
-  select(subject, order, condition, start_stop, stance_side, variable,  axis, step, normalized_time, value) 
-```
-
-
-Clean up the environment variables
-```{r}
-rm(list=setdiff(ls(), "tidy_data"))
-```
-
-
-
-# Find the steps to put into each period
-
-## examine the belt speeds
-```{r}
-
-belt_speeds <- tidy_data %>% 
-  ungroup() %>% 
+combined_data %>%  
   filter(str_detect(variable, "Belt")) %>% 
   filter(axis=="X") %>% 
   pivot_wider(names_from = variable, values_from = value) %>% 
   mutate(speed_difference = IPSI_BeltSpeed- CONTRA_BeltSpeed,
-         abs_speed_difference = abs(speed_difference))
-
-  
-
-belt_speeds %>% 
-  filter(stance_side=="left") %>% 
-  ggplot(aes(x = normalized_time, y = IPSI_BeltSpeed, group=step))+
-  geom_line()+
-  facet_grid(rows=vars(condition), cols = vars( start_stop))
-
-ggsave(file.path(figure_folder,"belt_speeds_all.png"))
-```
-
-## Assign steps to periods
-
-Get max speed difference per step and use this to flag the transition points.
-
-```{r}
-
-max_speed_diff <- belt_speeds %>% 
-  group_by(subject, order,condition,start_stop, stance_side,axis, step) %>% 
-  summarize(max_speed_diff = max(abs_speed_difference))
-
-max_speed_diff %>%  
-  ggplot(aes(x = step, y = max_speed_diff))+
+         abs_speed_difference = abs(speed_difference)) %>%  
+  ungroup() %>% 
+  group_by(subject, order,condition,start_stop, stance_side,axis, step, period) %>% 
+  summarize(max_speed_diff = max(abs_speed_difference)) %>% 
+  ggplot(aes(x= step, y = max_speed_diff, color=period))+
   geom_point()+
-  facet_grid(rows=vars(condition), cols = vars(start_stop))
+  facet_grid(cols = vars(stance_side,start_stop), rows=vars(condition))
 
-
-
-ggsave(file.path(figure_folder,"belt_speed_diff_all.png"))
 ```
 
-## Find when change occurs
-```{r}
 
-find_change_point <- function(data, window_size = 5) {
-  n <- nrow(data)
-  max_diff <- 0 # this will get updated as 
-  change_point <- NA
+# Belt Speed Across Condions by Period
+```{r, fig.width=15, fig.height=10}
+combined_data %>%
+  filter(variable == "IPSI_BeltSpeed") %>%
+  filter(axis == "X") %>%
+  ggplot(aes(x = normalized_time, y=value, group=step, color=period)) +
+  geom_path(alpha = 0.7) +
+  facet_grid(
+    cols = vars(period, stance_side), 
+    rows = vars(condition)
+  ) +
+  scale_x_continuous(labels=NULL)+
+  labs(
+    x = "Normalized Stance Time (0-100%)",
+    y = "Belt Speed (m/s)",
+    title = "Belt Speed Across Conditions",
+    subtitle = "Faceted by period and stance side",
+    color = "Condition"
+  )+
+  theme(legend.position = "bottom")
+
+```
+
+
+# Ankle Torque Across Conditions by Period
+
+```{r, fig.width=15, fig.height=10}
+
+combined_data %>%
+  filter(variable == "IPSI_ANKLE_MOMENT") %>%
+  filter(axis == "X") %>%
+  # filter(period %in% c("Late Baseline", "Early Post Adaptation")) %>% 
+  ggplot(aes(x = normalized_time, y=value, group=step, color=period)) +
+  geom_path(alpha = 0.7) +
+  facet_grid(
+    cols = vars(period, stance_side), 
+    rows = vars(condition))+
   
-  for (i in (window_size + 1):(n - window_size)) {
-    mean1 <- mean(data$max_speed_diff[(i-window_size):(i-1)])
-    mean2 <- mean(data$max_speed_diff[i:(i+window_size-1)])
-    diff <- abs(mean2 - mean1)
-    if (diff > max_diff) {
-      max_diff <- diff
-      change_point <- data$step[i]
-    }
-  }
-  
-  return(change_point)
-}
-
-speed_change_steps <- max_speed_diff %>%
-  group_by(condition, start_stop) %>%
-  summarize(change_point = find_change_point(cur_data())) %>% 
-  ungroup()
-
-max_speed_diff %>%
-  ungroup() %>% 
-  select(-axis) %>%  
-  left_join(speed_change_steps, by = c("condition", "start_stop")) %>%
-  ggplot(aes(x = step, y = max_speed_diff)) +
-  geom_point() +
-  geom_vline(data = speed_change_steps, aes(xintercept = change_point), color = "red", linetype = "dashed") +
-  facet_grid(rows = vars(condition), cols = vars(start_stop)) +
-  labs(title = "Belt Speed Difference with Detected Change Points",
-       x = "Step",
-       y = "Max Speed Difference")+
-  theme(legend.position = "bottom") 
-
-
-ggsave(file.path(figure_folder,"belt_speed_change_point_all.png"))
-
+  labs(
+    x = "Normalized Time",
+    y = "Belt Speed (m/s)",
+    title = "Ankle Torque Across Conditions",
+    subtitle = "Faceted by period and stance side",
+    color = "Condition"
+  )+
+  theme(legend.position = "bottom")
 ```
 
 
-## Assign Period based on Speed Change
-```{r}
-
-steps_to_include <- 5
-# Join the change points with the original data
-steps_by_period <- max_speed_diff %>%
-  ungroup() %>% 
-  select(-axis) %>%  
-  left_join(speed_change_steps, by = c("condition", "start_stop")) %>%
-  # group_by(condition, start_stop) %>%
-  mutate(period = case_when(
-    start_stop == "start" & step >= (change_point - steps_to_include -1) & step < change_point-1 ~ "Late Baseline",
-    start_stop == "start" & step > change_point & step < (change_point + steps_to_include +1 ) ~ "Early Adaptation",
-    start_stop == "stop" & step >= (change_point - steps_to_include -1) & step < change_point-1 ~ "Late Adaptation",
-    start_stop == "stop" & step > change_point & step < (change_point + steps_to_include +1) ~ "Early Post Adaptation",
-    TRUE ~ NA_character_
-  ),
-    period = factor(period, levels = c("Late Baseline", "Early Adaptation", "Late Adaptation", "Early Post Adaptation"))) 
-
-
-# Add the change points to the original plot
-steps_by_period %>%
-  ggplot(aes(x = step, y = max_speed_diff, color=period)) +
-  geom_point() +
-  geom_vline(data = speed_change_steps, aes(xintercept = change_point), color = "red", linetype = "dashed") +
-  facet_grid(rows = vars(condition), cols = vars(start_stop)) +
-  labs(title = "Belt Speed Difference with Detected Change Points",
-       x = "Step",
-       y = "Max Speed Difference")+
-  scale_color_manual(values = c("Late Baseline" = "purple",
-                              "Early Adaptation" = "red", 
-                              "Late Adaptation" = "green", 
-                              "Early Post Adaptation" = "blue",
-                              "NA" = "grey"),  # Add this line
-                   breaks = c("Late Baseline", "Early Adaptation", 
-                              "Late Adaptation", "Early Post Adaptation"),
-                   na.value = "grey") +  # Add this line
-  theme(legend.position = "bottom") 
-
-ggsave(file.path(figure_folder,"steps_by_period.png"))
-```
-
-# Filter tidy_data
-
-Get rid of any data that is related to steps that are not assigned to one of the periods of interest.
+# Step Length
 
 ```{r}
 
-tidy_data_by_period <- tidy_data %>% 
-  left_join(steps_by_period) %>% 
-  filter(!is.na(period)) %>% 
-  select(-max_speed_diff, -change_point)
+# Calculate step length
 
-```
-# Plot
-
-```{r}
-
-tidy_data_by_period %>% 
-  filter(variable == "IPSI_ANKLE_MOMENT") %>% 
-  filter(axis == "X") %>% 
-  ggplot(aes(x = normalized_time,y=value, group=step))+
-  geom_path()+
-  facet_grid(cols = vars(period), rows = vars(condition))
-
-ggsave(file.path(figure_folder,"pf_torque_5.png"))
-
-tidy_data_by_period %>% 
-  group_by(subject, order, condition, start_stop,stance_side,variable,axis,period, normalized_time) %>% 
-  summarise(value = mean(value)) %>% 
-  filter(variable == "IPSI_ANKLE_MOMENT") %>% 
-  filter(axis == "X") %>% 
-  ggplot(aes(x = normalized_time,y=value))+
-  geom_path()+
-  facet_grid(cols = vars(period), rows = vars(condition))
-ggsave(file.path(figure_folder,"pf_torque_avg.png"))
-
-```
-
-
-```{r}
-
-tidy_data_by_period %>% 
-  group_by(subject, order, condition, start_stop,stance_side,variable,axis,period, normalized_time) %>% 
-  summarise(value = mean(value)) %>% 
-  filter(variable %in% c("IPSI_ANKLE_MOMENT", "IPSI_ANKLE_ANGLE")) %>% 
-  filter(period %in% c("Late Baseline", "Early Post Adaptation")) %>% 
+combined_data%>% 
+  filter(normalized_time==1) %>% 
+  filter(axis == "Y") %>% 
+  filter(grepl("*_HEEL", variable)) %>% 
   pivot_wider(names_from = variable, values_from = value) %>% 
-  mutate(IPSI_ANKLE_MOMENT = -IPSI_ANKLE_MOMENT) %>% 
-  filter(axis == "X") %>% 
-  ggplot(aes(x = IPSI_ANKLE_ANGLE,y=IPSI_ANKLE_MOMENT, color=period))+
-  geom_path()+
-  facet_grid(cols = vars(condition))+
-  theme(aspect.ratio = 1,
-        legend.position = "bottom")
+  mutate(step_length = abs(IPSI_HEEL-CONTRA_HEEL)) %>% 
+  group_by(subject, order, condition, start_stop, stance_side, period) %>% 
+  summarize(step_length = mean(step_length)) %>% 
+  ungroup() %>% 
+  pivot_wider(
+    names_from = stance_side, 
+    values_from = step_length,
+    names_glue = "{stance_side}_step_length"  # This adds the suffix to each name
+  ) %>% 
+  mutate(SLR = left_step_length/right_step_length) %>% 
+  ggplot(aes(x=period, y = SLR))+
+  geom_point()+
+  facet_grid(rows=vars(condition))
+
+```
+
+# Time
+
+```{r}
   
+combined_data %>% 
+  filter(axis == "X") %>% 
+  filter(variable=="TIME") %>%
+  pivot_wider(names_from = variable,values_from = value) %>%
+  ungroup() %>% 
+  group_by(subject, order, condition, start_stop, stance_side, period, normalized_time) %>% 
+  summarise(TIME = mean(TIME)) %>%
+  ungroup() %>% 
+  group_by(subject, order, condition, start_stop, stance_side, period) %>% 
+  summarize(min_time = min(TIME),
+            max_time = max(TIME)) %>% 
+  mutate(stance_time = max_time-min_time) 
+  
+  ggplot(aes(x=normalized_time,y=TIME))+
+  geom_line()+
+  facet_grid(cols=vars(start_stop,period), rows=vars(condition))
+```
+
+# PF
+
+```{r}
+
+
+
 
 ```
 
