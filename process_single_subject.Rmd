@@ -1,0 +1,190 @@
+---
+title: "Processing V3D Data in R"
+author: "Mac Prible"
+date: "`r Sys.Date()`"
+output: html_document
+params:
+  subject: "s1"
+---
+
+```{r setup, include=FALSE}
+# knitr::opts_chunk$set(echo = TRUE)
+source("tidy_v3d.R")
+
+# Set up variables
+raw_data_directory <- "C:\\Users\\Mac Prible\\OneDrive - The University of Texas at Austin\\research\\PDSV\\data\\PDVS_2024\\v3d\\raw_v3d_output"
+tidy_data_directory <- "C:\\Users\\Mac Prible\\OneDrive - The University of Texas at Austin\\research\\PDSV\\data\\PDVS_2024\\v3d\\tidy_output"
+subject_reports <- "C:\\Users\\Mac Prible\\OneDrive - The University of Texas at Austin\\research\\PDSV\\data\\PDVS_2024\\v3d\\subject_reports"
+
+# Define function to process single file with side information
+process_side_file <- function(data_directory, subject_id, side) {
+  file_name <- str_glue("{subject_id}_{side}.tsv")
+  
+  tidy_data <- tsv_to_tidy(data_directory = data_directory, 
+                           file_name = file_name) %>%
+                  tidy_by_period() 
+  
+  return(tidy_data)
+  
+}
+
+# Process both sides and combine
+process_both_sides <- function(data_directory, subject_id) {
+  sides <- c("left", "right")
+  
+  combined <- map_df(sides, 
+                     ~process_side_file(data_directory = data_directory,
+                                        subject_id = subject_id,
+                                        side = .x)) 
+  
+  return(combined)
+}
+
+# tidy up subject's raw data
+combined_data <- process_both_sides(raw_data_directory, params$subject)
+
+keep_objects <- c("combined_data", "params", "tidy_data_directory", "subject_reports")
+rm(list = setdiff(ls(), keep_objects))
+```
+
+
+
+# Assignment of Periods
+
+Make sure that no transitional speed steps included in 
+
+```{r, fig.width=10,fig.height=6}
+combined_data %>%  
+  filter(str_detect(variable, "Belt")) %>% 
+  filter(period %in% c("Late Baseline", "Early Adapt", "Late Adapt", "Early Post Adapt")) %>% 
+  filter(axis=="X") %>% 
+  pivot_wider(names_from = variable, values_from = value) %>% 
+  mutate(speed_difference = IPSI_BeltSpeed- CONTRA_BeltSpeed,
+         abs_speed_difference = abs(speed_difference)) %>%  
+  ungroup() %>% 
+  group_by(subject, order,condition,start_stop, stance_side,axis, step, period) %>% 
+  summarize(max_speed_diff = max(abs_speed_difference)) %>% 
+  ggplot(aes(x= step, y = max_speed_diff, color=period))+
+  geom_point(show.legend = FALSE)+
+  facet_grid(cols = vars(stance_side,start_stop), rows=vars(condition))+
+  theme(legend.position="bottom")
+
+```
+
+
+# Belt Speed Across Condions by Period
+```{r, fig.width=10, fig.height=6}
+combined_data %>%
+  filter(variable == "IPSI_BeltSpeed") %>%
+  filter(axis == "X") %>%
+  ggplot(aes(x = normalized_time, y=value, group=step, color=period)) +
+  geom_path(alpha = 0.7, show.legend = FALSE) +
+  facet_grid(condition~period+stance_side,
+             labeller = label_wrap_gen(width = 8, multi_line = TRUE))+
+  scale_x_continuous(labels=NULL)+
+  labs(
+    x = "Normalized Stance Time (0-100%)",
+    y = "Belt Speed (m/s)",
+    title = "Belt Speed Across Conditions",
+    subtitle = "Faceted by period and stance side",
+    color = "Condition"
+  )
+  
+
+```
+
+
+# Ankle Torque Across Conditions by Period
+
+## Individual Steps
+```{r, fig.width=10, fig.height=6}
+
+combined_data %>%
+  filter(variable == "IPSI_ANKLE_MOMENT") %>%
+  filter(axis == "X") %>%
+  # filter(period %in% c("Late Baseline", "Early Post Adaptation")) %>% 
+  ggplot(aes(x = normalized_time, y=value, group=step, color=period)) +
+  scale_x_continuous(labels = NULL)+
+  geom_path(alpha = 0.7, show.legend = FALSE) +
+  facet_grid(condition~period+stance_side,
+             labeller = label_wrap_gen(width = 8, multi_line = TRUE))+
+  labs(
+    x = "Normalized Stance Time (0-100%)",
+    y = "Belt Speed (m/s)",
+    title = "Ankle Torque Across Conditions",
+    subtitle = "Faceted by period and stance side",
+    color = "Condition"
+  )
+  
+```
+
+## Averaged Across Steps
+
+Here I will also save output for use in the aggregated data later.
+
+```{r, fig.width=10, fig.height=6}
+mean_across_stance <- combined_data %>% 
+  filter(grepl("IPSI_*",variable) | grepl("*PELVIS*",variable) | variable == "TIME") %>%
+  group_by(subject,order,condition,period, stance_side,variable, axis, normalized_time) %>% 
+  summarize(value = mean(value)) 
+  
+mean_across_stance %>% 
+  filter(variable == "IPSI_ANKLE_MOMENT") %>%
+  filter(axis == "X") %>%
+  # filter(period %in% c("Late Baseline", "Early Post Adaptation")) %>% 
+  ggplot(aes(x = normalized_time, y=value, color=period)) +
+  scale_x_continuous(labels = NULL)+
+  geom_path(alpha = 0.7, show.legend = FALSE) +
+  facet_grid(condition~period+stance_side,
+             labeller = label_wrap_gen(width = 8, multi_line = TRUE))+
+  labs(
+    x = "Normalized Stance Time (0-100%)",
+    y = "Belt Speed (m/s)",
+    title = "Ankle Torque Across Conditions",
+    subtitle = "Averaged Across 5 Steps",
+    color = "Condition"
+  )
+
+output_path = file.path(tidy_data_directory,paste0(params$subject,"_mean_across_stance.csv"))
+mean_across_stance %>% write_csv2(output_path)
+
+mean_across_stance %>% 
+  filter(variable == "TIME") %>%
+  filter(axis == "X") %>%
+  # filter(period %in% c("Late Baseline", "Early Post Adaptation")) %>% 
+  ggplot(aes(x = normalized_time, y=value, color=period)) +
+  scale_x_continuous(labels = NULL)+
+  geom_path(alpha = 0.7, show.legend = FALSE) +
+  ylab("Mean Time Across Steps")+
+  facet_grid(condition~period+stance_side,
+             labeller = label_wrap_gen(width = 8, multi_line = TRUE))
+  
+
+```
+
+
+
+# Step Length
+
+```{r, fig.width=10, fig.height=6}
+step_lengths <- combined_data%>% 
+  filter(normalized_time==1) %>% 
+  filter((grepl("*_HEEL", variable) & axis == "Y")|(variable == "TIME" & axis == "X")) %>% 
+  select(-axis) %>% 
+  pivot_wider(names_from = variable, values_from = value) %>% 
+  mutate(step_length = abs(IPSI_HEEL-CONTRA_HEEL)) 
+
+step_lengths%>% 
+  ggplot(aes(x=TIME, y = step_length, color=stance_side))+
+  geom_point()+
+  facet_grid(cols=vars(start_stop),
+             rows=vars(condition))+
+  theme(legend.position="bottom")
+
+
+output_path = file.path(tidy_data_directory,paste0(params$subject,"_step_lengths.csv"))
+step_lengths %>% write_csv2(output_path)
+
+
+```
+

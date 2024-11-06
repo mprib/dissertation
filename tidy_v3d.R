@@ -185,26 +185,24 @@ tidy_by_period <- function(tidy_data) {
     mutate(last_step = max(step)) %>% 
     ungroup() %>% 
     mutate(period = case_when(
-      
-      start_stop == "start" & step >= 1 & step <= 5 ~ "start_first_five",
-      start_stop == "start" & step >= last_step-5 & step <= last_step ~ "start_last_five",
-      start_stop == "stop" & step >= 1 & step <= 5 ~ "stop_first_five",
-      start_stop == "stop" & step >= last_step-5 & step <= last_step ~ "stop_last_five",
+      start_stop == "start" & step >= 1 & step <= steps_to_include ~ "begin start",
+      start_stop == "start" & step >= last_step-steps_to_include & step <= last_step ~ "end start",
+      start_stop == "stop" & step >= 1 & step <= steps_to_include ~ "begin stop",
+      start_stop == "stop" & step >= last_step- steps_to_include & step <= last_step ~ "end stop",
       start_stop == "start" & step >= (change_point - steps_to_include -1) & step < change_point-1 ~ "Late Baseline",
-      start_stop == "start" & step > change_point & step < (change_point + steps_to_include +1 ) ~ "Early Adaptation",
-      start_stop == "stop" & step >= (change_point - steps_to_include -1) & step < change_point-1 ~ "Late Adaptation",
-      start_stop == "stop" & step > change_point & step < (change_point + steps_to_include +1) ~ "Early Post Adaptation",
+      start_stop == "start" & step > change_point & step < (change_point + steps_to_include +1 ) ~ "Early Adapt",
+      start_stop == "stop" & step >= (change_point - steps_to_include -1) & step < change_point-1 ~ "Late Adapt",
+      start_stop == "stop" & step > change_point & step < (change_point + steps_to_include +1) ~ "Early Post Adapt",
       TRUE ~ NA_character_
     ),
-    period = factor(period, levels = c("start_first_five", 
+    period = factor(period, levels = c("begin start", 
                                        "Late Baseline", 
-                                       "Early Adaptation", 
-                                       "start_last_five", 
-                                       "stop_first_five", 
-                                       "Late Adaptation", 
-                                       "Early Post Adaptation", 
-                                       "stop_last_five"))) 
-  
+                                       "Early Adapt", 
+                                       "end start", 
+                                       "begin stop", 
+                                       "Late Adapt", 
+                                       "Early Post Adapt", 
+                                       "end stop"))) 
   
   # fold in period to highly granular data and filter for only those with period assigned
   print("filtering data to only include observations assigned to a period")
@@ -212,6 +210,8 @@ tidy_by_period <- function(tidy_data) {
     left_join(steps_by_period) %>% 
     filter(!is.na(period)) %>% 
     select(-max_speed_diff, -change_point)
+  
+  #browser()
    
   return(tidy_data_by_period)
    
