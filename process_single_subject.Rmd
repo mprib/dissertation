@@ -14,7 +14,6 @@ source("tidy_v3d.R")
 # Set up variables
 raw_data_directory <- "C:\\Users\\Mac Prible\\OneDrive - The University of Texas at Austin\\research\\PDSV\\data\\PDVS_2024\\v3d\\raw_v3d_output"
 tidy_data_directory <- "C:\\Users\\Mac Prible\\OneDrive - The University of Texas at Austin\\research\\PDSV\\data\\PDVS_2024\\v3d\\tidy_output"
-subject_reports <- "C:\\Users\\Mac Prible\\OneDrive - The University of Texas at Austin\\research\\PDSV\\data\\PDVS_2024\\v3d\\subject_reports"
 
 # Define function to process single file with side information
 process_side_file <- function(data_directory, subject_id, side) {
