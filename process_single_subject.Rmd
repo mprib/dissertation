@@ -4,16 +4,16 @@ author: "Mac Prible"
 date: "`r Sys.Date()`"
 output: html_document
 params:
-  subject: "s1"
+  subject: "S8"
 ---
 
 ```{r setup, include=FALSE}
-# knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = FALSE)
 source("tidy_v3d.R")
 
 # Set up variables
-raw_data_directory <- "C:\\Users\\Mac Prible\\OneDrive - The University of Texas at Austin\\research\\PDSV\\data\\PDVS_2024\\v3d\\raw_v3d_output"
-tidy_data_directory <- "C:\\Users\\Mac Prible\\OneDrive - The University of Texas at Austin\\research\\PDSV\\data\\PDVS_2024\\v3d\\tidy_output"
+raw_data_directory <- "C:\\Users\\Mac Prible\\OneDrive - The University of Texas at Austin\\research\\PDSV\\data\\dissertation\\v3d\\raw_v3d_output"
+tidy_data_directory <- "C:\\Users\\Mac Prible\\OneDrive - The University of Texas at Austin\\research\\PDSV\\data\\dissertation\\v3d\\tidy_output"
 
 # Define function to process single file with side information
 process_side_file <- function(data_directory, subject_id, side) {
@@ -166,12 +166,28 @@ mean_across_stance %>%
 # Step Length
 
 ```{r, fig.width=10, fig.height=6}
+
+
+
 step_lengths <- combined_data%>% 
   filter(normalized_time==1) %>% 
-  filter((grepl("*_HEEL", variable) & axis == "Y")|(variable == "TIME" & axis == "X")) %>% 
+  filter((grepl("*_HEEL*", variable) & axis == "Y")|(variable == "TIME" & axis == "X")) %>% 
   select(-axis) %>% 
   pivot_wider(names_from = variable, values_from = value) %>% 
-  mutate(step_length = abs(IPSI_HEEL-CONTRA_HEEL)) 
+  mutate(
+    # Only coalesce if virtual columns exist (currently only the case for Subject 8, but if I lose another heel marker...)
+    IPSI_HEEL = if("IPSI_HEEL_virtual" %in% names(.)) {
+      coalesce(IPSI_HEEL, IPSI_HEEL_virtual)
+    } else {
+      IPSI_HEEL
+    },
+    CONTRA_HEEL = if("CONTRA_HEEL_virtual" %in% names(.)) {
+      coalesce(CONTRA_HEEL, CONTRA_HEEL_virtual)
+    } else {
+      CONTRA_HEEL
+    },
+    step_length = abs(IPSI_HEEL - CONTRA_HEEL)
+  ) 
 
 step_lengths%>% 
   ggplot(aes(x=TIME, y = step_length, color=stance_side))+
@@ -186,4 +202,5 @@ step_lengths %>% write_csv2(output_path)
 
 
 ```
+
 

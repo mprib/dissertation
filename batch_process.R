@@ -4,7 +4,7 @@ library(purrr)
 library(glue)
 
 # Define the output directory - modify this path as needed
-output_dir <- "C:\\Users\\Mac Prible\\OneDrive - The University of Texas at Austin\\research\\PDSV\\data\\PDVS_2024\\v3d\\subject_reports"
+output_dir <- "C:\\Users\\Mac Prible\\OneDrive - The University of Texas at Austin\\research\\PDSV\\data\\dissertation\\v3d\\subject_reports"
 
 # Define list of subjects with deliberate case
 subjects <- c(
@@ -50,9 +50,11 @@ if (!dir.exists(output_dir)) {
   dir.create(output_dir, recursive = TRUE)
 }
 
-# Process subjects one at a time
-for(subject in subjects) {
-  render_subject_report(subject)
-}
+# # Process subjects one at a time
+# for(subject in subjects) {
+#   render_subject_report(subject)
+# }
+
+render_subject_report("S8")
 
 message("Processing complete!")

@@ -50,6 +50,7 @@ tsv_to_tidy <- function(data_directory, file_name) {
     mutate(stance_side = stance_side) %>% 
     mutate(variable = case_when(
       raw_variable == "RHEEL" ~ "R_HEEL",
+      raw_variable == "RHEEL_virtual" ~ "R_HEEL_virtual", # needed for data patch on subject 8
       raw_variable == "LHEEL" ~ "L_HEEL",
       raw_variable == "FP1" ~ "Left_GRF",
       raw_variable == "FP2" ~ "Right_GRF",
