@@ -6,6 +6,7 @@ output: html_document
 ---
 
 # Import Data
+
 ```{r, warning=FALSE, message=FALSE}
 library(tidyverse)
 
@@ -23,6 +24,7 @@ step_lengths <-
 ```
 
 ## Get Stance Times
+
 ```{r}
 stance_times <- mean_across_stance %>% 
   filter(variable %in% c("TIME") & axis == "X") %>% 
@@ -50,8 +52,143 @@ BIL_CONDITION_LABELS <- c(
   "bbp" = "Bil. Fast Brake",
   "bpp" = "Bil. Fast Prop"
 )
+
+CONDITION_LABELS <- c(UNI_CONDITION_LABELS, BIL_CONDITION_LABELS)
 ```
 
+# Belt Speed
+
+```{r}
+
+
+mean_across_stance %>% 
+  filter(subject=="s1") %>% 
+  filter(period == "Late Adapt") %>% 
+  filter(condition == "sbt") %>% 
+  mutate(condition = CONDITION_LABELS[condition]) %>% 
+  filter(variable %in% c("IPSI_BeltSpeed") & axis == "X") %>%
+  # filter(variable %in% c("IPSI_ANKLE_MOMENT") & axis == "X") %>% 
+  ggplot(aes(x=normalized_time,y= value, linetype=period, color=stance_side))+
+  geom_line(size=1.2)+
+  # scale_x_continuous(labels=NULL)+
+  facet_grid(subject~condition + stance_side)+
+  theme_minimal()+
+  theme(legend.position="none")+
+  labs(
+    x = "Normalized Stance Time (0-100%)",
+    y = "Belt Speed (m/s)",
+    title = "Subject 1: Actual Belt Speed for Conventional Split Belt Treadmill",
+    subtitle = "Averaged Across 5 Steps",
+    color = "Condition"
+  )+
+  scale_color_manual(values= c("left" = "blue", "right" = "red"))  # Added color specification
+
+
+ggsave(file.path(figure_directory,"Conventional SBT speeds.png"))
+
+mean_across_stance %>% 
+  filter(subject=="s1") %>% 
+  filter(period == "Late Adapt") %>% 
+  filter(condition == "ubp") %>% 
+  mutate(condition = CONDITION_LABELS[condition]) %>% 
+  filter(variable %in% c("IPSI_BeltSpeed") & axis == "X") %>%
+  # filter(variable %in% c("IPSI_ANKLE_MOMENT") & axis == "X") %>% 
+  ggplot(aes(x=normalized_time,y= value, linetype=period, color=stance_side))+
+  geom_line(size=1.2)+
+  # scale_x_continuous(labels=NULL)+
+  facet_grid(subject~condition + stance_side)+
+  theme_minimal()+
+  theme(legend.position="none")+
+  labs(
+    x = "Normalized Stance Time (0-100%)",
+    y = "Belt Speed (m/s)",
+    title = "Subject 1: Actual Belt Speed for Unilateral FastBrake",
+    subtitle = "Averaged Across 5 Steps",
+    color = "Condition"
+  )+
+  scale_color_manual(values= c("left" = "blue", "right" = "red"))  # Added color specification
+
+
+ggsave(file.path(figure_directory,"Uni fast brake speeds.png"))
+
+mean_across_stance %>% 
+  filter(subject=="s1") %>% 
+  filter(period == "Late Adapt") %>% 
+  filter(condition == "upp") %>% 
+  mutate(condition = CONDITION_LABELS[condition]) %>% 
+  filter(variable %in% c("IPSI_BeltSpeed") & axis == "X") %>%
+  # filter(variable %in% c("IPSI_ANKLE_MOMENT") & axis == "X") %>% 
+  ggplot(aes(x=normalized_time,y= value, linetype=period, color=stance_side))+
+  geom_line(size=1.2)+
+  # scale_x_continuous(labels=NULL)+
+  facet_grid(subject~condition + stance_side)+
+  theme_minimal()+
+  theme(legend.position="none")+
+  labs(
+    x = "Normalized Stance Time (0-100%)",
+    y = "Belt Speed (m/s)",
+    title = "Subject 1: Actual Belt Speed for Unilateral FastProp",
+    subtitle = "Averaged Across 5 Steps",
+    color = "Condition"
+  )+
+  scale_color_manual(values= c("left" = "blue", "right" = "red"))  # Added color specification
+
+
+ggsave(file.path(figure_directory,"Uni fast prop speeds.png"))
+```
+
+```{r}
+
+mean_across_stance %>% 
+  filter(subject=="s1") %>% 
+  filter(period == "Late Adapt") %>% 
+  filter(condition %in% c("upp","ubp", "sbt")) %>% 
+  mutate(condition = CONDITION_LABELS[condition]) %>% 
+  filter(variable %in% c("IPSI_BeltSpeed") & axis == "X") %>%
+  # filter(variable %in% c("IPSI_ANKLE_MOMENT") & axis == "X") %>% 
+  ggplot(aes(x=normalized_time,y= value, linetype=period, color=stance_side))+
+  geom_line(size=1.2)+
+  # scale_x_continuous(labels=NULL)+
+  facet_grid(rows=vars(condition), cols = vars(stance_side))+
+  theme_minimal()+
+  theme(legend.position="none")+
+  labs(
+    x = "Normalized Stance Time (0-100%)",
+    y = "Belt Speed (m/s)",
+    title = "Subject 1: Actual Belt Speed Across All Unilateral Conditions",
+    subtitle = "Averaged Across 5 Steps",
+    color = "Condition"
+  )+
+  scale_color_manual(values= c("left" = "blue", "right" = "red"))  # Added color specification
+
+
+ggsave(file.path(figure_directory,"All Uni Condition speeds.png"))
+
+mean_across_stance %>% 
+  filter(subject=="s1") %>% 
+  filter(period == "Late Adapt") %>% 
+  filter(condition %in% c("bpp","bbp")) %>% 
+  mutate(condition = CONDITION_LABELS[condition]) %>% 
+  filter(variable %in% c("IPSI_BeltSpeed") & axis == "X") %>%
+  # filter(variable %in% c("IPSI_ANKLE_MOMENT") & axis == "X") %>% 
+  ggplot(aes(x=normalized_time,y= value, linetype=period, color=stance_side))+
+  geom_line(size=1.2)+
+  # scale_x_continuous(labels=NULL)+
+  facet_grid(rows=vars(condition), cols = vars(stance_side))+
+  theme_minimal()+
+  theme(legend.position="none")+
+  labs(
+    x = "Normalized Stance Time (0-100%)",
+    y = "Belt Speed (m/s)",
+    title = "Subject 1: Actual Belt Speed Across All Bilateral Conditions",
+    subtitle = "Averaged Across 5 Steps",
+    color = "Condition"
+  )+
+  scale_color_manual(values= c("left" = "blue", "right" = "red"))  # Added color specification
+
+
+ggsave(file.path(figure_directory,"All Bilateral Condition speeds.png"))
+```
 
 # Step Length Ratio (SLR)
 
@@ -98,6 +235,7 @@ plt_SLR +
 ggsave(file.path(figure_directory,"SLR_all_w_mean.png"))
 
 ```
+
 ## Late Baseline vs Early Post Adaptation
 
 ```{r}
@@ -143,10 +281,10 @@ ggsave(file.path(figure_directory,"SLR_pre_post_mean.png"))
 
 ```
 
-
 # Ankle PF Torque
 
 ## By Subject
+
 ```{r, fig.width=10, fig.height=6}
 periods = c("Late Baseline", "Early Post Adapt")
 mean_across_stance %>% 
@@ -173,8 +311,8 @@ mean_across_stance %>%
 ```
 
 ## Characteristic Torque Profile
-### Study 2: Unilateral
 
+### Study 2: Unilateral
 
 ```{r, fig.height=10, fig.width=8}
 
@@ -226,9 +364,7 @@ mean_across_stance %>%
 ggsave(file.path(figure_directory,"unil_torque_over_time.png"))
 ```
 
-
-### Study 3: Bilateral 
-
+### Study 3: Bilateral
 
 ```{r, fig.height=7, fig.width=8}
 
@@ -282,7 +418,6 @@ ggsave(file.path(figure_directory,"bil_torque_over_time.png"))
 
 ## PF Impulse
 
-
 ```{r}
 
 periods = c("Late Baseline", "Early Post Adapt")
@@ -299,8 +434,8 @@ PF_impulse <- mean_across_stance %>%
 
 
 ```
-### Study 2: Unilateral
 
+### Study 2: Unilateral
 
 ```{r, fig.width=6, fig.height=6}
 
@@ -408,8 +543,6 @@ plt+
 ggsave(file.path(figure_directory,"bil_impulse_w_mean.png"))
 ```
 
-
-
 ```{r, fig.width=10, fig.height=6}
 periods = c("Late Baseline", "Early Post Adapt")
 
@@ -453,4 +586,3 @@ mean_across_stance %>%
     color = "Condition"
   )
 ```
-

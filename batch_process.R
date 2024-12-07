@@ -4,7 +4,7 @@ library(purrr)
 library(glue)
 
 # Define the output directory - modify this path as needed
-output_dir <- "C:\\Users\\Mac Prible\\OneDrive - The University of Texas at Austin\\research\\PDSV\\data\\dissertation\\v3d\\subject_reports"
+output_dir <- file.path(getwd(), "subject_reports")
 
 # Define list of subjects with deliberate case
 subjects <- c(
@@ -55,6 +55,6 @@ if (!dir.exists(output_dir)) {
 #   render_subject_report(subject)
 # }
 
-render_subject_report("S8")
+render_subject_report("S12")
 
 message("Processing complete!")
