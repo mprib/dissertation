@@ -9,6 +9,8 @@ output: html_document
 
 ```{r, warning=FALSE, message=FALSE}
 library(tidyverse)
+library(lme4)
+library(emmeans)
 
 tidy_data_directory <- "C:\\Users\\Mac Prible\\OneDrive - The University of Texas at Austin\\research\\PDSV\\data\\dissertation\\v3d\\tidy_output"
 
@@ -308,6 +310,27 @@ mean_across_stance %>%
   )
 
 
+ggsave(file.path(figure_directory,"all_ankle_torques.svg"))
+
+
+
+```
+### Why is normalized time getting edge cropped?
+
+Looks like there are NAs getting propagated. These are in the mean stance values so I need to go back to the step-by-step values to see where the NAs are coming from.
+```{r}
+
+
+# mean_across_stance %>% 
+#   filter(period %in% periods) %>% 
+#   mutate(period = factor(period,levels = periods)) %>% 
+#   filter(variable %in% c("IPSI_ANKLE_MOMENT") & axis == "X") %>% 
+#   filter(is.na(value)) %>% view()
+#   ungroup() %>% 
+#   
+#   group_by(order, condition, stance_side, variable, axis,normalized_time) %>% 
+#   summarize(value = mean(value)) %>% 
+#   view()
 ```
 
 ## Characteristic Torque Profile
@@ -418,6 +441,7 @@ ggsave(file.path(figure_directory,"bil_torque_over_time.png"))
 
 ## PF Impulse
 
+### Study 2: Unilateral
 ```{r}
 
 periods = c("Late Baseline", "Early Post Adapt")
@@ -435,8 +459,9 @@ PF_impulse <- mean_across_stance %>%
 
 ```
 
-### Study 2: Unilateral
 
+
+#### Plot
 ```{r, fig.width=6, fig.height=6}
 
 plt <- PF_impulse %>% 
@@ -489,8 +514,40 @@ plt+
 ggsave(file.path(figure_directory,"uni_impulse_mean.png"))
 ```
 
-### Study 3: Bilateral
+#### Test
 
+```{r}
+
+
+unilateral_data <- PF_impulse %>% 
+  ungroup() %>% 
+  filter(condition %in% names(UNI_CONDITION_LABELS)) %>%  
+  mutate(condition = UNI_CONDITION_LABELS[condition]) %>% 
+  filter(stance_side=="left")
+  
+# Prepare data for lmer
+unilateral_data$subject <- factor(unilateral_data$subject)
+unilateral_data$condition <- factor(unilateral_data$condition)
+unilateral_data$period <- factor(unilateral_data$period)
+
+model <- lmer(PF_impulse ~ period * condition + (1|subject), 
+             data = unilateral_data)
+
+
+summary(model)
+
+# Compute estimated marginal means
+emm <- emmeans(model, specs = ~ period | condition)
+
+# Pairwise comparisons of Period within each Condition
+period_comparisons <- pairs(emm, simple = "period", adjust="holm")
+summary(period_comparisons)
+```
+
+
+
+### Study 3: Bilateral
+#### Plot
 ```{r, fig.width=6, fig.height=6}
 plt <- PF_impulse %>% 
   ungroup() %>% 
@@ -543,6 +600,38 @@ plt+
 ggsave(file.path(figure_directory,"bil_impulse_w_mean.png"))
 ```
 
+#### Test
+
+```{r}
+bilateral_data <- PF_impulse %>% 
+  ungroup() %>% 
+  filter(condition %in% names(BIL_CONDITION_LABELS)) %>%  
+  mutate(condition = BIL_CONDITION_LABELS[condition]) %>% 
+  group_by(subject,condition, period) %>%
+  summarize(PF_impulse= mean(PF_impulse))
+  
+# Prepare data for lmer
+bilateral_data$subject <- factor(bilateral_data$subject)
+bilateral_data$condition <- factor(bilateral_data$condition)
+bilateral_data$period <- factor(bilateral_data$period)
+
+model <- lmer(PF_impulse ~ period * condition + (1|subject), 
+             data = bilateral_data)
+
+
+summary(model)
+
+# Compute estimated marginal means
+emm <- emmeans(model, specs = ~ period | condition)
+
+# Pairwise comparisons of Period within each Condition
+period_comparisons <- pairs(emm, simple = "period", adjust="holm")
+summary(period_comparisons)
+```
+
+
+# Addendum
+## Pelvis Height
 ```{r, fig.width=10, fig.height=6}
 periods = c("Late Baseline", "Early Post Adapt")
 
