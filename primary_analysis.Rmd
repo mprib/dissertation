@@ -1,11 +1,16 @@
 ---
-title: "Aggregate Data"
+title: "Primary Analysis"
 author: "Mac Prible"
-date: "2024-11-06"
 output: html_document
 ---
 
 # Import Data
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo=FALSE)
+```
+
 
 ```{r, warning=FALSE, message=FALSE}
 library(tidyverse)
@@ -218,12 +223,13 @@ plt_SLR <- step_lengths %>%
   theme(plot.title = element_text(hjust = 0.5,),
         plot.caption = element_text(hjust = 0.5, size = 13),
         axis.text.x = element_text(angle = 45, hjust = 1),   # Add this line
-        legend.position = "bottom")+
+        legend.position = "none")+
   labs(title = "SLR Across Treadmill Protocol")
 
-plt_SLR
+# plt_SLR
+# 
+# ggsave(file.path(figure_directory,"SLR_all.png"))
 
-ggsave(file.path(figure_directory,"SLR_all.png"))
 plt_SLR +
   stat_summary(aes(group = 1), fun = mean, geom = "line", color = "black", size = 0.8, linetype = "dashed", alpha=.6) +  # Thinner, dashed mean line
   stat_summary(aes(group = 1), fun = mean, geom = "point", color = "black", size = 3, shape = 18) +  # Smaller mean points
@@ -263,12 +269,13 @@ plt_SLR <- step_lengths %>%
   theme(plot.title = element_text(hjust = 0.5,),
         plot.caption = element_text(hjust = 0.5, size = 13),
         axis.text.x = element_text(angle = 45, hjust = 1),   # Add this line
-        legend.position = "bottom")+
+        legend.position = "none")+
   labs(title = "SLR Across Treadmill Protocol")
 
-plt_SLR
+# plt_SLR
+# 
+# ggsave(file.path(figure_directory,"SLR_pre_post.png"))
 
-ggsave(file.path(figure_directory,"SLR_pre_post.png"))
 plt_SLR +
   stat_summary(aes(group = 1), fun = mean, geom = "line", color = "black", size = 0.8, linetype = "dashed", alpha=.6) +  # Thinner, dashed mean line
   stat_summary(aes(group = 1), fun = mean, geom = "point", color = "black", size = 3, shape = 18) +  # Smaller mean points
@@ -285,36 +292,6 @@ ggsave(file.path(figure_directory,"SLR_pre_post_mean.png"))
 
 # Ankle PF Torque
 
-## By Subject
-
-```{r, fig.width=10, fig.height=6}
-periods = c("Late Baseline", "Early Post Adapt")
-mean_across_stance %>% 
-  filter(period %in% periods) %>% 
-  mutate(period = factor(period,levels = periods)) %>% 
-  filter(variable %in% c("IPSI_ANKLE_MOMENT") & axis == "X") %>% 
-  ggplot(aes(x=normalized_time,y= value, linetype=period, color=condition))+
-  geom_line()+
-  geom_hline(yintercept = 0)+
-  scale_x_continuous(labels=NULL)+
-  facet_grid(subject~condition + stance_side)+
-  scale_linetype_manual(values=c("Early Post Adapt"="solid", "Late Baseline"="dashed")) +
-  theme_minimal()+
-  theme(legend.position="bottom")+
-  labs(
-    x = "Normalized Stance Time (0-100%)",
-    y = "Ankle PF Torque (N.m/BW)",
-    title = "Ankle Torque Across Conditions",
-    subtitle = "Averaged Across 5 Steps",
-    color = "Condition"
-  )
-
-
-ggsave(file.path(figure_directory,"all_ankle_torques.svg"))
-
-
-
-```
 ### Why is normalized time getting edge cropped?
 
 Looks like there are NAs getting propagated. These are in the mean stance values so I need to go back to the step-by-step values to see where the NAs are coming from.
@@ -476,15 +453,15 @@ plt <- PF_impulse %>%
   # scale_x_discrete(guide = guide_axis(n.dodge = 2))+
   theme_minimal()+
   theme(axis.text.x = element_text(angle = 45, hjust = 1),
-        legend.position = "bottom")+
+        legend.position = "none")+
   labs(
     x = "Period",
     y = "Ankle PF Impulse (N.m.s/BW)",
     title = "Ankle PF Impulse Across Periods",
   )
-plt
 
-ggsave(file.path(figure_directory,"uni_impulse.png"))
+# plt 
+# ggsave(file.path(figure_directory,"uni_impulse.png"))
 
 plt+
   stat_summary(aes(group = 1), 
@@ -568,9 +545,10 @@ plt <- PF_impulse %>%
     y = "Ankle PF Impulse (N.m.s/BW)",
     title = "Ankle PF Impulse Across Periods",
   )
-plt
 
-ggsave(file.path(figure_directory,"bil_impulse.png"))
+# plt
+# 
+# ggsave(file.path(figure_directory,"bil_impulse.png"))
 
 plt+
   stat_summary(aes(group = 1), 
@@ -631,6 +609,8 @@ summary(period_comparisons)
 
 
 # Addendum
+Just some random things I am looking at.
+
 ## Pelvis Height
 ```{r, fig.width=10, fig.height=6}
 periods = c("Late Baseline", "Early Post Adapt")
