@@ -8,11 +8,10 @@ output_dir <- file.path(getwd(), "subject_reports")
 
 # Define list of subjects with deliberate case
 subjects <- c(
-  "s1", 
-  "S2",
-  "S3",
-  "S4",
-  "S5"
+  "S17",
+  "S18",
+  "S19",
+  "S20"
 ) 
 
 # Function to render for a single subject
@@ -32,7 +31,7 @@ render_subject_report <- function(subject) {
   tryCatch({
     message(glue("Attempting to render with params$subject = {subject}"))
     render(
-      input = "process_single_subject.Rmd",
+      input = "generate_single_subject_variables.Rmd",
       output_file = output_file,
       params = list(subject = subject),
       quiet = FALSE  # Changed to FALSE to see more detail
@@ -55,6 +54,6 @@ if (!dir.exists(output_dir)) {
 #   render_subject_report(subject)
 # }
 
-render_subject_report("S12")
+render_subject_report("S18")
 
 message("Processing complete!")
