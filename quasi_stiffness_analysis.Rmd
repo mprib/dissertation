@@ -1,0 +1,89 @@
+---
+title: "Ankle Quasi-stiffness"
+author: "Mac Prible"
+output: html_document
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo=FALSE)
+knitr::opts_chunk$set(error = TRUE)
+options(error = function() traceback(2))
+```
+
+
+# Import Data
+```{r, warning=FALSE, message=FALSE}
+library(tidyverse)
+library(lme4)
+library(emmeans)
+
+tidy_data_directory <- "C:\\Users\\Mac Prible\\OneDrive - The University of Texas at Austin\\research\\PDSV\\data\\dissertation\\v3d\\tidy_output"
+
+figure_directory <- "C:\\Users\\Mac Prible\\OneDrive - The University of Texas at Austin\\research\\PDSV\\data\\dissertation\\figures"
+
+mean_across_stance <- 
+  list.files(tidy_data_directory, pattern="*_mean_across_stance.csv") %>% 
+  map_df(~read_csv2(file.path(tidy_data_directory,.)))
+  
+```
+
+
+## Define Conditions
+
+```{r}
+UNI_CONDITION_LABELS <- c(
+  "sbt" = "Conventional SBT",
+  "ubp" = "Uni. Fast Brake",
+  "upp" = "Uni. Fast Prop"
+)
+
+BIL_CONDITION_LABELS <- c(
+  "bbp" = "Bil. Fast Brake",
+  "bpp" = "Bil. Fast Prop"
+)
+
+CONDITION_LABELS <- c(UNI_CONDITION_LABELS, BIL_CONDITION_LABELS)
+```
+
+```{r}
+all_periods <- mean_across_stance %>% distinct(period)
+all_periods
+pre_post_periods <- c("Late Baseline", "Early Post Adapt")
+# pre_post_periods <- c("Late Baseline", "end stop")
+
+```
+
+```{r}
+
+stiffness_data <- mean_across_stance %>% 
+  filter(axis == "X") %>%  # interested in DF
+  filter(period %in% pre_post_periods) %>%  # reduce the size of the data to manage
+  filter(variable %in% c("IPSI_ANKLE_ANGLE", "IPSI_ANKLE_MOMENT")) %>% 
+  pivot_wider(names_from = variable,values_from = value) %>% 
+  mutate(IPSI_ANKLE_MOMENT = -IPSI_ANKLE_MOMENT)
+  
+  
+
+```
+
+```{r fig.width=6, fig.height=10}
+
+stiffness_data %>% 
+  filter(subject == "S10") %>%
+  ggplot(aes(x = IPSI_ANKLE_ANGLE, y = IPSI_ANKLE_MOMENT, color = period))+
+  geom_path()+
+  facet_grid(rows = vars(condition), cols = vars(stance_side))
+
+```
+
+# Overall Mean Stiffness Curves
+
+```{r fig.width=6, fig.height=10}
+stiffness_data %>% 
+  group_by(condition, period, stance_side, axis, normalized_time) %>% 
+  summarize(IPSI_ANKLE_ANGLE = mean(IPSI_ANKLE_ANGLE),
+            IPSI_ANKLE_MOMENT = mean(IPSI_ANKLE_MOMENT)) %>% 
+  ggplot(aes(x = IPSI_ANKLE_ANGLE, y = IPSI_ANKLE_MOMENT, color = period))+
+  geom_path()+
+  facet_grid(rows = vars(condition), cols = vars(stance_side))
+```
+
