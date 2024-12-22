@@ -27,7 +27,7 @@ mean_across_stance <-
 ```
 
 
-## Define Conditions
+## Define Conditions and Periods
 
 ```{r}
 UNI_CONDITION_LABELS <- c(
@@ -42,9 +42,7 @@ BIL_CONDITION_LABELS <- c(
 )
 
 CONDITION_LABELS <- c(UNI_CONDITION_LABELS, BIL_CONDITION_LABELS)
-```
 
-```{r}
 all_periods <- mean_across_stance %>% distinct(period)
 all_periods
 pre_post_periods <- c("Late Baseline", "Early Post Adapt")
@@ -52,19 +50,23 @@ pre_post_periods <- c("Late Baseline", "Early Post Adapt")
 
 ```
 
+
+# Stiffness Data
+## Creation
 ```{r}
 
 stiffness_data <- mean_across_stance %>% 
   filter(axis == "X") %>%  # interested in DF
+  select(-axis) %>% 
   filter(period %in% pre_post_periods) %>%  # reduce the size of the data to manage
+  mutate(period = factor(period, levels=c("Late Baseline", "Early Post Adapt"))) %>% 
   filter(variable %in% c("IPSI_ANKLE_ANGLE", "IPSI_ANKLE_MOMENT")) %>% 
   pivot_wider(names_from = variable,values_from = value) %>% 
   mutate(IPSI_ANKLE_MOMENT = -IPSI_ANKLE_MOMENT)
-  
-  
 
 ```
 
+## Individual Quasi-Stiffness Curves
 ```{r fig.width=6, fig.height=10}
 
 stiffness_data %>% 
@@ -75,15 +77,212 @@ stiffness_data %>%
 
 ```
 
-# Overall Mean Stiffness Curves
+## Overall Mean Stiffness Curves
 
+Note that this does not really mean much because it is smoothing over the discrete phases. Just gives a general sense of things.
 ```{r fig.width=6, fig.height=10}
 stiffness_data %>% 
-  group_by(condition, period, stance_side, axis, normalized_time) %>% 
+  group_by(condition, period, stance_side, normalized_time) %>% 
   summarize(IPSI_ANKLE_ANGLE = mean(IPSI_ANKLE_ANGLE),
             IPSI_ANKLE_MOMENT = mean(IPSI_ANKLE_MOMENT)) %>% 
   ggplot(aes(x = IPSI_ANKLE_ANGLE, y = IPSI_ANKLE_MOMENT, color = period))+
   geom_path()+
   facet_grid(rows = vars(condition), cols = vars(stance_side))
+```
+
+# Key Event Identification
+
+This is where things get fun. Going to use mean_across_stance to pull out ankle angle, VGRF and APGRF. These will be used to identify 3 key phases:
+
+
+## Point 1: Entering Dorsiflexion
+
+First max plantarflexion angle. Note that given the definition of things here, this is calculated as the min. 
+
+### Calculate Point
+
+```{r}
+pt_1_entering_dorsiflexion <- stiffness_data %>% 
+  group_by(subject, condition, period, stance_side) %>%
+  filter(normalized_time<50) %>% 
+  slice(which.min(IPSI_ANKLE_ANGLE)) %>% 
+  rename(max_PF_angle_time = normalized_time,
+         max_PF_angle = IPSI_ANKLE_ANGLE) %>% 
+  mutate(pt_1_entering_dorsiflexion_time = max_PF_angle_time)
+```
+
+### Visually Check Results
+```{r, fig.width=6, fig.height=30}
+
+stiffness_data %>% 
+  # filter(subject == sample_subject) %>% 
+  ggplot(aes(x= normalized_time,y = IPSI_ANKLE_ANGLE))+
+  geom_path()+
+  geom_point(data = pt_1_entering_dorsiflexion,
+             aes(x =max_PF_angle_time, y = max_PF_angle),
+             color="green")+
+  facet_grid(rows = vars(subject, period), cols = vars(condition, stance_side)) 
+
+
+```
+
+
+## Point 2: Enter Dual Phase
+
+### Reformat GRF Data 
+
+```{r}
+grf_data <- mean_across_stance %>% 
+  filter(period %in% pre_post_periods) %>% 
+  filter(variable == "IPSI_GRF") %>% 
+  mutate(period = factor(period, levels=c("Late Baseline", "Early Post Adapt"))) %>% 
+  pivot_wider(names_from = axis, values_from = value) %>% 
+  # select(-X) %>% 
+  rename(VGRF = Z,
+         APGRF = Y) 
+```
+
+
+
+### Find Critical Points and Average
+```{r}
+find_local_min_VGRF_time <- function(data) {
+  # requires data be grouped: group_by(subject, condition, period, stance_side)
+  # Find peak in first half
+  first_peak <- data %>%
+    filter(normalized_time <= 50) %>%
+    slice(which.max(VGRF))
+  
+  # Find peak in second half
+  second_peak <- data %>%
+    filter(normalized_time > 50) %>%
+    slice(which.max(VGRF))
+  
+  # Find minimum between the two peaks
+  central_min <- data %>%
+    filter(normalized_time > first_peak$normalized_time,
+           normalized_time < second_peak$normalized_time) %>%
+    slice(which.min(VGRF)) %>%
+    select(normalized_time, VGRF) %>% 
+    rename(local_min_VGRF_time=normalized_time,
+           local_min_VGRF = VGRF)
+  
+  return(central_min)
+}
+
+
+find_APGRF_crossover_time <- function(data) {
+  # requires data be grouped: group_by(subject, condition, period, stance_side)
+  
+  # look in the middle range, find where the absolute value "bounces" off of zero (i.e. the minimum)
+  crossover <- data %>%    
+  filter(normalized_time >= 25, normalized_time <= 75) %>%
+  slice(which.min(abs(APGRF))) %>% 
+  select(normalized_time, APGRF) %>% 
+  rename(APGRF_crossover_time = normalized_time,
+         APGRF_crossover = APGRF)
+  
+  
+  return(crossover)
+ 
+} 
+
+pt_2_enter_dual_phase <- grf_data %>% 
+  group_by(subject, condition, period, stance_side) %>%
+  nest() %>%
+  mutate(local_min_VGRF_time = map(data, find_local_min_VGRF_time),
+         APGRF_crossover_time = map(data, find_APGRF_crossover_time)) %>%
+  select(-data) %>% 
+  unnest(cols = c(local_min_VGRF_time, APGRF_crossover_time)) %>% 
+  mutate(pt_2_enter_dual_phase_time = (APGRF_crossover_time + local_min_VGRF_time)/2) %>% 
+  ungroup()
+
+```
+
+
+### Visually Check Results
+```{r, fig.width=6, fig.height=30}
+
+# VGRF plot
+p1 <- grf_data  %>% 
+  # filter(subject==sample_subject) %>%
+  ggplot() +
+  facet_grid(rows = vars(subject, period), cols = vars(condition, stance_side)) +
+  geom_line(aes(x = normalized_time, y = VGRF)) +
+  geom_point(data = pt_2_enter_dual_phase,
+             aes(x = local_min_VGRF_time, y = local_min_VGRF), 
+             color = "red", size = 2)
+
+# APGRF plot
+p2 <- grf_data %>% 
+  # filter(subject==sample_subject) %>%
+  ggplot() +
+  facet_grid(rows = vars(subject, period), cols = vars(condition, stance_side)) +
+  geom_line(aes(x = normalized_time, y = APGRF)) +
+  geom_point(data = pt_2_enter_dual_phase,
+             aes(x = APGRF_crossover_time, y = APGRF_crossover), 
+             color = "blue", size = 2)
+# Display plots
+p1
+p2  
+  
+```
+
+
+## Point 3: Enter Falling
+
+Midpoint of peak DF angle and moment. Keep in mind that this must happen AFTER point 2, so I can use that to narrow things down for the handful of weird people.
+
+
+```{r, fig.width=6, fig.height=30}
+
+peak_df_angle <- stiffness_data %>% 
+  group_by(subject, condition, period, stance_side) %>%
+  left_join(pt_2_enter_dual_phase) %>% 
+  filter(normalized_time>pt_2_enter_dual_phase_time) %>% 
+  slice(which.max(IPSI_ANKLE_ANGLE)) %>% 
+  rename(peak_df_angle_time = normalized_time,
+         peak_df_angle = IPSI_ANKLE_ANGLE)
+  
+stiffness_data %>% 
+  ggplot(aes(x= normalized_time,y = IPSI_ANKLE_ANGLE))+
+  geom_path()+
+  geom_point(data = peak_df_angle,
+             aes(x =peak_df_angle_time, y = peak_df_angle),
+             color="blue")+
+  facet_grid(rows = vars(subject, period), cols = vars(condition, stance_side)) 
+
+peak_df_moment <- stiffness_data %>% 
+  group_by(subject, condition, period, stance_side) %>%
+  left_join(pt_2_enter_dual_phase) %>% 
+  filter(normalized_time>pt_2_enter_dual_phase_time) %>% 
+  slice(which.max(IPSI_ANKLE_MOMENT)) %>% 
+  rename(peak_df_moment_time = normalized_time,
+         peak_df_moment = IPSI_ANKLE_MOMENT)
+
+stiffness_data %>% 
+  ggplot(aes(x= normalized_time,y = IPSI_ANKLE_MOMENT))+
+  geom_path()+
+  geom_point(data = peak_df_moment,
+             aes(x =peak_df_moment_time, y = peak_df_moment),
+             color="red")+
+  facet_grid(rows = vars(subject, period), cols = vars(condition, stance_side)) 
+
+
+pt_3_enter_falling <- peak_df_angle %>% 
+  left_join(peak_df_moment) %>% 
+  mutate(pt_3_enter_falling = (peak_df_angle_time + peak_df_moment_time)/2)
+  
+```
+
+Note that Pt 4 is toe off, which is just 100%.
+
+
+# Merge Key Points into single Dataframe
+
+```{r}
+
+
+
 ```
 

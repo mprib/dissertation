@@ -8,10 +8,26 @@ output_dir <- file.path(getwd(), "subject_reports")
 
 # Define list of subjects with deliberate case
 subjects <- c(
-  "S17",
+  "s1",				
+  "S10",				
+  "S11",			
+  "S12",				
+  "S13",				
+  "S14",				
+  "S15",				
+  "S16",				
+  "S17",				
   "S18",
-  "S19",
-  "S20"
+  "S19",				
+  "S2",				
+  "S20",				
+  "S3",				
+  "S4",				
+  "S5",				
+  "S6",				
+  "S7",				
+  "S8",				
+  "S9"
 ) 
 
 # Function to render for a single subject
@@ -49,11 +65,11 @@ if (!dir.exists(output_dir)) {
   dir.create(output_dir, recursive = TRUE)
 }
 
-# # Process subjects one at a time
-# for(subject in subjects) {
-#   render_subject_report(subject)
-# }
+# Process subjects one at a time
+for(subject in subjects) {
+  render_subject_report(subject)
+}
 
-render_subject_report("S18")
+# render_subject_report("S18")
 
 message("Processing complete!")
