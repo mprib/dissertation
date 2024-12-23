@@ -14,11 +14,13 @@ options(error = function() traceback(2))
 ```{r, warning=FALSE, message=FALSE}
 library(tidyverse)
 library(lme4)
+library(lmerTest)  # for p-values in mixed models
 library(emmeans)
+library(here)
 
-tidy_data_directory <- "C:\\Users\\Mac Prible\\OneDrive - The University of Texas at Austin\\research\\PDSV\\data\\dissertation\\v3d\\tidy_output"
-
-figure_directory <- "C:\\Users\\Mac Prible\\OneDrive - The University of Texas at Austin\\research\\PDSV\\data\\dissertation\\figures"
+dissertation_root <- normalizePath(file.path(here(),".."))
+tidy_data_directory <- file.path(dissertation_root, "v3d", "tidy_output")
+figure_directory <- file.path(dissertation_root, "figures")
 
 mean_across_stance <- 
   list.files(tidy_data_directory, pattern="*_mean_across_stance.csv") %>% 
@@ -77,23 +79,13 @@ stiffness_data %>%
 
 ```
 
-## Overall Mean Stiffness Curves
-
-Note that this does not really mean much because it is smoothing over the discrete phases. Just gives a general sense of things.
-```{r fig.width=6, fig.height=10}
-stiffness_data %>% 
-  group_by(condition, period, stance_side, normalized_time) %>% 
-  summarize(IPSI_ANKLE_ANGLE = mean(IPSI_ANKLE_ANGLE),
-            IPSI_ANKLE_MOMENT = mean(IPSI_ANKLE_MOMENT)) %>% 
-  ggplot(aes(x = IPSI_ANKLE_ANGLE, y = IPSI_ANKLE_MOMENT, color = period))+
-  geom_path()+
-  facet_grid(rows = vars(condition), cols = vars(stance_side))
-```
-
 # Key Event Identification
 
-This is where things get fun. Going to use mean_across_stance to pull out ankle angle, VGRF and APGRF. These will be used to identify 3 key phases:
+Using 3 phases from Molitor & Neptune (2024) Table 1: 
 
+1. Dorsiflexion
+2. Dual Flexion
+3. Falling
 
 ## Point 1: Entering Dorsiflexion
 
@@ -130,6 +122,8 @@ stiffness_data %>%
 ## Point 2: Enter Dual Phase
 
 ### Reformat GRF Data 
+
+Phase defined by APGRF and VGRF. Isolate these variables and rename for clarity. 
 
 ```{r}
 grf_data <- mean_across_stance %>% 
@@ -231,10 +225,11 @@ grf_data %>%
 
 ## Point 3: Enter Falling
 
-Midpoint of peak DF angle and moment. Keep in mind that this must happen AFTER point 2, so I can use that to narrow things down for the handful of weird people.
+Midpoint of peak DF angle and moment. Keep in mind that this must happen AFTER point 2, so that event time can be used to narrow the window of possibility.
 
+### Find Critical Points and Average
 
-```{r, fig.width=6, fig.height=30}
+```{r}
 
 peak_df_angle <- stiffness_data %>% 
   group_by(subject, condition, period, stance_side) %>%
@@ -243,14 +238,6 @@ peak_df_angle <- stiffness_data %>%
   slice(which.max(IPSI_ANKLE_ANGLE)) %>% 
   rename(peak_df_angle_time = normalized_time,
          peak_df_angle = IPSI_ANKLE_ANGLE)
-  
-stiffness_data %>% 
-  ggplot(aes(x= normalized_time,y = IPSI_ANKLE_ANGLE))+
-  geom_path()+
-  geom_point(data = peak_df_angle,
-             aes(x =peak_df_angle_time, y = peak_df_angle),
-             color="blue")+
-  facet_grid(rows = vars(subject, period), cols = vars(condition, stance_side)) 
 
 peak_df_moment <- stiffness_data %>% 
   group_by(subject, condition, period, stance_side) %>%
@@ -260,6 +247,26 @@ peak_df_moment <- stiffness_data %>%
   rename(peak_df_moment_time = normalized_time,
          peak_df_moment = IPSI_ANKLE_MOMENT)
 
+
+pt_3_enter_falling <- peak_df_angle %>% 
+  left_join(peak_df_moment) %>% 
+  select(-starts_with("pt_")) %>%  # don't want part 2 cluttering up
+  mutate(pt_3_enter_falling_time = (peak_df_angle_time + peak_df_moment_time)/2)
+  
+```
+
+
+### Visually Check Results
+```{r, fig.width=6, fig.height=30}
+  
+stiffness_data %>% 
+  ggplot(aes(x= normalized_time,y = IPSI_ANKLE_ANGLE))+
+  geom_path()+
+  geom_point(data = peak_df_angle,
+             aes(x =peak_df_angle_time, y = peak_df_angle),
+             color="blue")+
+  facet_grid(rows = vars(subject, period), cols = vars(condition, stance_side)) 
+
 stiffness_data %>% 
   ggplot(aes(x= normalized_time,y = IPSI_ANKLE_MOMENT))+
   geom_path()+
@@ -267,12 +274,6 @@ stiffness_data %>%
              aes(x =peak_df_moment_time, y = peak_df_moment),
              color="red")+
   facet_grid(rows = vars(subject, period), cols = vars(condition, stance_side)) 
-
-
-pt_3_enter_falling <- peak_df_angle %>% 
-  left_join(peak_df_moment) %>% 
-  select(-starts_with("pt_")) %>%  # don't want part 2 cluttering up
-  mutate(pt_3_enter_falling_time = (peak_df_angle_time + peak_df_moment_time)/2)
   
 ```
 
@@ -344,12 +345,14 @@ phase_endpoints <- stiffness_with_phase %>%
 phase_lines <- phase_endpoints %>%
   left_join(phase_stiffness)
 
+inspect_subject <- "S2"
+
 # Plot with proper intercepts
 stiffness_with_phase %>%
-  filter(subject == "S4") %>% 
+  filter(subject == inspect_subject) %>% 
   ggplot(aes(x = IPSI_ANKLE_ANGLE, y = IPSI_ANKLE_MOMENT)) +
   geom_path(aes(color = Phase)) +
-  geom_segment(data = phase_lines %>% filter(subject == "S4"),
+  geom_segment(data = phase_lines %>% filter(subject == inspect_subject),
                aes(x = x_start, 
                    xend = x_end,
                    y = intercept + stiffness * x_start,
@@ -361,26 +364,17 @@ stiffness_with_phase %>%
   theme_minimal()
 ```
 
+# Does the symmetrical PDSV alter ankle stiffness?
 ```{r}
-phase_stiffness %>%
-  filter(condition %in% c("bbp", "bpp")) %>% 
-  ggplot(aes(x = Phase, y = stiffness, color = period)) +
-  geom_point(position = position_dodge(width = 0.3), size = 1) +
-  facet_grid(rows = vars(condition), cols = vars(stance_side)) +
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  labs(y = "Stiffness (k)", 
-       color = "Stance Side")
 
-
-
-# Mac: this is something that you are doing for convenience but is really dirty
 phase_stiffness_for_test <- phase_stiffness %>% 
-  filter(subject != "S8") %>% # seems to be a problem for some reason
+  # filter(stance_side == "left") %>%
+  filter(subject != "S8") %>% # right ankle angle seems weird even in late baseline;
+  # filter(subject != "S4") %>% 
   ungroup() %>% 
-  filter(condition %in% c("bbp", "bpp")) %>% 
+  filter(condition %in% c("bbp", "bpp")) %>%
   group_by(subject, condition, period, Phase) %>% 
-  summarize(stiffness = mean(stiffness)) 
+  summarize(stiffness = mean(stiffness)) # average across both sides to reduce random noise.
 
 phase_stiffness_for_test %>%
   group_by(subject, condition, period, Phase) %>% 
@@ -396,8 +390,6 @@ phase_stiffness_for_test %>%
 ```
 
 ```{r}
-library(lme4)
-library(lmerTest)  # for p-values in mixed models
 
 # Run separate models for each Phase since they represent different biomechanical events
 for(current_phase in unique(phase_stiffness_for_test$Phase)) {
@@ -450,38 +442,3 @@ cat("\nFalling Phase - Within Condition Comparisons:\n")
 falling_emm <- emmeans(falling_model, ~ period | condition)  # Note the | operator
 pairs(falling_emm, adjust = "bonf")
 ```
-
-# thoughts for tomorrow
-
-Here's a summary plan for tomorrow:
-
-ANALYSIS PLAN - Bilateral Conditions Only
-----------------------------------------
-1. Data Preprocessing:
-- Filter for only conditions starting with 'b'
-- Remove subjects with low number of points (define threshold)
-- Average mean_stance data across sides at the beginning of analysis
-
-2. Main Analysis Steps:
-- Calculate phase stiffness using averaged bilateral data
-- Run mixed effects models for each phase
-- Conduct within-condition post-hoc comparisons
-- Examine Dual Flexion phase in more detail
-
-3. Code Structure:
-```r
-# Initial data prep
-bilateral_data <- original_data %>%
-  filter(str_detect(condition, "^b")) %>%
-  group_by([subject, other_relevant_vars]) %>%
-  # Add minimum points threshold
-  # Average across sides
-  
-# Continue with similar analysis structure from today
-# but using this newly preprocessed dataset
-```
-
-4. Questions to Consider:
-- What threshold for minimum points?
-- Does averaging across sides reduce variability?
-- Does this change our understanding of the Dual Flexion results?
