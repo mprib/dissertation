@@ -69,6 +69,8 @@ stiffness_data <- mean_across_stance %>%
 ```
 
 ## Individual Quasi-Stiffness Curves
+
+Examining a test case.
 ```{r fig.width=6, fig.height=10}
 
 stiffness_data %>% 
@@ -76,6 +78,23 @@ stiffness_data %>%
   ggplot(aes(x = IPSI_ANKLE_ANGLE, y = IPSI_ANKLE_MOMENT, color = period))+
   geom_path()+
   facet_grid(rows = vars(condition), cols = vars(stance_side))
+
+```
+
+# Very High Level 
+
+This is an extremely cursory examination of how subjects respond in aggregate. It ignores the specifics of each phase. In general, it appears that the Bilateral Fast Prop condition (bpp) causes the ankle to get more stiff, and in the Bilateral Fast Brake condition it becomes less stiff. This will be tested in more granular detail at the end of the workbook.
+
+```{r}
+
+stiffness_data %>% 
+  group_by(condition, period, stance_side, normalized_time) %>% 
+  summarize(IPSI_ANKLE_ANGLE = mean(IPSI_ANKLE_ANGLE),
+            IPSI_ANKLE_MOMENT = mean(IPSI_ANKLE_MOMENT)) %>% 
+  ggplot(aes(x = IPSI_ANKLE_ANGLE, y = IPSI_ANKLE_MOMENT, color = period))+
+  geom_path()+
+  facet_grid(rows = vars(condition), cols = vars(stance_side))
+
 
 ```
 
