@@ -188,7 +188,7 @@ find_APGRF_crossover_time <- function(data) {
 } 
 
 pt_2_enter_dual_phase <- grf_data %>% 
-  group_by(subject, condition, period, stance_side) %>%
+  group_by(subject,order, condition, period, stance_side) %>%
   nest() %>%
   mutate(local_min_VGRF_time = map(data, find_local_min_VGRF_time),
          APGRF_crossover_time = map(data, find_APGRF_crossover_time)) %>%
@@ -271,7 +271,8 @@ stiffness_data %>%
 
 pt_3_enter_falling <- peak_df_angle %>% 
   left_join(peak_df_moment) %>% 
-  mutate(pt_3_enter_falling = (peak_df_angle_time + peak_df_moment_time)/2)
+  select(-starts_with("pt_")) %>%  # don't want part 2 cluttering up
+  mutate(pt_3_enter_falling_time = (peak_df_angle_time + peak_df_moment_time)/2)
   
 ```
 
@@ -281,8 +282,197 @@ Note that Pt 4 is toe off, which is just 100%.
 # Merge Key Points into single Dataframe
 
 ```{r}
-
-
+  
+all_key_points <- pt_1_entering_dorsiflexion %>% 
+  left_join(pt_2_enter_dual_phase, by = join_by(subject, order, condition, period, stance_side)) %>%
+  left_join(pt_3_enter_falling, by = join_by(subject, order, condition, period, stance_side)) %>% 
+  select(subject, 
+         order, 
+         condition, 
+         period, 
+         stance_side,
+         starts_with("pt_"))
 
 ```
 
+# Assign Phase Based on Key Points
+
+
+```{r}
+
+stiffness_with_phase <- stiffness_data %>% 
+  ungroup() %>% 
+  left_join(all_key_points) %>% 
+  mutate(Phase = case_when(
+    normalized_time < pt_1_entering_dorsiflexion_time ~ "Initial",
+    normalized_time >= pt_1_entering_dorsiflexion_time & normalized_time < pt_2_enter_dual_phase_time ~ "Dorsiflexion",
+    normalized_time >= pt_2_enter_dual_phase_time & normalized_time < pt_3_enter_falling_time ~ "Dual Flexion",
+    normalized_time >= pt_3_enter_falling_time ~ "Falling",
+    TRUE ~ "None"  # catch any other cases
+  )) %>% 
+  mutate(Phase = factor(Phase, levels = c("Initial", "Dorsiflexion", "Dual Flexion", "Falling", "None")))
+  
+  
+```
+
+```{r}
+# Update phase_stiffness to include intercepts
+phase_stiffness <- stiffness_with_phase %>%
+  filter(Phase != "Initial") %>% 
+  group_by(subject, condition, period, stance_side, Phase) %>%
+  summarise(
+    stiffness = coef(lm(IPSI_ANKLE_MOMENT ~ IPSI_ANKLE_ANGLE))[2],  # slope
+    intercept = coef(lm(IPSI_ANKLE_MOMENT ~ IPSI_ANKLE_ANGLE))[1],   # intercept
+    r_squared = summary(lm(IPSI_ANKLE_MOMENT ~ IPSI_ANKLE_ANGLE))$r.squared
+  ) %>%
+  ungroup()
+
+# Update the plotting code to use the calculated intercepts
+phase_endpoints <- stiffness_with_phase %>%
+  group_by(subject, condition, period, stance_side, Phase) %>%
+  summarize(
+    x_start = min(IPSI_ANKLE_ANGLE),
+    x_end = max(IPSI_ANKLE_ANGLE)
+  )
+
+phase_lines <- phase_endpoints %>%
+  left_join(phase_stiffness)
+
+# Plot with proper intercepts
+stiffness_with_phase %>%
+  filter(subject == "S4") %>% 
+  ggplot(aes(x = IPSI_ANKLE_ANGLE, y = IPSI_ANKLE_MOMENT)) +
+  geom_path(aes(color = Phase)) +
+  geom_segment(data = phase_lines %>% filter(subject == "S4"),
+               aes(x = x_start, 
+                   xend = x_end,
+                   y = intercept + stiffness * x_start,
+                   yend = intercept + stiffness * x_end,
+                   color = Phase),
+               linetype = "dashed",
+               size = 1) +
+  facet_grid(rows = vars(condition), cols = vars(stance_side, period)) +
+  theme_minimal()
+```
+
+```{r}
+phase_stiffness %>%
+  filter(condition %in% c("bbp", "bpp")) %>% 
+  ggplot(aes(x = Phase, y = stiffness, color = period)) +
+  geom_point(position = position_dodge(width = 0.3), size = 1) +
+  facet_grid(rows = vars(condition), cols = vars(stance_side)) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(y = "Stiffness (k)", 
+       color = "Stance Side")
+
+phase_stiffness %>%
+  filter(subject != "S8") %>%
+  # filter(condition %in% c("bbp", "bpp")) %>% 
+  group_by(subject, condition, period, Phase) %>% 
+  summarize(stiffness = mean(stiffness)) %>% 
+  ggplot(aes(x = Phase, y = stiffness, color = period)) +
+  geom_point(position = position_dodge(width = 0.3), size = 1) +
+  facet_grid(rows = vars(condition)) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(y = "Stiffness (k)", 
+       color = "Stance Side")
+
+
+# Mac: this is something that you are doing for convenience but is really dirty
+phase_stiffness_for_test <- phase_stiffness %>% 
+  filter(subject != "S8")
+
+```
+
+```{r}
+library(lme4)
+library(lmerTest)  # for p-values in mixed models
+
+# Run separate models for each Phase since they represent different biomechanical events
+for(current_phase in unique(phase_stiffness_for_test$Phase)) {
+  
+  cat("\nAnalysis for", current_phase, "phase:\n")
+  
+  # Subset data for current phase
+  phase_data <- phase_stiffness_for_test %>%
+    filter(Phase == current_phase,
+           condition %in% c("bbp", "bpp"))
+  
+  # Fit mixed model
+  model <- lmer(stiffness ~ period * condition + (1|subject), 
+                data = phase_data)
+  
+  # Print ANOVA results
+  print(anova(model))
+}
+```
+
+```{r}
+
+
+# For Dorsiflexion phase
+dorsi_data <- phase_stiffness_for_test %>%
+  filter(Phase == "Dorsiflexion",
+         condition %in% c("bbp", "bpp"))
+dorsi_model <- lmer(stiffness ~ period * condition + (1|subject), data = dorsi_data)
+
+cat("\nDorsiflexion Phase - Within Condition Comparisons:\n")
+dorsi_emm <- emmeans(dorsi_model, ~ period | condition)  # Note the | operator
+pairs(dorsi_emm, adjust = "bonf")
+
+# For Dual Flexion Phase
+dual_flexion_data <- phase_stiffness_for_test %>%
+  filter(Phase == "Dual Flexion",
+         condition %in% c("bbp", "bpp"))
+dual_flexion_model <- lmer(stiffness ~ period * condition + (1|subject), data = dual_flexion_data)
+cat("\nDual Flexion Phase - Within Condition Comparisons:\n")
+dual_flexion_emm <- emmeans(dual_flexion_model, ~ period | condition)  # Note the | operator
+pairs(dual_flexion_emm, adjust = "bonf")
+
+# For Falling phase
+falling_data <- phase_stiffness_for_test %>%
+  filter(Phase == "Falling",
+         condition %in% c("bbp", "bpp"))
+falling_model <- lmer(stiffness ~ period * condition + (1|subject), data = falling_data)
+
+cat("\nFalling Phase - Within Condition Comparisons:\n")
+falling_emm <- emmeans(falling_model, ~ period | condition)  # Note the | operator
+pairs(falling_emm, adjust = "bonf")
+```
+
+# thoughts for tomorrow
+
+Here's a summary plan for tomorrow:
+
+ANALYSIS PLAN - Bilateral Conditions Only
+----------------------------------------
+1. Data Preprocessing:
+- Filter for only conditions starting with 'b'
+- Remove subjects with low number of points (define threshold)
+- Average mean_stance data across sides at the beginning of analysis
+
+2. Main Analysis Steps:
+- Calculate phase stiffness using averaged bilateral data
+- Run mixed effects models for each phase
+- Conduct within-condition post-hoc comparisons
+- Examine Dual Flexion phase in more detail
+
+3. Code Structure:
+```r
+# Initial data prep
+bilateral_data <- original_data %>%
+  filter(str_detect(condition, "^b")) %>%
+  group_by([subject, other_relevant_vars]) %>%
+  # Add minimum points threshold
+  # Average across sides
+  
+# Continue with similar analysis structure from today
+# but using this newly preprocessed dataset
+```
+
+4. Questions to Consider:
+- What threshold for minimum points?
+- Does averaging across sides reduce variability?
+- Does this change our understanding of the Dual Flexion results?
