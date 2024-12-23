@@ -201,10 +201,12 @@ pt_2_enter_dual_phase <- grf_data %>%
 
 
 ### Visually Check Results
+
+In plots below it appears that S9 lacks a "double hump" in VGRF for one of the trials. The code here effectively just uses 50% for that point, which I think is somewhat reasonable since it's then just getting averaged in with the APGRF crossover point. Might also be reasonable to throw out any measurements without a typical double hump.
 ```{r, fig.width=6, fig.height=30}
 
 # VGRF plot
-p1 <- grf_data  %>% 
+grf_data  %>% 
   # filter(subject==sample_subject) %>%
   ggplot() +
   facet_grid(rows = vars(subject, period), cols = vars(condition, stance_side)) +
@@ -214,7 +216,7 @@ p1 <- grf_data  %>%
              color = "red", size = 2)
 
 # APGRF plot
-p2 <- grf_data %>% 
+grf_data %>% 
   # filter(subject==sample_subject) %>%
   ggplot() +
   facet_grid(rows = vars(subject, period), cols = vars(condition, stance_side)) +
@@ -222,10 +224,8 @@ p2 <- grf_data %>%
   geom_point(data = pt_2_enter_dual_phase,
              aes(x = APGRF_crossover_time, y = APGRF_crossover), 
              color = "blue", size = 2)
-# Display plots
-p1
-p2  
-  
+
+
 ```
 
 
@@ -315,6 +315,7 @@ stiffness_with_phase <- stiffness_data %>%
   
 ```
 
+# Calculate All Quasi-stiffnesses
 ```{r}
 # Update phase_stiffness to include intercepts
 phase_stiffness <- stiffness_with_phase %>%
@@ -327,6 +328,11 @@ phase_stiffness <- stiffness_with_phase %>%
   ) %>%
   ungroup()
 
+
+```
+
+# Visually Check Quasi-stiffness Test Cases
+```{r}
 # Update the plotting code to use the calculated intercepts
 phase_endpoints <- stiffness_with_phase %>%
   group_by(subject, condition, period, stance_side, Phase) %>%
