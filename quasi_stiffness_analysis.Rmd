@@ -366,9 +366,17 @@ phase_stiffness %>%
   labs(y = "Stiffness (k)", 
        color = "Stance Side")
 
-phase_stiffness %>%
-  filter(subject != "S8") %>%
-  # filter(condition %in% c("bbp", "bpp")) %>% 
+
+
+# Mac: this is something that you are doing for convenience but is really dirty
+phase_stiffness_for_test <- phase_stiffness %>% 
+  filter(subject != "S8") %>% # seems to be a problem for some reason
+  ungroup() %>% 
+  filter(condition %in% c("bbp", "bpp")) %>% 
+  group_by(subject, condition, period, Phase) %>% 
+  summarize(stiffness = mean(stiffness)) 
+
+phase_stiffness_for_test %>%
   group_by(subject, condition, period, Phase) %>% 
   summarize(stiffness = mean(stiffness)) %>% 
   ggplot(aes(x = Phase, y = stiffness, color = period)) +
@@ -377,12 +385,7 @@ phase_stiffness %>%
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
   labs(y = "Stiffness (k)", 
-       color = "Stance Side")
-
-
-# Mac: this is something that you are doing for convenience but is really dirty
-phase_stiffness_for_test <- phase_stiffness %>% 
-  filter(subject != "S8")
+       color = "Period")
 
 ```
 
