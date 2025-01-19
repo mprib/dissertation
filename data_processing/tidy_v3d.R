@@ -19,6 +19,7 @@ tsv_to_tidy <- function(data_directory, file_name) {
   stance_side <- file_name_info[2]  # relies on naming convention
   input_path <- file.path(data_directory, file_name)
   
+  print(paste("file.path:", input_path))
   #browser()
   
   print(paste("Begin processing:",file_name))
