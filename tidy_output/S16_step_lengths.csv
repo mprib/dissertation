@@ -1,0 +1,421 @@
+subject;order;condition;start_stop;stance_side;step;normalized_time;last_step;period;IPSI_HEEL;CONTRA_HEEL;TIME;step_length
+S16;1;bpp;start;left;1;1;58;begin start;-0,21237;0,33536;0,55;0,54773
+S16;1;bpp;start;left;2;1;58;begin start;-0,22657;0,33878;1,74;0,56535
+S16;1;bpp;start;left;3;1;58;begin start;-0,19823;0,30750;2,88;0,50573
+S16;1;bpp;start;left;4;1;58;begin start;-0,16683;0,38573;4,09;0,55256
+S16;1;bpp;start;left;5;1;58;begin start;-0,17358;0,36316;5,26;0,53674
+S16;1;bpp;start;left;21;1;58;Late Baseline;-0,12950;0,42815;24,31;0,55765
+S16;1;bpp;start;left;22;1;58;Late Baseline;-0,10369;0,47899;25,54;0,58268
+S16;1;bpp;start;left;23;1;58;Late Baseline;-0,13836;0,41198;26,69;0,55034
+S16;1;bpp;start;left;24;1;58;Late Baseline;-0,14684;0,42597;27,89;0,57281
+S16;1;bpp;start;left;25;1;58;Late Baseline;-0,13842;0,42276;29,09;0,56118
+S16;1;bpp;start;left;28;1;58;Early Adapt;-0,11199;0,41337;32,15;0,52536
+S16;1;bpp;start;left;29;1;58;Early Adapt;-0,11486;0,37348;33,03;0,48834
+S16;1;bpp;start;left;30;1;58;Early Adapt;-0,13353;0,41372;33,95;0,54725
+S16;1;bpp;start;left;31;1;58;Early Adapt;-0,19467;0,45292;34,89;0,64759
+S16;1;bpp;start;left;32;1;58;Early Adapt;-0,19425;0,46372;35,85;0,65797
+S16;1;bpp;start;left;53;1;58;end start;-0,21506;0,31055;55,94;0,52561
+S16;1;bpp;start;left;54;1;58;end start;-0,20152;0,34068;56,88;0,54220
+S16;1;bpp;start;left;55;1;58;end start;-0,23019;0,33251;57,83;0,56270
+S16;1;bpp;start;left;56;1;58;end start;-0,21769;0,35187;58,77;0,56956
+S16;1;bpp;start;left;57;1;58;end start;-0,21470;0,37233;59,71;0,58703
+S16;1;bpp;start;left;58;1;58;end start;-0,19569;0,38687;60,66;0,58256
+S16;1;bpp;stop;left;1;1;60;begin stop;-0,24855;0,43924;0,30;0,68779
+S16;1;bpp;stop;left;2;1;60;begin stop;-0,22457;0,42580;1,32;0,65037
+S16;1;bpp;stop;left;3;1;60;begin stop;-0,20102;0,47150;2,36;0,67252
+S16;1;bpp;stop;left;4;1;60;begin stop;-0,25998;0,36359;3,32;0,62357
+S16;1;bpp;stop;left;5;1;60;begin stop;-0,21498;0,34324;4,29;0,55822
+S16;1;bpp;stop;left;26;1;60;Late Adapt;-0,10745;0,55098;25,11;0,65843
+S16;1;bpp;stop;left;27;1;60;Late Adapt;-0,16675;0,46763;26,08;0,63438
+S16;1;bpp;stop;left;28;1;60;Late Adapt;-0,17061;0,47692;27,09;0,64753
+S16;1;bpp;stop;left;29;1;60;Late Adapt;-0,19573;0,44101;28,07;0,63674
+S16;1;bpp;stop;left;30;1;60;Late Adapt;-0,20956;0,39801;29,05;0,60757
+S16;1;bpp;stop;left;33;1;60;Early Post Adapt;-0,28193;0,18994;32,00;0,47187
+S16;1;bpp;stop;left;34;1;60;Early Post Adapt;-0,36405;-0,01186;32,82;0,35219
+S16;1;bpp;stop;left;35;1;60;Early Post Adapt;-0,31984;0,09224;33,70;0,41208
+S16;1;bpp;stop;left;36;1;60;Early Post Adapt;-0,20770;0,21275;34,66;0,42045
+S16;1;bpp;stop;left;37;1;60;Early Post Adapt;-0,20043;0,27080;35,66;0,47123
+S16;1;bpp;stop;left;55;1;60;end stop;0,00916;0,56524;53,86;0,55608
+S16;1;bpp;stop;left;56;1;60;end stop;0,04304;0,56611;55,00;0,52307
+S16;1;bpp;stop;left;57;1;60;end stop;0,07974;0,56238;56,12;0,48264
+S16;1;bpp;stop;left;58;1;60;end stop;0,03690;0,56257;57,19;0,52567
+S16;1;bpp;stop;left;59;1;60;end stop;0,07200;0,58850;58,33;0,51650
+S16;1;bpp;stop;left;60;1;60;end stop;-0,03111;0,52370;59,41;0,55481
+S16;2;ubp;start;left;1;1;62;begin start;-0,17674;0,37147;0,74;0,54821
+S16;2;ubp;start;left;2;1;62;begin start;-0,19264;0,35403;1,87;0,54667
+S16;2;ubp;start;left;3;1;62;begin start;-0,21430;0,32165;2,98;0,53595
+S16;2;ubp;start;left;4;1;62;begin start;-0,18595;0,32849;4,12;0,51444
+S16;2;ubp;start;left;5;1;62;begin start;-0,16410;0,37471;5,29;0,53881
+S16;2;ubp;start;left;22;1;62;Late Baseline;-0,25143;0,27097;24,82;0,52240
+S16;2;ubp;start;left;23;1;62;Late Baseline;-0,21474;0,29331;25,97;0,50805
+S16;2;ubp;start;left;24;1;62;Late Baseline;-0,14548;0,37257;27,12;0,51805
+S16;2;ubp;start;left;25;1;62;Late Baseline;-0,11579;0,39182;28,24;0,50761
+S16;2;ubp;start;left;26;1;62;Late Baseline;-0,09339;0,41363;29,34;0,50702
+S16;2;ubp;start;left;29;1;62;Early Adapt;0,06335;0,12867;32,09;0,06532
+S16;2;ubp;start;left;30;1;62;Early Adapt;-0,20046;0,29097;32,81;0,49143
+S16;2;ubp;start;left;31;1;62;Early Adapt;-0,07520;0,10728;33,65;0,18248
+S16;2;ubp;start;left;32;1;62;Early Adapt;-0,11604;0,27079;34,43;0,38683
+S16;2;ubp;start;left;33;1;62;Early Adapt;-0,16391;0,21850;35,21;0,38241
+S16;2;ubp;start;left;57;1;62;end start;-0,17512;0,31458;56,14;0,48970
+S16;2;ubp;start;left;58;1;62;end start;-0,21149;0,23700;57,03;0,44849
+S16;2;ubp;start;left;59;1;62;end start;-0,18364;0,30970;57,95;0,49334
+S16;2;ubp;start;left;60;1;62;end start;-0,14928;0,27023;58,89;0,41951
+S16;2;ubp;start;left;61;1;62;end start;-0,16444;0,35241;59,80;0,51685
+S16;2;ubp;start;left;62;1;62;end start;-0,22733;0,25656;60,72;0,48389
+S16;2;ubp;stop;left;1;1;60;begin stop;-0,27416;0,31887;0,22;0,59303
+S16;2;ubp;stop;left;2;1;60;begin stop;-0,30529;0,28811;1,23;0,59340
+S16;2;ubp;stop;left;3;1;60;begin stop;-0,28136;0,30574;2,26;0,58710
+S16;2;ubp;stop;left;4;1;60;begin stop;-0,31263;0,27021;3,27;0,58284
+S16;2;ubp;stop;left;5;1;60;begin stop;-0,31838;0,23695;4,24;0,55533
+S16;2;ubp;stop;left;27;1;60;Late Adapt;-0,20769;0,36569;26,11;0,57338
+S16;2;ubp;stop;left;28;1;60;Late Adapt;-0,24728;0,34195;27,10;0,58923
+S16;2;ubp;stop;left;29;1;60;Late Adapt;-0,22627;0,33827;28,08;0,56454
+S16;2;ubp;stop;left;30;1;60;Late Adapt;-0,19758;0,36494;29,08;0,56252
+S16;2;ubp;stop;left;31;1;60;Late Adapt;-0,16956;0,37168;30,05;0,54124
+S16;2;ubp;stop;left;34;1;60;Early Post Adapt;-0,16560;0,37070;32,92;0,53630
+S16;2;ubp;stop;left;35;1;60;Early Post Adapt;-0,12443;0,40956;33,86;0,53399
+S16;2;ubp;stop;left;36;1;60;Early Post Adapt;-0,07881;0,45826;34,86;0,53707
+S16;2;ubp;stop;left;37;1;60;Early Post Adapt;-0,08022;0,42411;35,85;0,50433
+S16;2;ubp;stop;left;38;1;60;Early Post Adapt;-0,07457;0,40931;36,81;0,48388
+S16;2;ubp;stop;left;55;1;60;end stop;0,00375;0,57773;54,90;0,57398
+S16;2;ubp;stop;left;56;1;60;end stop;-0,00899;0,52635;56,06;0,53534
+S16;2;ubp;stop;left;57;1;60;end stop;-0,02181;0,51497;57,19;0,53678
+S16;2;ubp;stop;left;58;1;60;end stop;-0,04868;0,49205;58,34;0,54073
+S16;2;ubp;stop;left;59;1;60;end stop;-0,02276;0,50230;59,49;0,52506
+S16;2;ubp;stop;left;60;1;60;end stop;-0,01555;0,52442;60,67;0,53997
+S16;3;bbp;start;left;1;1;76;begin start;-0,17932;0,38668;0,35;0,56600
+S16;3;bbp;start;left;2;1;76;begin start;-0,16691;0,39862;1,56;0,56553
+S16;3;bbp;start;left;3;1;76;begin start;-0,20408;0,35389;2,71;0,55797
+S16;3;bbp;start;left;4;1;76;begin start;-0,22563;0,28801;3,82;0,51364
+S16;3;bbp;start;left;5;1;76;begin start;-0,20114;0,32636;4,95;0,52750
+S16;3;bbp;start;left;22;1;76;Late Baseline;-0,18845;0,37624;24,28;0,56469
+S16;3;bbp;start;left;23;1;76;Late Baseline;-0,19663;0,34598;25,47;0,54261
+S16;3;bbp;start;left;24;1;76;Late Baseline;-0,18650;0,35155;26,65;0,53805
+S16;3;bbp;start;left;25;1;76;Late Baseline;-0,17587;0,36993;27,82;0,54580
+S16;3;bbp;start;left;26;1;76;Late Baseline;-0,16187;0,39527;29,01;0,55714
+S16;3;bbp;start;left;29;1;76;Early Adapt;-0,18544;0,39943;31,97;0,58487
+S16;3;bbp;start;left;30;1;76;Early Adapt;-0,20422;0,22913;32,67;0,43335
+S16;3;bbp;start;left;31;1;76;Early Adapt;-0,09159;0,42091;33,42;0,51250
+S16;3;bbp;start;left;32;1;76;Early Adapt;-0,09448;0,41598;34,16;0,51046
+S16;3;bbp;start;left;33;1;76;Early Adapt;-0,12906;0,43890;34,90;0,56796
+S16;3;bbp;start;left;71;1;76;end start;-0,16180;0,28383;63,32;0,44563
+S16;3;bbp;start;left;72;1;76;end start;-0,04573;0,45081;64,05;0,49654
+S16;3;bbp;start;left;73;1;76;end start;-0,07068;0,42800;64,80;0,49868
+S16;3;bbp;start;left;74;1;76;end start;-0,07813;0,45388;65,57;0,53201
+S16;3;bbp;start;left;75;1;76;end start;-0,10823;0,38765;66,28;0,49588
+S16;3;bbp;start;left;76;1;76;end start;-0,11242;0,41569;67,05;0,52811
+S16;3;bbp;stop;left;1;1;57;begin stop;-0,18273;0,55657;0,46;0,73930
+S16;3;bbp;stop;left;2;1;57;begin stop;-0,16431;0,53159;1,44;0,69590
+S16;3;bbp;stop;left;3;1;57;begin stop;-0,16064;0,53653;2,41;0,69717
+S16;3;bbp;stop;left;4;1;57;begin stop;-0,12445;0,59963;3,39;0,72408
+S16;3;bbp;stop;left;5;1;57;begin stop;-0,17952;0,56645;4,37;0,74597
+S16;3;bbp;stop;left;27;1;57;Late Adapt;-0,25545;0,44809;25,18;0,70354
+S16;3;bbp;stop;left;28;1;57;Late Adapt;-0,18758;0,52214;26,17;0,70972
+S16;3;bbp;stop;left;29;1;57;Late Adapt;-0,14498;0,55184;27,15;0,69682
+S16;3;bbp;stop;left;30;1;57;Late Adapt;-0,15866;0,55923;28,11;0,71789
+S16;3;bbp;stop;left;31;1;57;Late Adapt;-0,20598;0,51232;29,08;0,71830
+S16;3;bbp;stop;left;34;1;57;Early Post Adapt;-0,07229;0,47432;32,05;0,54661
+S16;3;bbp;stop;left;35;1;57;Early Post Adapt;-0,11336;0,46001;33,22;0,57337
+S16;3;bbp;stop;left;36;1;57;Early Post Adapt;-0,08678;0,44521;34,44;0,53199
+S16;3;bbp;stop;left;37;1;57;Early Post Adapt;-0,08369;0,47206;35,69;0,55575
+S16;3;bbp;stop;left;38;1;57;Early Post Adapt;-0,11747;0,41699;36,86;0,53446
+S16;3;bbp;stop;left;52;1;57;end stop;-0,05440;0,53328;53,84;0,58768
+S16;3;bbp;stop;left;53;1;57;end stop;-0,05404;0,57384;55,11;0,62788
+S16;3;bbp;stop;left;54;1;57;end stop;-0,07115;0,55158;56,40;0,62273
+S16;3;bbp;stop;left;55;1;57;end stop;-0,09081;0,52915;57,68;0,61996
+S16;3;bbp;stop;left;56;1;57;end stop;-0,11023;0,44117;58,89;0,55140
+S16;3;bbp;stop;left;57;1;57;end stop;-0,12679;0,46017;60,12;0,58696
+S16;4;upp;start;left;1;1;68;begin start;-0,23466;0,33098;0,42;0,56564
+S16;4;upp;start;left;2;1;68;begin start;-0,24252;0,31519;1,61;0,55771
+S16;4;upp;start;left;3;1;68;begin start;-0,22504;0,33579;2,82;0,56083
+S16;4;upp;start;left;4;1;68;begin start;-0,21511;0,31737;3,99;0,53248
+S16;4;upp;start;left;5;1;68;begin start;-0,23834;0,32837;5,18;0,56671
+S16;4;upp;start;left;22;1;68;Late Baseline;-0,18889;0,31645;24,69;0,50534
+S16;4;upp;start;left;23;1;68;Late Baseline;-0,18819;0,40034;25,89;0,58853
+S16;4;upp;start;left;24;1;68;Late Baseline;-0,24315;0,28298;27,01;0,52613
+S16;4;upp;start;left;25;1;68;Late Baseline;-0,24372;0,28591;28,17;0,52963
+S16;4;upp;start;left;26;1;68;Late Baseline;-0,19091;0,34315;29,35;0,53406
+S16;4;upp;start;left;29;1;68;Early Adapt;-0,06143;0,25588;32,57;0,31731
+S16;4;upp;start;left;30;1;68;Early Adapt;-0,11449;0,32417;33,43;0,43866
+S16;4;upp;start;left;31;1;68;Early Adapt;-0,07558;0,22534;34,34;0,30092
+S16;4;upp;start;left;32;1;68;Early Adapt;-0,07604;0,33859;35,29;0,41463
+S16;4;upp;start;left;33;1;68;Early Adapt;-0,08187;0,27978;36,26;0,36165
+S16;4;upp;start;left;63;1;68;end start;0,00361;0,51248;66,48;0,50887
+S16;4;upp;start;left;64;1;68;end start;-0,08408;0,47491;67,49;0,55899
+S16;4;upp;start;left;65;1;68;end start;-0,10666;0,40679;68,49;0,51345
+S16;4;upp;start;left;66;1;68;end start;-0,11507;0,45820;69,58;0,57327
+S16;4;upp;start;left;67;1;68;end start;-0,14929;0,39427;70,65;0,54356
+S16;4;upp;start;left;68;1;68;end start;-0,14320;0,40256;71,72;0,54576
+S16;4;upp;stop;left;1;1;59;begin stop;-0,24147;0,28486;0,53;0,52633
+S16;4;upp;stop;left;2;1;59;begin stop;-0,25862;0,26675;1,52;0,52537
+S16;4;upp;stop;left;3;1;59;begin stop;-0,23075;0,26966;2,51;0,50041
+S16;4;upp;stop;left;4;1;59;begin stop;-0,20214;0,30961;3,50;0,51175
+S16;4;upp;stop;left;5;1;59;begin stop;-0,22788;0,28335;4,49;0,51123
+S16;4;upp;stop;left;25;1;59;Late Adapt;-0,19833;0,30061;24,68;0,49894
+S16;4;upp;stop;left;26;1;59;Late Adapt;-0,20087;0,31962;25,69;0,52049
+S16;4;upp;stop;left;27;1;59;Late Adapt;-0,18806;0,34692;26,73;0,53498
+S16;4;upp;stop;left;28;1;59;Late Adapt;-0,19532;0,34221;27,75;0,53753
+S16;4;upp;stop;left;29;1;59;Late Adapt;-0,14308;0,36361;28,77;0,50669
+S16;4;upp;stop;left;32;1;59;Early Post Adapt;-0,11982;0,38586;31,77;0,50568
+S16;4;upp;stop;left;33;1;59;Early Post Adapt;-0,20764;0,21017;32,59;0,41781
+S16;4;upp;stop;left;34;1;59;Early Post Adapt;-0,21087;0,25929;33,45;0,47016
+S16;4;upp;stop;left;35;1;59;Early Post Adapt;-0,12766;0,38948;34,47;0,51714
+S16;4;upp;stop;left;36;1;59;Early Post Adapt;-0,12785;0,36368;35,49;0,49153
+S16;4;upp;stop;left;54;1;59;end stop;-0,06751;0,50089;55,27;0,56840
+S16;4;upp;stop;left;55;1;59;end stop;-0,08606;0,46444;56,42;0,55050
+S16;4;upp;stop;left;56;1;59;end stop;-0,11714;0,43071;57,53;0,54785
+S16;4;upp;stop;left;57;1;59;end stop;-0,10110;0,42332;58,63;0,52442
+S16;4;upp;stop;left;58;1;59;end stop;-0,12052;0,42769;59,76;0,54821
+S16;4;upp;stop;left;59;1;59;end stop;-0,12785;0,39158;60,88;0,51943
+S16;5;sbt;start;left;1;1;77;begin start;-0,19538;0,30936;0,77;0,50474
+S16;5;sbt;start;left;2;1;77;begin start;-0,14366;0,37875;1,93;0,52241
+S16;5;sbt;start;left;3;1;77;begin start;-0,14610;0,43637;3,10;0,58247
+S16;5;sbt;start;left;4;1;77;begin start;-0,15394;0,38502;4,19;0,53896
+S16;5;sbt;start;left;5;1;77;begin start;-0,11822;0,36437;5,29;0,48259
+S16;5;sbt;start;left;25;1;77;Late Baseline;-0,21986;0,34475;27,97;0,56461
+S16;5;sbt;start;left;26;1;77;Late Baseline;-0,23830;0,31821;29,12;0,55651
+S16;5;sbt;start;left;27;1;77;Late Baseline;-0,17531;0,34529;30,31;0,52060
+S16;5;sbt;start;left;28;1;77;Late Baseline;-0,12193;0,39149;31,46;0,51342
+S16;5;sbt;start;left;29;1;77;Late Baseline;-0,14602;0,38437;32,57;0,53039
+S16;5;sbt;start;left;32;1;77;Early Adapt;-0,23944;0,05517;35,23;0,29461
+S16;5;sbt;start;left;33;1;77;Early Adapt;-0,17628;0,20960;36,00;0,38588
+S16;5;sbt;start;left;34;1;77;Early Adapt;-0,17481;0,22707;36,83;0,40188
+S16;5;sbt;start;left;35;1;77;Early Adapt;-0,13372;0,26290;37,67;0,39662
+S16;5;sbt;start;left;36;1;77;Early Adapt;-0,08824;0,26859;38,50;0,35683
+S16;5;sbt;start;left;72;1;77;end start;-0,20370;0,35009;70,74;0,55379
+S16;5;sbt;start;left;73;1;77;end start;-0,20478;0,33434;71,65;0,53912
+S16;5;sbt;start;left;74;1;77;end start;-0,18666;0,37582;72,56;0,56248
+S16;5;sbt;start;left;75;1;77;end start;-0,21744;0,37476;73,49;0,59220
+S16;5;sbt;start;left;76;1;77;end start;-0,19127;0,35437;74,40;0,54564
+S16;5;sbt;start;left;77;1;77;end start;-0,17419;0,43115;75,33;0,60534
+S16;5;sbt;stop;left;1;1;62;begin stop;-0,25652;0,33276;0,23;0,58928
+S16;5;sbt;stop;left;2;1;62;begin stop;-0,26013;0,29121;1,12;0,55134
+S16;5;sbt;stop;left;3;1;62;begin stop;-0,26668;0,31410;2,00;0,58078
+S16;5;sbt;stop;left;4;1;62;begin stop;-0,25724;0,31567;2,90;0,57291
+S16;5;sbt;stop;left;5;1;62;begin stop;-0,23633;0,35969;3,80;0,59602
+S16;5;sbt;stop;left;31;1;62;Late Adapt;-0,31955;0,33086;27,23;0,65041
+S16;5;sbt;stop;left;32;1;62;Late Adapt;-0,31218;0,31263;28,15;0,62481
+S16;5;sbt;stop;left;33;1;62;Late Adapt;-0,24167;0,36059;29,09;0,60226
+S16;5;sbt;stop;left;34;1;62;Late Adapt;-0,22802;0,37981;30,01;0,60783
+S16;5;sbt;stop;left;35;1;62;Late Adapt;-0,20458;0,37938;30,92;0,58396
+S16;5;sbt;stop;left;38;1;62;Early Post Adapt;-0,12434;0,55359;33,47;0,67793
+S16;5;sbt;stop;left;39;1;62;Early Post Adapt;-0,27858;0,24948;34,39;0,52806
+S16;5;sbt;stop;left;40;1;62;Early Post Adapt;-0,29551;0,27477;35,34;0,57028
+S16;5;sbt;stop;left;41;1;62;Early Post Adapt;-0,22782;0,29859;36,32;0,52641
+S16;5;sbt;stop;left;42;1;62;Early Post Adapt;-0,22994;0,31629;37,29;0,54623
+S16;5;sbt;stop;left;57;1;62;end stop;-0,12386;0,44152;53,21;0,56538
+S16;5;sbt;stop;left;58;1;62;end stop;-0,12269;0,45934;54,41;0,58203
+S16;5;sbt;stop;left;59;1;62;end stop;-0,13385;0,44776;55,58;0,58161
+S16;5;sbt;stop;left;60;1;62;end stop;-0,09826;0,43636;56,73;0,53462
+S16;5;sbt;stop;left;61;1;62;end stop;-0,14246;0,43499;57,85;0,57745
+S16;5;sbt;stop;left;62;1;62;end stop;-0,12864;0,41364;58,98;0,54228
+S16;1;bpp;start;right;1;1;58;begin start;-0,21776;0,34981;1,15;0,56757
+S16;1;bpp;start;right;2;1;58;begin start;-0,22914;0,30614;2,31;0,53528
+S16;1;bpp;start;right;3;1;58;begin start;-0,19101;0,36261;3,48;0,55362
+S16;1;bpp;start;right;4;1;58;begin start;-0,18800;0,38630;4,68;0,57430
+S16;1;bpp;start;right;5;1;58;begin start;-0,15681;0,41164;5,88;0,56845
+S16;1;bpp;start;right;20;1;58;Late Baseline;-0,12801;0,44001;23,72;0,56802
+S16;1;bpp;start;right;21;1;58;Late Baseline;-0,11433;0,43319;24,91;0,54752
+S16;1;bpp;start;right;22;1;58;Late Baseline;-0,14560;0,42097;26,10;0,56657
+S16;1;bpp;start;right;23;1;58;Late Baseline;-0,15033;0,41214;27,28;0,56247
+S16;1;bpp;start;right;24;1;58;Late Baseline;-0,13968;0,42692;28,50;0,56660
+S16;1;bpp;start;right;27;1;58;Early Adapt;-0,11127;0,23256;31,73;0,34383
+S16;1;bpp;start;right;28;1;58;Early Adapt;-0,15924;0,45846;32,60;0,61770
+S16;1;bpp;start;right;29;1;58;Early Adapt;-0,18042;0,46514;33,49;0,64556
+S16;1;bpp;start;right;30;1;58;Early Adapt;-0,17962;0,38944;34,39;0,56906
+S16;1;bpp;start;right;31;1;58;Early Adapt;-0,16711;0,37799;35,36;0,54510
+S16;1;bpp;start;right;53;1;58;end start;-0,23342;0,37422;56,43;0,60764
+S16;1;bpp;start;right;54;1;58;end start;-0,22450;0,39718;57,38;0,62168
+S16;1;bpp;start;right;55;1;58;end start;-0,25218;0,33007;58,30;0,58225
+S16;1;bpp;start;right;56;1;58;end start;-0,21163;0,36567;59,25;0,57730
+S16;1;bpp;start;right;57;1;58;end start;-0,21741;0,37055;60,19;0,58796
+S16;1;bpp;start;right;58;1;58;end start;-0,19941;0,39246;61,14;0,59187
+S16;1;bpp;stop;right;1;1;60;begin stop;-0,26241;0,36904;0,80;0,63145
+S16;1;bpp;stop;right;2;1;60;begin stop;-0,25015;0,39883;1,82;0,64898
+S16;1;bpp;stop;right;3;1;60;begin stop;-0,25677;0,38454;2,84;0,64131
+S16;1;bpp;stop;right;4;1;60;begin stop;-0,25948;0,35301;3,82;0,61249
+S16;1;bpp;stop;right;5;1;60;begin stop;-0,23683;0,37802;4,79;0,61485
+S16;1;bpp;stop;right;26;1;60;Late Adapt;-0,16598;0,46067;25,59;0,62665
+S16;1;bpp;stop;right;27;1;60;Late Adapt;-0,19043;0,43894;26,58;0,62937
+S16;1;bpp;stop;right;28;1;60;Late Adapt;-0,20166;0,43001;27,58;0,63167
+S16;1;bpp;stop;right;29;1;60;Late Adapt;-0,22861;0,39855;28,56;0,62716
+S16;1;bpp;stop;right;30;1;60;Late Adapt;-0,24629;0,37809;29,53;0,62438
+S16;1;bpp;stop;right;33;1;60;Early Post Adapt;-0,35417;0,11371;32,45;0,46788
+S16;1;bpp;stop;right;34;1;60;Early Post Adapt;-0,32106;0,03558;33,27;0,35664
+S16;1;bpp;stop;right;35;1;60;Early Post Adapt;-0,23765;0,14345;34,19;0,38110
+S16;1;bpp;stop;right;36;1;60;Early Post Adapt;-0,20271;0,26350;35,16;0,46621
+S16;1;bpp;stop;right;37;1;60;Early Post Adapt;-0,21870;0,21755;36,11;0,43625
+S16;1;bpp;stop;right;55;1;60;end stop;0,04865;0,56151;54,45;0,51286
+S16;1;bpp;stop;right;56;1;60;end stop;0,03624;0,56855;55,56;0,53231
+S16;1;bpp;stop;right;57;1;60;end stop;0,04214;0,56455;56,64;0,52241
+S16;1;bpp;stop;right;58;1;60;end stop;0,01176;0,53566;57,72;0,52390
+S16;1;bpp;stop;right;59;1;60;end stop;0,01058;0,56312;58,86;0,55254
+S16;1;bpp;stop;right;60;1;60;end stop;-0,02390;0,49198;59,97;0,51588
+S16;2;ubp;start;right;1;1;62;begin start;-0,17296;0,39387;0,16;0,56683
+S16;2;ubp;start;right;2;1;62;begin start;-0,15749;0,37709;1,33;0,53458
+S16;2;ubp;start;right;3;1;62;begin start;-0,20044;0,33067;2,43;0,53111
+S16;2;ubp;start;right;4;1;62;begin start;-0,21500;0,32159;3,55;0,53659
+S16;2;ubp;start;right;5;1;62;begin start;-0,16635;0,38056;4,72;0,54691
+S16;2;ubp;start;right;22;1;62;Late Baseline;-0,25537;0,30286;24,26;0,55823
+S16;2;ubp;start;right;23;1;62;Late Baseline;-0,26327;0,27252;25,38;0,53579
+S16;2;ubp;start;right;24;1;62;Late Baseline;-0,17827;0,32329;26,54;0,50156
+S16;2;ubp;start;right;25;1;62;Late Baseline;-0,11474;0,41949;27,71;0,53423
+S16;2;ubp;start;right;26;1;62;Late Baseline;-0,09241;0,42193;28,81;0,51434
+S16;2;ubp;start;right;29;1;62;Early Adapt;-0,16919;0,40489;31,79;0,57408
+S16;2;ubp;start;right;30;1;62;Early Adapt;-0,09884;0,47640;32,38;0,57524
+S16;2;ubp;start;right;31;1;62;Early Adapt;-0,30174;0,34552;33,20;0,64726
+S16;2;ubp;start;right;32;1;62;Early Adapt;-0,15894;0,46172;33,98;0,62066
+S16;2;ubp;start;right;33;1;62;Early Adapt;-0,19105;0,43958;34,78;0,63063
+S16;2;ubp;start;right;57;1;62;end start;-0,15956;0,46316;55,64;0,62272
+S16;2;ubp;start;right;58;1;62;end start;-0,22019;0,44231;56,54;0,66250
+S16;2;ubp;start;right;59;1;62;end start;-0,19241;0,39421;57,42;0,58662
+S16;2;ubp;start;right;60;1;62;end start;-0,22157;0,45214;58,36;0,67371
+S16;2;ubp;start;right;61;1;62;end start;-0,18259;0,42335;59,23;0,60594
+S16;2;ubp;start;right;62;1;62;end start;-0,22458;0,46680;60,20;0,69138
+S16;2;ubp;stop;right;1;1;59;begin stop;-0,23918;0,39793;0,67;0,63711
+S16;2;ubp;stop;right;2;1;59;begin stop;-0,24582;0,36979;1,67;0,61561
+S16;2;ubp;stop;right;3;1;59;begin stop;-0,25378;0,37927;2,70;0,63305
+S16;2;ubp;stop;right;4;1;59;begin stop;-0,27340;0,34736;3,70;0,62076
+S16;2;ubp;stop;right;5;1;59;begin stop;-0,26734;0,36437;4,69;0,63171
+S16;2;ubp;stop;right;26;1;59;Late Adapt;-0,16448;0,44040;25,55;0,60488
+S16;2;ubp;stop;right;27;1;59;Late Adapt;-0,16872;0,46481;26,56;0,63353
+S16;2;ubp;stop;right;28;1;59;Late Adapt;-0,17570;0,42306;27,54;0,59876
+S16;2;ubp;stop;right;29;1;59;Late Adapt;-0,15493;0,45109;28,53;0,60602
+S16;2;ubp;stop;right;30;1;59;Late Adapt;-0,12767;0,47636;29,52;0,60403
+S16;2;ubp;stop;right;33;1;59;Early Post Adapt;-0,14012;0,25437;32,37;0,39449
+S16;2;ubp;stop;right;34;1;59;Early Post Adapt;-0,09968;0,20756;33,32;0,30724
+S16;2;ubp;stop;right;35;1;59;Early Post Adapt;-0,05771;0,30661;34,32;0,36432
+S16;2;ubp;stop;right;36;1;59;Early Post Adapt;-0,07274;0,36295;35,33;0,43569
+S16;2;ubp;stop;right;37;1;59;Early Post Adapt;-0,07420;0,33811;36,30;0,41231
+S16;2;ubp;stop;right;54;1;59;end stop;0,01279;0,54334;54,30;0,53055
+S16;2;ubp;stop;right;55;1;59;end stop;-0,04004;0,53316;55,46;0,57320
+S16;2;ubp;stop;right;56;1;59;end stop;-0,03316;0,51200;56,61;0,54516
+S16;2;ubp;stop;right;57;1;59;end stop;-0,04963;0,52330;57,77;0,57293
+S16;2;ubp;stop;right;58;1;59;end stop;-0,03175;0,50878;58,93;0,54053
+S16;2;ubp;stop;right;59;1;59;end stop;-0,03040;0,53311;60,08;0,56351
+S16;3;bbp;start;right;1;1;75;begin start;-0,16151;0,39748;0,96;0,55899
+S16;3;bbp;start;right;2;1;75;begin start;-0,19352;0,36552;2,13;0,55904
+S16;3;bbp;start;right;3;1;75;begin start;-0,21254;0,33971;3,29;0,55225
+S16;3;bbp;start;right;4;1;75;begin start;-0,19547;0,32077;4,40;0,51624
+S16;3;bbp;start;right;5;1;75;begin start;-0,18418;0,33843;5,52;0,52261
+S16;3;bbp;start;right;22;1;75;Late Baseline;-0,20620;0,37250;24,88;0,57870
+S16;3;bbp;start;right;23;1;75;Late Baseline;-0,22679;0,34124;26,04;0,56803
+S16;3;bbp;start;right;24;1;75;Late Baseline;-0,17049;0,38530;27,25;0,55579
+S16;3;bbp;start;right;25;1;75;Late Baseline;-0,17501;0,38139;28,41;0,55640
+S16;3;bbp;start;right;26;1;75;Late Baseline;-0,15026;0,38236;29,58;0,53262
+S16;3;bbp;start;right;29;1;75;Early Adapt;-0,28070;0,27073;32,28;0,55143
+S16;3;bbp;start;right;30;1;75;Early Adapt;-0,13213;0,33823;33,02;0,47036
+S16;3;bbp;start;right;31;1;75;Early Adapt;-0,11049;0,40326;33,78;0,51375
+S16;3;bbp;start;right;32;1;75;Early Adapt;-0,08135;0,44079;34,53;0,52214
+S16;3;bbp;start;right;33;1;75;Early Adapt;-0,11781;0,41220;35,28;0,53001
+S16;3;bbp;start;right;70;1;75;end start;-0,24089;0,32164;62,93;0,56253
+S16;3;bbp;start;right;71;1;75;end start;-0,07846;0,36976;63,70;0,44822
+S16;3;bbp;start;right;72;1;75;end start;-0,08937;0,45603;64,42;0,54540
+S16;3;bbp;start;right;73;1;75;end start;-0,10194;0,46384;65,18;0,56578
+S16;3;bbp;start;right;74;1;75;end start;-0,12590;0,41616;65,94;0,54206
+S16;3;bbp;start;right;75;1;75;end start;-0,09396;0,43358;66,67;0,52754
+S16;3;bbp;stop;right;1;1;56;begin stop;-0,20710;0,48691;0,92;0,69401
+S16;3;bbp;stop;right;2;1;56;begin stop;-0,18050;0,53966;1,92;0,72016
+S16;3;bbp;stop;right;3;1;56;begin stop;-0,13853;0,54817;2,89;0,68670
+S16;3;bbp;stop;right;4;1;56;begin stop;-0,12183;0,61674;3,91;0,73857
+S16;3;bbp;stop;right;5;1;56;begin stop;-0,14559;0,51753;4,85;0,66312
+S16;3;bbp;stop;right;26;1;56;Late Adapt;-0,25545;0,46739;24,70;0,72284
+S16;3;bbp;stop;right;27;1;56;Late Adapt;-0,22720;0,48326;25,67;0,71046
+S16;3;bbp;stop;right;28;1;56;Late Adapt;-0,18141;0,53472;26,65;0,71613
+S16;3;bbp;stop;right;29;1;56;Late Adapt;-0,15898;0,56031;27,62;0,71929
+S16;3;bbp;stop;right;30;1;56;Late Adapt;-0,20121;0,54344;28,59;0,74465
+S16;3;bbp;stop;right;33;1;56;Early Post Adapt;-0,03255;0,45088;31,52;0,48343
+S16;3;bbp;stop;right;34;1;56;Early Post Adapt;-0,11543;0,46951;32,62;0,58494
+S16;3;bbp;stop;right;35;1;56;Early Post Adapt;-0,14516;0,45250;33,82;0,59766
+S16;3;bbp;stop;right;36;1;56;Early Post Adapt;-0,08249;0,54600;35,11;0,62849
+S16;3;bbp;stop;right;37;1;56;Early Post Adapt;-0,13278;0,47175;36,28;0,60453
+S16;3;bbp;stop;right;51;1;56;end stop;-0,06931;0,48921;53,21;0,55852
+S16;3;bbp;stop;right;52;1;56;end stop;-0,01689;0,56368;54,49;0,58057
+S16;3;bbp;stop;right;53;1;56;end stop;-0,02482;0,58537;55,79;0,61019
+S16;3;bbp;stop;right;54;1;56;end stop;-0,06701;0,52827;57,04;0,59528
+S16;3;bbp;stop;right;55;1;56;end stop;-0,14510;0,46475;58,27;0,60985
+S16;3;bbp;stop;right;56;1;56;end stop;-0,13577;0,45711;59,49;0,59288
+S16;4;upp;start;right;1;1;67;begin start;-0,23737;0,32989;1,02;0,56726
+S16;4;upp;start;right;2;1;67;begin start;-0,26708;0,29505;2,18;0,56213
+S16;4;upp;start;right;3;1;67;begin start;-0,24291;0,32457;3,40;0,56748
+S16;4;upp;start;right;4;1;67;begin start;-0,23669;0,34238;4,58;0,57907
+S16;4;upp;start;right;5;1;67;begin start;-0,25322;0,32815;5,78;0,58137
+S16;4;upp;start;right;22;1;67;Late Baseline;-0,19314;0,35050;25,26;0,54364
+S16;4;upp;start;right;23;1;67;Late Baseline;-0,23317;0,34500;26,46;0,57817
+S16;4;upp;start;right;24;1;67;Late Baseline;-0,26544;0,30096;27,59;0,56640
+S16;4;upp;start;right;25;1;67;Late Baseline;-0,21123;0,32431;28,77;0,53554
+S16;4;upp;start;right;26;1;67;Late Baseline;-0,14759;0,37954;29,95;0,52713
+S16;4;upp;start;right;29;1;67;Early Adapt;-0,10283;0,47561;32,99;0,57844
+S16;4;upp;start;right;30;1;67;Early Adapt;-0,18509;0,49229;33,91;0,67738
+S16;4;upp;start;right;31;1;67;Early Adapt;-0,13216;0,48668;34,80;0,61884
+S16;4;upp;start;right;32;1;67;Early Adapt;-0,22255;0,42494;35,73;0,64749
+S16;4;upp;start;right;33;1;67;Early Adapt;-0,12986;0,48201;36,72;0,61187
+S16;4;upp;start;right;62;1;67;end start;0,00385;0,64960;65,95;0,64575
+S16;4;upp;start;right;63;1;67;end start;-0,02858;0,60563;66,96;0,63421
+S16;4;upp;start;right;64;1;67;end start;-0,08497;0,50517;67,97;0,59014
+S16;4;upp;start;right;65;1;67;end start;-0,13484;0,44465;68,95;0,57949
+S16;4;upp;start;right;66;1;67;end start;-0,14919;0,49490;70,07;0,64409
+S16;4;upp;start;right;67;1;67;end start;-0,14742;0,46057;71,14;0,60799
+S16;4;upp;stop;right;1;1;58;begin stop;-0,23783;0,30962;0,99;0,54745
+S16;4;upp;stop;right;2;1;58;begin stop;-0,24371;0,27481;1,97;0,51852
+S16;4;upp;stop;right;3;1;58;begin stop;-0,19673;0,32486;2,97;0,52159
+S16;4;upp;stop;right;4;1;58;begin stop;-0,19958;0,36999;3,98;0,56957
+S16;4;upp;stop;right;5;1;58;begin stop;-0,24224;0,32799;4,96;0,57023
+S16;4;upp;stop;right;25;1;58;Late Adapt;-0,18979;0,38489;25,16;0,57468
+S16;4;upp;stop;right;26;1;58;Late Adapt;-0,18336;0,39561;26,17;0,57897
+S16;4;upp;stop;right;27;1;58;Late Adapt;-0,18061;0,38992;27,20;0,57053
+S16;4;upp;stop;right;28;1;58;Late Adapt;-0,13852;0,41511;28,24;0,55363
+S16;4;upp;stop;right;29;1;58;Late Adapt;-0,12440;0,41438;29,22;0,53878
+S16;4;upp;stop;right;32;1;58;Early Post Adapt;-0,23298;0,18859;32,09;0,42157
+S16;4;upp;stop;right;33;1;58;Early Post Adapt;-0,21533;0,11623;32,94;0,33156
+S16;4;upp;stop;right;34;1;58;Early Post Adapt;-0,14504;0,21163;33,90;0,35667
+S16;4;upp;stop;right;35;1;58;Early Post Adapt;-0,14522;0,31514;34,95;0,46036
+S16;4;upp;stop;right;36;1;58;Early Post Adapt;-0,09753;0,33093;35,98;0,42846
+S16;4;upp;stop;right;53;1;58;end stop;-0,06445;0,43908;54,67;0,50353
+S16;4;upp;stop;right;54;1;58;end stop;-0,09119;0,45588;55,83;0,54707
+S16;4;upp;stop;right;55;1;58;end stop;-0,09836;0,43195;56,97;0,53031
+S16;4;upp;stop;right;56;1;58;end stop;-0,09960;0,40259;58,08;0,50219
+S16;4;upp;stop;right;57;1;58;end stop;-0,11030;0,42444;59,19;0,53474
+S16;4;upp;stop;right;58;1;58;end stop;-0,17263;0,36639;60,28;0,53902
+S16;5;sbt;start;right;1;1;77;begin start;-0,23509;0,24598;0,20;0,48107
+S16;5;sbt;start;right;2;1;77;begin start;-0,17432;0,35191;1,35;0,52623
+S16;5;sbt;start;right;3;1;77;begin start;-0,09887;0,42125;2,53;0,52012
+S16;5;sbt;start;right;4;1;77;begin start;-0,12235;0,36671;3,65;0,48906
+S16;5;sbt;start;right;5;1;77;begin start;-0,13720;0,37532;4,76;0,51252
+S16;5;sbt;start;right;25;1;77;Late Baseline;-0,22215;0,30389;27,37;0,52604
+S16;5;sbt;start;right;26;1;77;Late Baseline;-0,24393;0,29371;28,52;0,53764
+S16;5;sbt;start;right;27;1;77;Late Baseline;-0,21771;0,32477;29,72;0,54248
+S16;5;sbt;start;right;28;1;77;Late Baseline;-0,16378;0,36533;30,88;0,52911
+S16;5;sbt;start;right;29;1;77;Late Baseline;-0,13882;0,40602;32,02;0,54484
+S16;5;sbt;start;right;32;1;77;Early Adapt;-0,26503;0,42028;34,87;0,68531
+S16;5;sbt;start;right;33;1;77;Early Adapt;-0,19832;0,35824;35,56;0,55656
+S16;5;sbt;start;right;34;1;77;Early Adapt;-0,23890;0,41639;36,33;0,65529
+S16;5;sbt;start;right;35;1;77;Early Adapt;-0,18983;0,46014;37,19;0,64997
+S16;5;sbt;start;right;36;1;77;Early Adapt;-0,16721;0,52572;38,04;0,69293
+S16;5;sbt;start;right;72;1;77;end start;-0,16417;0,46931;70,20;0,63348
+S16;5;sbt;start;right;73;1;77;end start;-0,16539;0,47704;71,12;0,64243
+S16;5;sbt;start;right;74;1;77;end start;-0,11240;0,51878;72,05;0,63118
+S16;5;sbt;start;right;75;1;77;end start;-0,12263;0,51278;72,95;0,63541
+S16;5;sbt;start;right;76;1;77;end start;-0,14337;0,49476;73,89;0,63813
+S16;5;sbt;start;right;77;1;77;end start;-0,09581;0,50766;74,78;0,60347
+S16;5;sbt;stop;right;1;1;62;begin stop;-0,17421;0,45289;0,62;0,62710
+S16;5;sbt;stop;right;2;1;62;begin stop;-0,17425;0,38066;1,48;0,55491
+S16;5;sbt;stop;right;3;1;62;begin stop;-0,18314;0,40357;2,38;0,58671
+S16;5;sbt;stop;right;4;1;62;begin stop;-0,14361;0,41255;3,27;0,55616
+S16;5;sbt;stop;right;5;1;62;begin stop;-0,13665;0,44191;4,18;0,57856
+S16;5;sbt;stop;right;31;1;62;Late Adapt;-0,19596;0,38610;27,62;0,58206
+S16;5;sbt;stop;right;32;1;62;Late Adapt;-0,15817;0,41432;28,55;0,57249
+S16;5;sbt;stop;right;33;1;62;Late Adapt;-0,13006;0,46823;29,48;0,59829
+S16;5;sbt;stop;right;34;1;62;Late Adapt;-0,12511;0,46413;30,39;0,58924
+S16;5;sbt;stop;right;35;1;62;Late Adapt;-0,11910;0,46759;31,29;0,58669
+S16;5;sbt;stop;right;38;1;62;Early Post Adapt;-0,23967;0,20902;33,84;0,44869
+S16;5;sbt;stop;right;39;1;62;Early Post Adapt;-0,25364;0,08858;34,78;0,34222
+S16;5;sbt;stop;right;40;1;62;Early Post Adapt;-0,21390;0,11681;35,78;0,33071
+S16;5;sbt;stop;right;41;1;62;Early Post Adapt;-0,21018;0,15497;36,73;0,36515
+S16;5;sbt;stop;right;42;1;62;Early Post Adapt;-0,17231;0,18127;37,73;0,35358
+S16;5;sbt;stop;right;57;1;62;end stop;-0,15020;0,39689;53,76;0,54709
+S16;5;sbt;stop;right;58;1;62;end stop;-0,12887;0,40892;54,97;0,53779
+S16;5;sbt;stop;right;59;1;62;end stop;-0,11344;0,40403;56,15;0,51747
+S16;5;sbt;stop;right;60;1;62;end stop;-0,13063;0,39534;57,25;0,52597
+S16;5;sbt;stop;right;61;1;62;end stop;-0,14497;0,36950;58,39;0,51447
+S16;5;sbt;stop;right;62;1;62;end stop;-0,14470;0,37082;59,51;0,51552
