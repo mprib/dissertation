@@ -12,8 +12,8 @@ knitr::opts_chunk$set(echo = FALSE)
 source("tidy_v3d.R")
 
 # Set up variables
-raw_data_directory <- "C:\\Users\\Mac Prible\\OneDrive - The University of Texas at Austin\\research\\PDSV\\data\\dissertation\\v3d\\raw_v3d_output"
-tidy_data_directory <- "C:\\Users\\Mac Prible\\OneDrive - The University of Texas at Austin\\research\\PDSV\\data\\dissertation\\v3d\\tidy_output"
+raw_data_directory <- "C:/Users/Mac Prible/OneDrive - The University of Texas at Austin/research/PDSV/dissertation/v3d/raw_v3d_output"
+tidy_data_directory <- "C:/Users/Mac Prible/OneDrive - The University of Texas at Austin/research/PDSV/dissertation/PDSV_R/tidy_output"
 
 # Define function to process single file with side information
 process_side_file <- function(data_directory, subject_id, side) {
