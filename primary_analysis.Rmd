@@ -63,6 +63,10 @@ BIL_CONDITION_LABELS <- c(
 )
 
 CONDITION_LABELS <- c(UNI_CONDITION_LABELS, BIL_CONDITION_LABELS)
+
+pre_post_periods <- c("Late Baseline", "Early Post Adapt")
+primary_periods <- c("Late Baseline", "Early Adapt" , "Late Adapt", "Early Post Adapt")
+pre_late_periods <- c("Late Baseline",  "Late Adapt")
 ```
 
 # Belt Speed
@@ -204,7 +208,6 @@ ggsave(file.path(figure_directory,"All Bilateral Condition speeds.png"))
 ## All time periods.
 
 ```{r}
-primary_periods <- c("Late Baseline", "Early Adapt" , "Late Adapt", "Early Post Adapt")
  
 plt_SLR <- step_lengths %>% 
   filter(period %in% primary_periods) %>% 
@@ -250,7 +253,6 @@ ggsave(file.path(figure_directory,"SLR_all_w_mean.png"))
 
 ```{r}
 
-pre_post_periods <- c("Late Baseline", "Early Post Adapt")
 
 
 SLR_data <- step_lengths %>% 
@@ -342,9 +344,11 @@ Looks like there are NAs getting propagated. These are in the mean stance values
 
 ```{r, fig.height=10, fig.width=8}
 
+# comparison <- pre_late_periods
+comparison <- pre_post_periods
 mean_across_stance %>% 
-  filter(period %in% pre_post_periods) %>% 
-  mutate(period = factor(period,levels = pre_post_periods)) %>% 
+  filter(period %in% comparison) %>%
+  mutate(period = factor(period,levels = comparison)) %>% 
   filter(condition %in% names(UNI_CONDITION_LABELS)) %>%  
   mutate(condition = UNI_CONDITION_LABELS[condition]) %>% 
   filter(variable %in% c("IPSI_ANKLE_MOMENT") & axis == "X") %>% 
@@ -374,7 +378,7 @@ mean_across_stance %>%
     rows = vars(condition),
     cols = vars(stance_side)
   ) +
-  scale_linetype_manual(values = c("Early Post Adapt" = "solid", "Late Baseline" = "dashed")) +
+  scale_linetype_manual(values = setNames(c("solid", "dashed"), comparison)) + 
   theme_minimal() +
   theme(legend.position = "bottom") +
   labs(
@@ -497,9 +501,12 @@ summary(period_comparisons)
 ### Characteristic Torque Profile
 ```{r, fig.height=7, fig.width=8}
 
+# comparison <- pre_late_periods
+comparison <- pre_post_periods
+
 mean_across_stance %>% 
-  filter(period %in% pre_post_periods) %>% 
-  mutate(period = factor(period,levels = pre_post_periods)) %>% 
+  filter(period %in% comparison) %>% 
+  mutate(period = factor(period,levels = comparison)) %>% 
   filter(condition %in% names(BIL_CONDITION_LABELS)) %>%  
   mutate(condition = BIL_CONDITION_LABELS[condition]) %>% 
   filter(variable %in% c("IPSI_ANKLE_MOMENT") & axis == "X") %>% 
@@ -529,7 +536,7 @@ mean_across_stance %>%
     rows = vars(condition),
     cols = vars(stance_side)
   ) +
-  scale_linetype_manual(values = c("Early Post Adapt" = "solid", "Late Baseline" = "dashed")) +
+  scale_linetype_manual(values = setNames(c("solid", "dashed"), comparison)) + 
   theme_minimal() +
   theme(legend.position = "bottom") +
   labs(
