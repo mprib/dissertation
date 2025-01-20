@@ -19,9 +19,9 @@ library(tidyverse)
 library(lme4)
 library(emmeans)
 
-tidy_data_directory <- "C:\\Users\\Mac Prible\\OneDrive - The University of Texas at Austin\\research\\PDSV\\dissertation\\pdsv_R\\tidy_output"
+tidy_data_directory <- "C:\\Users\\Mac Prible\\OneDrive - The University of Texas at Austin\\research\\PDSV\\dissertation\\pdvs_R\\tidy_output"
 
-figure_directory <- "C:\\Users\\Mac Prible\\OneDrive - The University of Texas at Austin\\research\\PDSV\\data\\dissertation\\manuscripts\\figures"
+figure_directory <- "C:\\Users\\Mac Prible\\OneDrive - The University of Texas at Austin\\research\\PDSV\\dissertation\\manuscripts\\figures"
 
 mean_across_stance <- 
   list.files(tidy_data_directory, pattern="*_mean_across_stance.csv") %>% 
