@@ -1,8 +1,8 @@
 Version: 1.0
 ProjectId: 9fa5ab77-b02e-4458-96ba-ae31644081db
 
-RestoreWorkspace: Default
-SaveWorkspace: Default
+RestoreWorkspace: No
+SaveWorkspace: No
 AlwaysSaveHistory: Default
 
 EnableCodeIndexing: Yes
@@ -12,3 +12,8 @@ Encoding: UTF-8
 
 RnwWeave: Sweave
 LaTeX: pdfLaTeX
+
+MarkdownWrap: Sentence
+MarkdownReferences: Document
+
+SpellingDictionary: en_US
