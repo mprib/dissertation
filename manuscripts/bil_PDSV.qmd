@@ -1,0 +1,76 @@
+# Introduction
+
+Slower walking speeds in older adults are a significant concern, associated with an increased risk of falls (Bergen, Stevens, and Burns 2016) and mortality (Hardy et al. 2007).
+Age-related decreases in walking speed are partly attributed to the increased metabolic cost of walking (Schrack et al. 2012). A key contributor to this increased cost is a shift from ankle plantarflexion (PF) towards hip joint torques during the gait cycle (Delabastita et al. 2021), a phenomenon known as the "proximal shift" characteristic of aging gait (DeVita and Hortobagyi 2000; Kerrigan et al. 1998; Silder, Heiderscheit, and Thelen 2008). Interventions that can reverse this shift by increasing PF torque could potentially improve gait efficiency and disrupt the trajectory towards reduced walking economy and speed.
+
+While increasing walking speed can increase ankle PF demands in older adults (Silder, Heiderscheit, and Thelen 2008), this approach does not directly address inefficient gait patterns at a person's preferred speed.
+Furthermore, older adults often adopt faster cadences at a given speed compared to younger adults (Nagasaki et al. 1996), a strategy that reduces ankle demands at the expense of increased hip demands (Umberger and Martin 2007).
+
+Split-belt treadmill (SBT) walking, where belts move at different speeds, has been shown to induce spontaneous adaptations in PF torque that persist briefly after belts return to matched speeds (Lauziare et al. 2014).
+These changes in PF torque are correlated with alterations in step length (Lauziare et al. 2014) typically observed following SBT adaptation (Reisman, Block, and Bastian 2005; Reisman et al. 2007) and are thought to be driven by cerebellar feedforward control mechanisms (Morton and Bastian 2006).
+
+Conventional SBT walking inherently involves asymmetrical perturbations.
+Shorter steps on the slow belt correspond to smaller peak PF torque on the fast belt, while longer steps on the fast belt correspond to larger peak PF torque on the slow belt.
+To decompose these asymmetrical effects, we utilized Phase-Dependent Speed Variation (PDSV), separating the perturbation into two distinct components: (1) **FastBrake**, where the leading limb steps onto a faster belt, generating braking force as it is pushed towards the trailing limb; and (2) **FastProp**, where the trailing limb steps off a faster belt, generating propulsive force as it is pulled away from the leading limb.
+
+Unlike conventional SBT paradigms, PDSV can be applied bilaterally. 
+In bilateral FastBrake, both leading limbs are always pushed towards their respective trailing limbs.
+In bilateral FastProp, both trailing limbs are always pulled away from their respective leading limbs.
+
+This study investigated the effects of bilaterally applied PDSV on ankle PF impulse in healthy young adults.
+We hypothesized that bilateral FastBrake elicits adaptations that bilaterally decrease PF impulse, while bilateral FastProp leads to a bilateral increase in PF impulse.
+
+## Methods
+
+### Participants
+
+Twenty healthy adults (age range 18-45 years) were recruited from central Texas.
+Participants were included if they were able to walk unassisted for 20 minutes and excluded if they reported pregnancy or any lower extremity orthopedic, neurological, vascular, or metabolic conditions affecting gait. 
+The study was approved by the Internal Revue Board of the University of Texas at Austin, and all participants provided informed consent prior to participation.
+
+
+
+### Data Collection
+
+Kinematic and kinetic data were collected using a 10-camera Vicon Nexus motion capture system (Vicon Motion Systems, Oxford, UK) operating at 100 Hz and an instrumented split-belt treadmill with integrated force plates (Motek Medical, Amsterdam, Netherlands) sampling at 1000 Hz.
+Participants wore a safety harness throughout the experiment. 
+A 7-segment lower body marker set was used to track motion. Static and dynamic calibration trials were performed, including functional calibration of hip and knee joint centers using "hula hoop" and "quarter squat" movements (schwartz)
+
+### Protocol
+
+Participants completed two randomly ordered trials: Bilateral FastBrake and Bilateral FastProp. Each trial consisted of three phases: a 3-minute baseline walking period at 1 m/s, a 6-minute perturbed walking (adaptation) period, and a 3-minute post-adaptation period. 
+The speed ratio during the adaptation period was 2:1 (1 m/s and 2 m/s).
+
+**Bilateral FastBrake:** Upon entering swing, the target belt speed increased to 2 m/s. Following initial contact and once vertical ground reaction force (GRF) under the leading limb exceeded that of the contralateral limb, the belt speed target was reduced to 1 m/s.
+
+**Bilateral FastBrake:** Upon entering swing, the target belt speed decreased to 1 m/s. Following initial contact and once vertical ground reaction force (GRF) under the leading limb exceeded that of the contralateral limb, the belt speed target was increased to 2 m/s.
+
+Participants received verbal countdowns before speed changes. Ground reaction forces were recorded continuously. D-Flow software (v3.20.0, Motek Medical) controlled belt speeds based on real-time vertical GRF data.
+Participants were instructed to avoid using the handrails unless necessary to maintain balance. Rating of Perceived Exertion (RPE) was collected using a Borg RPE 10-point scale (Borg, 1982) during the final minute of the Baseline and Adaptation periods. 
+Sixty-second recordings captured the transitions between late baseline and early adaptation, and late adaptation and early post-adaptation.
+
+### Split Belt Control Mechanism
+
+Custom D-Flow scripts triggered belt speed changes based on force plate data. Swing initiation was detected when GRF under a limb went to zero. The transition point for speed change during stance was identified when the vertical GRF under one limb exceeded the vertical GRF under the contralateral limb. The baseline speed was 1 m/s and the fast speed was 2 m/s. Belt speed transitions were limited by the treadmill's maximum acceleration of 3 m/s². The resulting belt speed profiles were synchronized to the participant's gait cycle and adjusted in real-time to variations in cadence.
+
+### Data Processing
+
+Marker trajectory and GRF data were filtered using a second-order Butterworth low-pass filter with a 6 Hz cutoff frequency in Visual3D (HAS Motion, Kingston, Ontario, Canada). Center of pressure (COP) data were filtered using a second-order Butterworth low-pass filter with a 4 Hz cutoff frequency to remove oscillatory artifacts. Joint centers were defined by malleoli markers (ankle) and functional calibration methods (hip and knee) (Cappozzo et al., 1995).
+
+Joint torques were calculated using inverse dynamics and normalized to body weight. Joint torque profiles across the stance phase were time-normalized to 100 points and averaged across five consecutive steps to characterize torque in each period (Late Baseline, Early Adaptation, Late Adaptation, Early Post Adaptation). Plantarflexor impulse was calculated by summing the time-normalized joint torque profile when there was a net PF moment and then multiplying by the mean stance time to remove the effect of time normalization.
+
+Actual belt velocity was calculated using reflective markers affixed to the belts and custom Python scripts within Vicon. The onset and completion of the Adaptation period were identified using these belt velocity data. Primary variables for Late Baseline and Early Post Adaptation were calculated by averaging the last five complete steps of Baseline and the first five complete steps of Post Adaptation, respectively. Secondary variables for Early and Late Adaptation were calculated similarly.
+
+### Primary Variable
+
+The primary variable was ankle PF impulse during stance, averaged across the left and right sides and normalized to body weight (N⋅m⋅s/BW).
+
+### Secondary Variables
+
+Secondary variables included RPE, assessed in the final minute of the Baseline and Adaptation periods, and lower extremity joint torques, calculated for all four periods (Late Baseline, Early Adaptation, Late Adaptation, Early Post Adaptation).
+
+### Statistical Analysis
+
+The effect of the split-belt treadmill protocols on ankle PF impulse was assessed using a linear mixed-effects model. Mean PF impulse was analyzed with Period (Baseline and Post-Adaptation) and Condition (Bilateral FastBrake, Bilateral FastProp) as fixed effects and their interaction. A random intercept for Participant was included to account for within-subject variability. Pairwise comparisons of periods within each condition were conducted using the emmeans package in R, with Holm's correction applied for multiple comparisons. Potential order and carryover effects were assessed using mixed-effects models with condition order and previous condition as fixed effects and participant as a random effect. All statistical analyses were performed in R (version X.X.X, R Core Team, 20XX), and statistical significance was set at α = 0.05.
+
+**References:**

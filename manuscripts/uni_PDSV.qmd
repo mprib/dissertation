@@ -1,0 +1,122 @@
+# Introduction
+
+Stroke is a leading cause of disability, affecting over 9 million adults in the United States with approximately 900,000 new survivors each year, resulting in substantial economic burden (Tsao et al., 2023).
+A common consequence of stroke is impaired gait, characterized by asymmetric step length, which correlates with asymmetrical force production and stroke severity (Balasubramanian et al., 2007).
+Split-belt treadmill (SBT) training, where each leg moves on belts at different speeds, has emerged as a promising intervention to address this asymmetry by inducing spontaneous changes in gait mechanics without explicit feedback (Reisman, Block, & Bastian, 2005; Reisman et al., 2007). 
+Repeated SBT training has been shown to improve step-length symmetry and enhance walking speed in individuals with post-stroke hemiparesis (Reisman et al., 2013; Betschart, McFadyen, & Nadeau, 2018). 
+This study introduces an innovative variation of the SBT protocol, Phase-Dependent Speed Variation (PDSV), intended to evoke novel biomechanical adaptations that may offer advantages over conventional SBT (cSBT) training.
+
+### Conventional Split-Belt Treadmill Training
+
+In cSBT for post-stroke gait asymmetry, the limb taking shorter steps is placed on the faster belt (Reisman, Block, & Bastian, 2005; Reisman et al., 2007).
+While this initially exaggerates asymmetry, it triggers feed-forward adaptations that gradually restore baseline asymmetry (Reisman, Block, & Bastian, 2005; Reisman et al., 2007), contingent on intact cerebellar function (Morton & Bastian, 2006).
+Upon equalization of belt speeds, a transient overcorrection towards symmetry (post-adaptation) occurs, indicative of potential long-term benefits with continued training (Reisman et al., 2013; Betschart, McFadyen, & Nadeau, 2018).
+Given the variability in post-stroke gait asymmetry, with some individuals exhibiting longer paretic steps and others longer non-paretic steps (Balasubramanian et al., 2007), fast-belt assignment is determined by the Step Length Ratio (SLR), calculated as $\frac{\text{paretic\ step\ length}}{\text{non\ paretic\ step\ length}}$.
+
+### Limitations of Conventional Split-Belt Treadmill Training
+
+A notable limitation of cSBT training is the induction of post-adaptation reductions in ankle plantarflexor (PF) torque on the fast side and increases on the slow side, observed in both healthy and post-stroke individuals (Lauziare et al., 2014).
+These PF torque changes correlate with contralateral step length alterations, impacting the SLR.
+Considering that hemiparetic gait often involves reduced paretic PF torque (Allen, Kautz, & Neptune, 2011), a crucial factor for forward propulsion (Neptune, Kautz, & Zajac, 2001; Liu et al., 2006; Hsiao et al., 2015), this effect may be detrimental for individuals with Longer Non-Paretic Steps (LNPS) (Lauziare et al., 2014).
+Thus, while cSBT can normalize SLR, it may inadvertently exacerbate joint deficits on the paretic side.
+This study investigated a novel approach to modulate SLR therapeutically without compromising PF torque.
+
+### Phase-Dependent Speed Variation (PDSV)
+
+We hypothesized that the cSBT task could be deconstructed into two distinct perturbations, each eliciting unique adaptations: "FastBrake" and "FastProp" (Figure 1).
+
+**"FastBrake"**: Stepping onto a faster belt requires the leading limb to generate braking force while being pushed posteriorly, increasing the subsequent slow-side step length. Adaptation to this perturbation was expected to decrease slow-side step length, correlating with decreased fast-side PF torque (Lauziare et al., 2014).
+
+**"FastProp"**: Stepping off a faster belt necessitates the trailing limb to generate propulsive force while being pulled away, decreasing the subsequent fast-side step length. Adaptation was predicted to increase fast-side step length and, because this occurs in late stance when plantarflexors are primary contributors to ipsilateral swing (Neptune, Kautz, & Zajac, 2001), increase ipsilateral (fast-side) PF torque.
+
+To isolate these perturbations, we implemented Phase Dependent Speed Variation (PDSV), modulating belt speed on the target side in real-time based on vertical Ground Reaction Force (GRF) triggers during swing initiation (GRF → 0) and when the target limb bears more vertical GRF than the contralateral limb. The specific implementation of FastBrake and FastProp belt speed profiles are illustrated in Figure 2.
+
+This study aimed to characterize the short-term adaptations to unilateral PDSV compared to conventional split-belt treadmill training in healthy adults. It was hypothesized that:
+
+**(H1)**  PDSV would alter SLR similarly to cSBT, resulting in increased SLR from baseline to post-adaptation across all conditions.
+
+**(H2)**  The effect on fast-side PF impulse would differ across conditions. Compared to baseline, cSBT and FastBrake would decrease fast-side PF impulse during early adaptation, while FastProp would increase it.
+
+These hypotheses were based on the premise that isolating the braking and propulsive phases of the split-belt perturbation would lead to distinct biomechanical adaptations. Specifically, FastProp was expected to offer a potential therapeutic advantage for individuals with LNPS by increasing paretic step length without reducing paretic PF torque, while FastBrake might provide a more tolerable alternative to cSBT for individuals with longer paretic steps.
+
+# Methods
+
+## Participants
+
+Twenty healthy adults (18-45 years old) from central Texas participated in this study.
+Inclusion criteria were the ability to walk unassisted for 20 minutes.
+Exclusion criteria included pregnancy, and any lower extremity orthopedic, neurological, vascular, or metabolic conditions affecting gait.
+The study was approved by the Internal Revue Board of the University of Texas at Austin, and all participants provided informed consent prior to participation.
+
+## Data Collection
+
+Data were collected using a 10-camera Vicon Nexus motion capture system (100 Hz) and an instrumented split-belt treadmill with handrails (Motek Medical, 1000 Hz). Participants wore a safety harness and a 7-segment lower body marker set. 
+Static and dynamic calibration trials were performed, including functional calibration of hip and knee joints using "hula hoop" and "quarter squat" movements (Schwartz & Rozumalski, 2005).
+
+
+## Protocol
+
+Participants completed trials for three conditions in a randomized order: cSBT, Unilateral FastBrake, and Unilateral FastProp. 
+Each trial consisted of 3 minutes of baseline walking (1 m/s), 6 minutes of perturbed walking, and 3 minutes of post-adaptation (Figure 3). 
+This protocol structure was chosen based on prior research demonstrating detectable changes in PF torque following adaptation periods of similar duration (Lauziare et al., 2014).
+A 2:1 speed ratio was used, as adaptation to this ratio typically occurs within approximately 25 strides (Reisman, Block, & Bastian, 2005), providing ample time for adaptation and washout given typical stride times of less than 1.5 seconds (Wang et al., 2019).
+
+In the cSBT condition, the left belt was set at 1 m/s and the right belt at 2 m/s.
+In the Unilateral FastBrake condition, the left belt began at 2 m/s at left foot contact and then slowed to 1 m/s after the left limb bore 50% of the total vertical GRF.
+In the Unilateral FastProp condition, the left belt began at 1 m/s at left foot contact and then accelerated to 2 m/s after the left limb bore 50% of the total vertical GRF.
+
+Participants wore a safety harness and received verbal countdowns before speed changes.
+Ground reaction forces were recorded, and D-Flow software (v3.20.0) controlled belt speeds based on vertical GRF. 
+Rating of Perceived Exertion (RPE) was collected using a Borg RPE 10-point scale (Borg et al., 2010) during the final minute of Baseline and Adaptation. 
+Sixty-second recordings captured late baseline (last 30 s)/early adaptation (first 30 s) and late adaptation (last 30 s)/early post-adaptation (first 30 s) transitions.
+Participants were instructed to avoid using handrails unless necessary for balance.
+
+## Split Belt Control Mechanism
+
+For PDSV trials, custom D-Flow scripts triggered left belt speed changes based on force plate data.
+For FastBrake, the left belt accelerated to 2 m/s at left swing initiation (vertical GRF approaching zero) and began to slow to 1 m/s when the left vertical GRF exceeded the right vertical GRF.
+For FastProp, the left belt slowed to 1 m/s at left swing initiation and began to accelerate to 2 m/s when the left vertical GRF exceeded the right vertical GRF.
+The belt acceleration was limited to 3 m/s². 
+
+## Rationale for Target Belt Speeds
+
+Healthy individuals walking at ≥1 m/s have a swing time of approximately 0.33 seconds (Wang et al., 2019), allowing a 1 m/s speed change between double support phases.
+This resulted in a roughly even distribution of fast and baseline speeds across the braking and propulsive phases of stance (Figure 2). 
+The 2:1 speed ratio (1 m/s slow, 2 m/s fast) is well-tolerated in healthy individuals (Reisman, Block, & Bastian, 2005) and elicits detectable after-effects in ankle joint torque (Lauziare et al., 2014).
+
+## Data Processing
+
+Visual3D (HAS Motion, Kingston, Ontario) software was used for data filtering and biomechanical calculations.
+Marker trajectories and GRF data were smoothed using second-order Butterworth low-pass filters at 6 Hz.
+Center of Pressure data were smoothed using second-order Butterworth filters at 4 Hz to remove an oscillatory artifact present in the treadmill's COP data across all trials. 
+This filtering method allowed for COP progression across the foot to align with typical patterns (Chiu, Wu, & Chang, 2013). 
+Joint centers were defined by malleoli markers (ankle) and functional calibration methods (hip and knee) (Schwartz & Rozumalski, 2005).
+
+Joint torques were normalized to body weight. 
+Joint torque profiles across the stance phase were time-normalized and averaged across five steps to characterize torque in each period (Figure 4). 
+PF impulse was calculated by summing the time-normalized joint torque profile when there was a net PF moment and multiplying by the mean stance time.
+
+Actual belt velocity was calculated using reflective markers affixed to the belts and custom Python scripts processed within Vicon.
+The onset and completion of the Adaptation period were identified using this belt velocity data.
+Primary variables for Late Baseline and Early Post Adaptation were calculated by averaging the last 5 complete steps of Baseline and the first 5 complete steps of Post Adaptation, respectively.
+Averaging five steps before and after alterations in belt speed has been previously shown to effectively identify step length symmetry and PF torque changes from baseline to post-adaptation (Lauziare et al., 2014).
+Secondary variables for Early and Late Adaptation were calculated similarly.
+
+## Primary Variables
+
+*   **Step Length Ratio (SLR):** Defined as $\frac{left\ (fast)\ step\ length}{right\ (baseline)\ step\ length}$, where step length is the distance between heel markers at initial contact of the leading limb.
+*   **Left (fast side) ankle PF impulse:** Calculated during stance and normalized to body weight.
+
+Primary variables were analyzed for Late Baseline and Early Post Adaptation.
+
+## Secondary Variables
+
+Dominant lower limb was assessed by asking, "If you were to kick a soccer ball into a goal, which foot would you kick with?" (van Melick et al., 2017). RPE was assessed in the final minute of each baseline and adaptation period. Lower extremity joint torques were calculated for all four periods (Late Baseline, Early Adaptation, Late Adaptation, Early Post Adaptation).
+
+## Statistical Analysis
+
+To assess the effects of the different split-belt treadmill protocols on primary variables, linear mixed-effects models were employed. Step Length Ratio (SLR) and Left (altered side) PF impulse were analyzed with Period (Baseline and Post-Adaptation) and Condition (cSBT, FastBrake, and FastProp) as fixed effects, as well as their interaction. A random intercept for Participant was included to account for within-subject variability. Pairwise comparisons of periods within each condition were conducted using Holm's correction for multiple comparisons.
+
+Potential order and carryover effects were assessed using a mixed-effects model with condition order and previous condition as fixed effects and participant as a random effect.
+
+All analyses were performed in R using the lme4 package for mixed-effects modeling and the emmeans package for post-hoc comparisons. Statistical significance was set at α = 0.05 for all tests.
