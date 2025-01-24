@@ -5,50 +5,51 @@ This README is intended to document the steps of data processing that take jjpla
 
 # Stage 1: Vicon Output
 
-Vicon data for each subject is stored within research/PDSV/dissertation/raw_vicon/S#.
-This is data that has been fully cleaned with one file each for the start and stop of all adaptation trials.
-Additionally, there are going to be a couple of calibration files (S#\_static and S#\_dynamic).
+Vicon data for each subject is stored within `research/PDSV/dissertation/raw_vicon/S#`.
 
-# Stage 2: Visual 3D pipeline output
+# Stage 2: Creation of `.cmz` files
+
+Individual calibration and trial data is aggregated into cmz files within `dissertation/cmz`.
+The basic steps for the creation of the `.cmz` for each participant is as follows
 
 1.  Load all motion trials
 2.  Models --\> create from static calibration file --\> select static.c3d
 3.  Add model file : `lower_extremity.mdh`
 4.  Click "Skeleton Sword" button to calibrate functional knee and hip
-5.  Run Pipelines (stored in `dissertation\v3d\pipelines`:
 
--   Filter Signals and Detect Events (0)
--   Get Subject Mass (1) *[update mass in model tab]*
--   Compute Model Based Data (2)
--   Clean up BeltSpeed data (3)
--   Export normalized calculations (4)
+At this point, there is a substantial amount of manual processing through the GUI, including tweaks to the underlying `mdh` file to accomodate issues peculiar to an individual data collection (such as a marker falling off the foot).
 
-Pipeline `4` will create `S#_left_gait_cycle_data.tsv` and `S#_right_gait_cycle_data.tsv` within the `dissertation\v3d\raw_v3d_output` subfolder.
+This is data that has been fully cleaned with one file each for the start and stop of all adaptation trials.
+Additionally, there are going to be a couple of calibration files (S#\_static and S#\_dynamic).
+
+# Stage 3: Run Pipelines 
+
+These are stored in `dissertation\v3d\pipelines`:
+
+1.  Filter Signals and Detect Events 
+2.  Get Subject Mass *[update mass in model tab]*
+3.  Compute Model Based Data 
+4.  Clean up BeltSpeed data 
+5.  Export normalized calculations 
+
+The final pipeline will create `S#_left_gait_cycle_data.tsv` and `S#_right_gait_cycle_data.tsv` within the `dissertation\v3d\raw_v3d_output` subfolder.
 These two files are the inputs of the next stage
 
-# Stage 3: Rolling up with Python
+# Stage 3: Convert to tidy format
 
-The objective here is to convert the `.tsv` files into a tidy tabular format that can subsequently be processed within python.
-Because these final 2 stages of processing are code heavy, they are stored in the git repo `pdvs_v3d`.
-Open `tsv_to_tidy.py`, update the subject number, and run the script.
-It should create a `S#_measured_data_long.csv` which is a tidy table that can be loaded into R.
+see: `dissertation\pdvs_R\data_processing`
 
-# Stage 4: Final Stats and Rollup
+The raw pipeline output is in an exceptionally wide format.
+Data for each subject is processed separately within the workbook `generate_single_subject_variables.Rmd`.
+This workbook generates individual subject reports in `dissertation\pdvs_R\subject_reports` which can be visually inspected for reasonability of the Visual3D pipeline output and the resulting mean stance data that is determined for later stage processing.
+That mean data (normalized parameter across stance phase, averaged across 5 steps) is the primary building block for later characterizations of torque and impulse. The step length data is determined based on the time normalized stance data at t=0.
+
+Tidy data for each participant is stored in `pdsv_R\tidy_output`.
+
+The script `batch_process.R` runs the workbook against all the subject data.
+
+# Stage 4: Final Rollup and Analysis
 
 Final processing of results occurs in PDSV_Results.qmd.
 This will roll up the individual `S#_measured_data_long.csv` into a single dataframe for processing.
-There are some additional transformations that tidy up the Visual3D output.
-Just taking a moment to feel what it's like to type in Rstudio on linux.
-Is this something that I can do a lot of?
-Should I specifically do all my drafting in RStudio?
-I'm thinking that I might.
-Rather than trying to do something fancy within vscode where this kind of data analysis and processing is not really a first class citizen.
-Yep, this is easy enough.
-I'm fairly happy with how this is working.
-So I shouldn't try to overcomplicate things.
-Just keep everything here in RStudio for data analysis and manuscript drafting.
-There should already be default tools for integrating with word and other tools.
-I may need to do some stuff with pandoc on the other side for conversion back to markdown.
 
-Ok.
-I think I'm learning how this works in the source view.
