@@ -4,16 +4,17 @@ author: "Mac Prible"
 date: "`r Sys.Date()`"
 output: html_document
 params:
-  subject: "S20"
+  subject: "S2"
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE)
+library(here)
 source("tidy_v3d.R")
 
 # Set up variables
-raw_data_directory <- "C:/Users/Mac Prible/OneDrive - The University of Texas at Austin/research/PDSV/dissertation/v3d/raw_v3d_output"
-tidy_data_directory <- "C:/Users/Mac Prible/OneDrive - The University of Texas at Austin/research/PDSV/dissertation/PDSV_R/tidy_output"
+raw_data_directory <- here('..', 'v3d','raw_v3d_output')
+tidy_data_directory <- here('data')
 
 # Define function to process single file with side information
 process_side_file <- function(data_directory, subject_id, side) {
@@ -75,6 +76,7 @@ combined_data %>%
 # Belt Speed Across Condions by Period
 ```{r beltspeed, fig.width=10, fig.height=6}
 combined_data %>%
+  # filter(variable == "CONTRA_BeltSpeed") %>%
   filter(variable == "IPSI_BeltSpeed") %>%
   filter(axis == "X") %>%
   ggplot(aes(x = normalized_time, y=value, group=step, color=period)) +
@@ -124,7 +126,7 @@ Here I will also save output for use in the aggregated data later.
 
 ```{r mean-ankle-torque, fig.width=10, fig.height=6}
 mean_across_stance <- combined_data %>% 
-  filter(grepl("IPSI_*",variable) | grepl("*PELVIS*",variable) | variable == "TIME") %>%
+  filter(grepl("IPSI_*",variable) | grepl("CONTRA_*",variable) | grepl("*PELVIS*",variable) | variable == "TIME") %>%
   group_by(subject,order,condition,period, stance_side,variable, axis, normalized_time) %>% 
   summarize(value = mean(value)) 
   
@@ -183,6 +185,8 @@ combined_data %>%
   
 
 ```
+
+
 ```{r GRF_mean, fig.width=10, fig.height=6}
 mean_across_stance %>% 
   filter(variable == "IPSI_GRF") %>%

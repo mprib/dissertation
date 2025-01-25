@@ -2,32 +2,33 @@
 library(rmarkdown)
 library(purrr)
 library(glue)
+library(here)
 
 # Define the output directory - modify this path as needed
-output_dir <- file.path(getwd(), "subject_reports")
+output_dir <- file.path(getwd(), "reports", "subject_reports")
 
 # Define list of subjects with deliberate case
 subjects <- c(
-  "s1",				
-  "S10",				
-  "S11",			
-  "S12",				
-  "S13",				
-  "S14",				
-  "S15",				
-  "S16",				
-  "S17",				
-  "S18",
-  "S19",				
-  "S2",				
-  "S20",				
-  "S3",				
-  "S4",				
-  "S5",				
-  "S6",				
-  "S7",				
-  "S8",				
-  "S9"
+  # "s1",				
+  # "S10",				
+  # "S11",			
+  # "S12",				
+  # "S13",				
+  # "S14",				
+  # "S15",				
+  # "S16",				
+  # "S17",				
+  # "S18",
+  # "S19",				
+  "S2" #, 				
+  # "S20",				
+  # "S3",				
+  # "S4",				
+  # "S5",				
+  # "S6",				
+  # "S7",				
+  # "S8",				
+  # "S9"
 ) 
 
 # Function to render for a single subject
@@ -47,7 +48,7 @@ render_subject_report <- function(subject) {
   tryCatch({
     message(glue("Attempting to render with params$subject = {subject}"))
     render(
-      input = "generate_single_subject_variables.Rmd",
+      input = here("scripts","data_prep", "generate_single_subject_variables.Rmd"),
       output_file = output_file,
       params = list(subject = subject),
       quiet = FALSE  # Changed to FALSE to see more detail

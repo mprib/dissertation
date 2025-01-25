@@ -18,10 +18,10 @@ options(error = function() traceback(2))
 library(tidyverse)
 library(lme4)
 library(emmeans)
+library(here)
 
-tidy_data_directory <- "C:\\Users\\Mac Prible\\OneDrive - The University of Texas at Austin\\research\\PDSV\\dissertation\\pdvs_R\\tidy_output"
-
-figure_directory <- "C:\\Users\\Mac Prible\\OneDrive - The University of Texas at Austin\\research\\PDSV\\dissertation\\manuscripts\\figures"
+tidy_data_directory <- here("tidy_output")
+figure_directory <- here("manuscripts","figures")
 
 mean_across_stance <- 
   list.files(tidy_data_directory, pattern="*_mean_across_stance.csv") %>% 
