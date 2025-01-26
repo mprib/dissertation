@@ -115,7 +115,7 @@ mean_across_stance %>%
   )+
   scale_color_manual(
     values = c("IPSI_BeltSpeed" = "blue", "CONTRA_BeltSpeed" = "red"),
-    labels = c("IPSI_BeltSpeed" = "Stance Limb", "CONTRA_BeltSpeed" = "Contralateral Limb") # Added labels for each color
+    labels = c("IPSI_BeltSpeed" = "Reference Limb", "CONTRA_BeltSpeed" = "Contralateral Limb") # Added labels for each color
   )
   
 ggsave(file.path(figure_directory,"Bilateral PDSV speeds.png"))
@@ -123,6 +123,8 @@ ggsave(file.path(figure_directory,"Bilateral PDSV speeds.png"))
 
 
 # Characteristic Torque Profile
+
+## Both Sides
 ```{r}
 
 # comparison <- pre_late_periods
@@ -134,9 +136,9 @@ mean_across_stance %>%
   filter(condition %in% names(BIL_CONDITION_LABELS)) %>%  
   mutate(condition = BIL_CONDITION_LABELS[condition]) %>% 
   filter(variable %in% c("IPSI_ANKLE_MOMENT") & axis == "X") %>% 
-  group_by(period, condition, variable, normalized_time) %>% 
+  group_by(period, condition, variable, normalized_time, stance_side) %>% 
   summarize(
-    Pelvis_COM = mean(value),
+    PF_torque = mean(value),
     se = sd(value)/sqrt(n()),  # Standard error
     ci = 1.96 * se,            # 95% confidence interval
     upper = PF_torque + ci,
@@ -157,7 +159,62 @@ mean_across_stance %>%
   geom_hline(yintercept = 0) +
   scale_x_continuous(labels = NULL) +
   facet_grid(
-    cols = vars(condition)
+    rows = vars(condition),
+    cols = vars(stance_side)
+  ) +
+  scale_linetype_manual(values = setNames(c("solid", "dashed"), comparison)) + 
+    theme_minimal() +
+  theme(
+    legend.position = "bottom",
+  ) +
+  labs(
+    x = "Normalized Stance Time (0-100%)",
+    y = "Ankle Moment (N.m/BW)",
+    title = "Ankle Torque Across Conditions",
+    subtitle = "Averaged Across Subjects (95% CI)",
+    color = "Condition",
+    fill = "Condition"
+  )
+  
+ggsave(file.path(figure_directory,"bil_torque_over_time.png"))
+```
+
+## Averaged Across Sides
+```{r}
+
+# comparison <- pre_late_periods
+comparison <- pre_post_periods
+
+mean_across_stance %>% 
+  filter(period %in% comparison) %>% 
+  mutate(period = factor(period,levels = comparison)) %>% 
+  filter(condition %in% names(BIL_CONDITION_LABELS)) %>%  
+  mutate(condition = BIL_CONDITION_LABELS[condition]) %>% 
+  filter(variable %in% c("IPSI_ANKLE_MOMENT") & axis == "X") %>% 
+  group_by(period, condition, variable, normalized_time) %>% 
+  summarize(
+    PF_torque = mean(value),
+    se = sd(value)/sqrt(n()),  # Standard error
+    ci = 1.96 * se,            # 95% confidence interval
+    upper = PF_torque + ci,
+    lower = PF_torque - ci,
+    .groups = 'drop'
+  ) %>% 
+  ggplot(aes(x = normalized_time, color = condition, linetype = period)) +
+  geom_ribbon(aes(
+    ymin = lower, 
+    ymax = upper,
+    fill = condition,
+    group = interaction(condition, period)
+  ), 
+  alpha = 0.2,
+  color = NA
+  ) +
+  geom_line(aes(y = PF_torque), size = 1) +
+  geom_hline(yintercept = 0) +
+  scale_x_continuous(labels = NULL) +
+  facet_grid(
+    cols = vars(condition),
   ) +
   scale_linetype_manual(values = setNames(c("solid", "dashed"), comparison)) + 
   theme_minimal() +
@@ -165,17 +222,17 @@ mean_across_stance %>%
   labs(
     x = "Normalized Stance Time (0-100%)",
     y = "Ankle PF Torque (N.m/BW)",
-    title = "Ankle Torque Across Across Stance Phase",
+    title = "Ankle Torque Across Conditions",
     subtitle = "Averaged Across Subjects (95% CI)",
     color = "Condition",
     fill = "Condition"
   )
 
 
-ggsave(file.path(figure_directory,"bil_torque_over_time.png"))
+ggsave(file.path(figure_directory,"torque_over_time.png"))
 ```
 
-### PF Impulse
+# PF Impulse
 
 ```{r}
 PF_impulse <- mean_across_stance %>% 
@@ -183,14 +240,13 @@ PF_impulse <- mean_across_stance %>%
   mutate(period = factor(period,levels = pre_post_periods)) %>% 
   filter(variable %in% c("IPSI_ANKLE_MOMENT") & axis == "X") %>% 
   group_by(subject, period, condition, variable, normalized_time,stance_side) %>% 
-  summarize(Pelvis_COM = mean(value)) %>% 
+  summarize(PF_torque = mean(value)) %>% 
   filter(PF_torque<0) %>%
   group_by(subject, stance_side,condition, period) %>% 
   summarize(PF_impulse = sum(PF_torque)/-100)
 ```
 
-
-#### Plot
+## Plot
 ```{r}
 plt <- PF_impulse %>% 
   ungroup() %>% 
@@ -198,7 +254,7 @@ plt <- PF_impulse %>%
   mutate(condition = BIL_CONDITION_LABELS[condition]) %>% 
   group_by(subject,condition, period) %>% 
   summarize(PF_impulse= mean(PF_impulse)) %>%  
-  ggplot(aes(x = period,y=PF_impulse, group = subject, color=subject))+
+  ggplot(aes(x = period,y=PF_impulse, group = subject, color=condition))+
   geom_point()+
   geom_line()+
   facet_grid( ~ condition)+
@@ -208,8 +264,8 @@ plt <- PF_impulse %>%
         legend.position = "none")+
   labs(
     x = "Period",
-    y = "Ankle PF Impulse (N.m.s/BW)",
-    title = "Ankle PF Impulse Across Stance Phase by Period",
+    y = "PF Impulse (N.m.s/BW)",
+    title = "Plantarflexor Impulse Across Stance Phase by Period",
   )
 
 # plt
@@ -244,7 +300,7 @@ plt+
 ggsave(file.path(figure_directory,"bil_impulse_w_mean.png"))
 ```
 
-#### Test
+## Test
 
 ```{r}
 bilateral_data <- PF_impulse %>% 
@@ -274,13 +330,10 @@ summary(period_comparisons)
 ```
 
 
-# Addendum
-Just some random things I am looking at.
-
-## Pelvis Position
+# Pelvis Position
+## Across Stance Phase
 ```{r}
 periods = c("Late Adapt", "Early Post Adapt")
-
 
 mean_across_stance %>% 
   filter(period %in% periods) %>% 
@@ -303,13 +356,20 @@ mean_across_stance %>%
   labs(
     x = "Normalized Stance Time (0-100%)",
     y = "Pelvis COM AP Position",
-    title = "Mean Pelvis CoM Position",
+    title = "Pelvis CoM Position",
     subtitle = "5 steps immediately before and after the end of Adaptation",
     color = "Condition"
   ) +
   theme_minimal()
 
-  mean_across_stance %>% 
+```
+
+
+## Change in Mean Position
+```{r}
+periods = c("Late Adapt", "Early Post Adapt")
+
+mean_across_stance %>% 
   filter(period %in% periods) %>% 
   mutate(period = factor(period, levels = periods)) %>% 
   filter(variable %in% c("PELVIS_COM") & axis == "Y") %>% 
@@ -318,11 +378,14 @@ mean_across_stance %>%
   mutate(value = -value) %>% 
   
   group_by(period, condition, variable, subject) %>% 
-  summarize(Pelvis_COM = mean(value)) %>%steps
-  facet_grid(cols=vars(condition)) +
+  summarize(Pelvis_COM = mean(value)) %>% 
+  ggplot(aes(x=period, y= Pelvis_COM, color=condition, group=subject)) +
+  geom_line() +
+  geom_point() +
+  facet_grid(cols=vars(condition))+
   scale_linetype_manual(values=c("Early Post Adapt"="solid", "Late Adapt"="dashed")) +
   labs(
-    x = "Normalized Stance Time (0-100%)",
+    x = "Period",
     y = "Pelvis COM AP Position",
     title = "Mean Pelvis CoM Position",
     subtitle = "5 steps immediately before and after the end of Adaptation",
@@ -331,4 +394,3 @@ mean_across_stance %>%
   theme_minimal()
 
 ```
-
