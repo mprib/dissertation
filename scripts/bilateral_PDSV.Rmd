@@ -250,7 +250,6 @@ PF_impulse <- mean_across_stance %>%
 ```{r}
 plt <- PF_impulse %>% 
   ungroup() %>% 
-  filter(condition %in% names(BIL_CONDITION_LABELS)) %>%  
   mutate(condition = BIL_CONDITION_LABELS[condition]) %>% 
   group_by(subject,condition, period) %>% 
   summarize(PF_impulse= mean(PF_impulse)) %>%  
@@ -305,7 +304,6 @@ ggsave(file.path(figure_directory,"bil_impulse_w_mean.png"))
 ```{r}
 bilateral_data <- PF_impulse %>% 
   ungroup() %>% 
-  filter(condition %in% names(BIL_CONDITION_LABELS)) %>%  
   mutate(condition = BIL_CONDITION_LABELS[condition]) %>% 
   group_by(subject,condition, period) %>%
   summarize(PF_impulse= mean(PF_impulse))
@@ -331,11 +329,12 @@ summary(period_comparisons)
 
 
 # Pelvis Position
-## Across Stance Phase
+
 ```{r}
 periods = c("Late Adapt", "Early Post Adapt")
 
-mean_across_stance %>% 
+pelvis_COM_data <- mean_across_stance %>% 
+  mutate(condition = BIL_CONDITION_LABELS[condition]) %>% 
   filter(period %in% periods) %>% 
   mutate(period = factor(period, levels = periods)) %>% 
   filter(variable %in% c("PELVIS_COM") & axis == "Y") %>% 
@@ -343,42 +342,16 @@ mean_across_stance %>%
   # negative Y is forward in treadmill frame of reference
   mutate(value = -value) %>% 
   
-  group_by(period, condition, variable, normalized_time, subject) %>% 
-  summarize(Pelvis_COM = mean(value)) %>% 
-  # Create interaction variable for grouping
-  mutate(subject_period_interaction = interaction(subject, period)) %>% 
-  ggplot(aes(x=normalized_time, y= Pelvis_COM, linetype=period, color=condition, group=subject_period_interaction)) +
-  geom_line() +
-  scale_x_continuous(labels=NULL) +
-  facet_grid(rows=vars(condition),
-             cols=vars(period)) +
-  scale_linetype_manual(values=c("Early Post Adapt"="solid", "Late Adapt"="dashed")) +
-  labs(
-    x = "Normalized Stance Time (0-100%)",
-    y = "Pelvis COM AP Position",
-    title = "Pelvis CoM Position",
-    subtitle = "5 steps immediately before and after the end of Adaptation",
-    color = "Condition"
-  ) +
-  theme_minimal()
-
+  group_by(period, condition, subject) %>% 
+  summarize(Pelvis_COM = mean(value))
 ```
 
+## Plot
 
-## Change in Mean Position
 ```{r}
-periods = c("Late Adapt", "Early Post Adapt")
-
-mean_across_stance %>% 
-  filter(period %in% periods) %>% 
-  mutate(period = factor(period, levels = periods)) %>% 
-  filter(variable %in% c("PELVIS_COM") & axis == "Y") %>% 
   
-  # negative Y is forward in treadmill frame of reference
-  mutate(value = -value) %>% 
   
-  group_by(period, condition, variable, subject) %>% 
-  summarize(Pelvis_COM = mean(value)) %>% 
+pelvis_COM_data %>% 
   ggplot(aes(x=period, y= Pelvis_COM, color=condition, group=subject)) +
   geom_line() +
   geom_point() +
@@ -391,6 +364,56 @@ mean_across_stance %>%
     subtitle = "5 steps immediately before and after the end of Adaptation",
     color = "Condition"
   ) +
-  theme_minimal()
+  theme_minimal()+
+  stat_summary(aes(group = 1), 
+              fun = mean, 
+              geom = "line", 
+              color = "black", 
+              linewidth = 1, 
+              linetype = "dashed", 
+              alpha = .6) +
+  stat_summary(aes(group = 1), 
+              fun = mean, 
+              geom = "point", 
+              color = "black", 
+              size = 3, 
+              shape = 18) +
+  # Optionally add mean values as text
+  geom_text(stat = "summary", 
+            fun = mean,
+            aes(label = sprintf("%.2f", ..y..), 
+                hjust = ifelse(period=="Late Adapt", 1.5, -0.5),
+                group = 1),
+            color = "black", 
+            vjust = -0.5, 
+          
+            size = 3)
 
 ```
+
+## Test
+
+```{r}
+  
+# Prepare data for lmer
+pelvis_COM_data$subject <- factor(pelvis_COM_data$subject)
+pelvis_COM_data$condition <- factor(pelvis_COM_data$condition)
+pelvis_COM_data$period <- factor(pelvis_COM_data$period)
+
+model <- lmer(Pelvis_COM ~ period * condition + (1|subject), 
+             data = pelvis_COM_data)
+
+
+summary(model)
+
+# Compute estimated marginal means
+emm <- emmeans(model, specs = ~ period | condition)
+
+# Pairwise comparisons of Period within each Condition
+period_comparisons <- pairs(emm, simple = "period", adjust="holm")
+summary(period_comparisons)
+
+
+
+```
+
