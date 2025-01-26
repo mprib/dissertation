@@ -13,11 +13,14 @@ knitr::opts_chunk$set(error = TRUE)
 options(error = function() traceback(2))
 ```
 
+Color reference guide here: https://sape.inf.usi.ch/quick-reference/ggplot2/colour
+  
 # Import Data
 
 ```{r, warning=FALSE, message=FALSE}
 library(tidyverse)
 library(lme4)
+library(cowplot) # Mac, Check out customization options
 library(emmeans)
 
 tidy_data_directory <- here("data")
@@ -135,6 +138,7 @@ mean_across_stance %>%
   alpha = 0.2,
   color = NA
   ) +
+
   geom_line(aes(y = PF_torque), size = 1) +
   geom_hline(yintercept = 0) +
   scale_x_continuous(labels = NULL) +
@@ -443,7 +447,7 @@ step_length_data <- mean_across_stance %>%
 
 step_length_data %>% 
   filter(period %in% pre_post_periods) %>% 
-  ggplot(aes(x = period, y = value))+
+  ggplot(aes(x = period, y = value, color=condition))+
   geom_point()+
   facet_grid(cols = vars(condition),
              rows = vars(name),
@@ -451,6 +455,10 @@ step_length_data %>%
              )+
   
   theme_minimal()+
+  labs(
+    title = "Step Length Immediately Before and After End of Adaptation"
+    )+
+  theme(legend.position="none")+
   stat_summary(aes(group = 1), 
               fun = mean, 
               geom = "line", 
@@ -468,7 +476,7 @@ step_length_data %>%
   geom_text(stat = "summary", 
             fun = mean,
             aes(label = sprintf("%.2f", ..y..), 
-                hjust = ifelse(period=="Late Adapt", 1.5, -0.5),
+                hjust = ifelse(period=="Late Baseline", 1.5, -0.5),
                 group = 1),
             color = "black", 
             vjust = -0.5, 
