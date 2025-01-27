@@ -1,0 +1,148 @@
+---
+title: "Quality Checks"
+author: "Mac Prible"
+output: html_document
+---
+
+This may turn into just a scratch pad to think through how to implement the checks that they committe wanted me to.
+
+```{r setup, include=FALSE}
+library(here)
+knitr::opts_chunk$set(echo=FALSE)
+knitr::opts_chunk$set(error = TRUE)
+options(error = function() traceback(2))
+```
+
+ 
+ 
+# Import Data
+
+```{r, warning=FALSE, message=FALSE}
+library(tidyverse)
+library(lme4)
+library(cowplot) # Mac, Check out customization options
+library(emmeans)
+
+tidy_data_directory <- here("data")
+figure_directory <- here("manuscripts","figures")
+
+mean_across_stance <- 
+  list.files(tidy_data_directory, pattern="*_mean_across_stance.csv") %>% 
+  map_df(~read_csv2(file.path(tidy_data_directory,.)))
+  
+```
+
+
+
+## Convenient Lists
+
+Conditions: 
+
+1. bbp      
+2. bpp      
+3. sbt      
+4. ubp      
+5. upp  
+
+Periods:
+
+1. begin start     
+2. Late Baseline   
+3. Early Adapt     
+4. end start       
+5. begin stop      
+6. Late Adapt      
+7. Early Post Adapt
+8. end stop     
+
+
+```{r}
+UNI_CONDITION_LABELS <- c("sbt" = "Conventional SBT",
+                          "ubp" = "Uni. Fast Brake",
+                          "upp" = "Uni. Fast Prop")
+
+BIL_CONDITION_LABELS <- c("bbp" = "Bil. Fast Brake",
+                          "bpp" = "Bil. Fast Prop")
+
+CONDITION_LABELS <- c(UNI_CONDITION_LABELS, BIL_CONDITION_LABELS)
+
+pre_post_periods <- c("Late Baseline", 
+                      "Early Post Adapt")
+
+primary_periods <- c("Late Baseline", 
+                     "Early Adapt",
+                     "Late Adapt",
+                     "Early Post Adapt")
+
+pre_late_periods <- c("Late Baseline",
+                      "Late Adapt")
+
+ordered_periods <- c("Early Adapt",
+                     "Early Post Adapt",
+                     "Late Adapt",
+                     "Late Baseline",
+                     "begin start",
+                     "begin stop",
+                     "end start",
+                     "end stop")
+
+```
+
+# Check SLR Convergence
+
+To confirm that the adaption and wash out periods were of a sufficient length to allow both convergence to a stable pattern as well as a return to a comparable baseline, I'm going to examine the step length from multiple perspective. One basic one is the SLR for all of the asymmetrical conditions.
+
+## Calculate step length across all conditions and start/stop of each period
+```{r}
+
+step_lengths <- mean_across_stance %>% 
+  filter(normalized_time==1) %>% 
+  filter(axis == "Y") %>% 
+  filter(variable %in% c("IPSI_HEEL", "CONTRA_HEEL")) %>% 
+  pivot_wider(names_from = variable,values_from = value) %>% 
+  mutate(step_length = CONTRA_HEEL - IPSI_HEEL) %>% 
+  mutate(period = factor(period, levels=ordered_periods)) %>% 
+  mutate(order = factor(order, levels=c(1:5)))
+
+
+slr <- step_lengths %>% 
+  select(-CONTRA_HEEL, -IPSI_HEEL) %>%
+  pivot_wider(names_from = stance_side,values_from = step_length) %>% 
+  mutate(slr = left/right)
+```
+
+# Late Baseline Step Length 
+
+```{r}
+
+step_lengths %>% 
+  filter(period %in% c("Late Baseline")) %>%
+  ggplot(aes(x=condition, y = step_length))+
+  geom_boxplot()+
+  facet_grid(cols = vars(stance_side))+
+  cowplot::theme_minimal_grid()
+
+step_lengths %>% 
+  filter(period %in% c("Late Baseline")) %>%
+  ggplot(aes(x=order, y = step_length))+
+  geom_boxplot()+
+  facet_grid(cols = vars(stance_side))+
+  cowplot::theme_minimal_grid()
+
+```
+
+# Step Length Ratio in Late Baseline
+
+Is there any difference between 
+```{r}
+
+slr %>% 
+  filter(condition %in% names(UNI_CONDITION_LABELS)) %>% 
+  filter(period == "Late Baseline") %>% 
+  ggplot(aes(x=condition,y=slr))+
+  geom_boxplot()+
+  geom_point()+
+  cowplot::theme_minimal_grid()
+
+```
+
