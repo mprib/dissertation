@@ -22,41 +22,105 @@ library(tidyverse)
 library(lme4)
 library(cowplot) # Mac, Check out customization options
 library(emmeans)
+library(car)
+library(clipr)
 
 tidy_data_directory <- here("data")
 figure_directory <- here("manuscripts","figures")
 
-mean_across_stance <- 
+raw_mean_across_stance <- 
   list.files(tidy_data_directory, pattern="*_mean_across_stance.csv") %>% 
   map_df(~read_csv2(file.path(tidy_data_directory,.)))
-  
+
+# note that step lengths here are handled separately because I don't want to average heel positions across multiple steps and then take the difference between them. Instead I take difference between heel positions at contact and then average across multiple steps. While they would likely generate similar results, I'm not 100% on that given the treadmill movement, so I took this more careful approach.  
+step_lengths <- 
+  list.files(tidy_data_directory, pattern="*_step_lengths.csv") %>% 
+  map_df(~read_csv2(file.path(tidy_data_directory,.)))
 ```
 
 
 # Mild Data Adjustments
-```{r}
 
-## Define Conditions
+## Define Some Lists for Convenience
+
+Some lists for convenience.
+
+Periods:
+
+1. begin start     
+2. Late Baseline   
+3. Early Adapt     
+4. end start       
+5. begin stop      
+6. Late Adapt      
+7. Early Post Adapt
+8. end stop     
+```{r}
+periods <- c("begin start" = "begin start", 
+             "Late Baseline" = "Late Baseline", 
+             "Early Adapt" = "Early Adaptation",
+             "end start" = "end start",
+             "begin stop" = "begin stop",
+             "Late Adapt" = "Late Adaptation",
+             "Early Post Adapt" = "Early Post Adaptation",
+             "end stop" = "end stop")
+
+pre_post_periods <- c("Late Baseline", "Early Post Adaptation")
+primary_periods <- c("Late Baseline", "Early Adaptation" , "Late Adaptation", "Early Post Adaptation")
+pre_late_periods <- c("Late Baseline",  "Late Adaptation")
+
 BIL_CONDITION_LABELS <- c(
   "bbp" = "Fast Brake",
   "bpp" = "Fast Prop"
 )
+```
 
-## Define Periods of Interest
-pre_post_periods <- c("Late Baseline", "Early Post Adapt")
-primary_periods <- c("Late Baseline", "Early Adapt" , "Late Adapt", "Early Post Adapt")
-pre_late_periods <- c("Late Baseline",  "Late Adapt")
+## Assign Previous Condition
+```{r}
+
+previous_condition <- raw_mean_across_stance %>% 
+  mutate(order = factor(order, levels = c(1:5))) %>% 
+  group_by(subject, order, condition) %>% 
+  summarize() %>% 
+  ungroup() %>% 
+  arrange(subject, order) %>%  
+  group_by(subject) %>%
+  mutate(previous_condition = lag(condition)) %>%
+  mutate(previous_condition = replace_na(previous_condition, "none")) %>%
+  ungroup() 
+
+mean_across_stance <- raw_mean_across_stance %>% 
+  mutate(order = factor(order, levels = c(1:5))) %>% 
+  mutate(period = factor(period, 
+                        levels = names(periods),
+                        labels = unname(periods))) %>% 
+  left_join(previous_condition)
 
 
-## Limit Data to Bilateral Conditions
+
+# rm(raw_mean_across_stance)
+# rm(previous_condition)
+```
+
+
+
+
+
+
+## Filter Out Unilateral conditions
+```{r}
+
 mean_across_stance <- mean_across_stance %>% 
+  ## Limit Data to Bilateral Conditions
   filter(condition %in% names(BIL_CONDITION_LABELS)) %>% 
-  select(-order)
+  # make sure that order is a sensible factor 
+  mutate(order = factor(order, levels = c(1:5)))
 
 
 ## Basic Checks You Have Data You Want
 mean_across_stance %>% group_by(variable) %>% summarize()
 mean_across_stance %>% group_by(condition) %>% summarize()
+mean_across_stance %>% group_by(period) %>% summarize()
 ```
 
 # Belt Speed
@@ -65,7 +129,7 @@ mean_across_stance %>% group_by(condition) %>% summarize()
 
 # filter out the swing phase from contralateral belt speed
 mean_across_stance %>% 
-  filter(period == "Late Adapt") %>% 
+  filter(period == "Late Adaptation") %>% view()
   filter(
     (variable %in% c("CONTRA_BeltSpeed", "IPSI_BeltSpeed") & axis == "X") |
     (variable %in% c("CONTRA_GRF", "IPSI_GRF") & axis == "Z")
@@ -87,7 +151,7 @@ mean_across_stance %>%
   geom_line(aes(group = interaction(subject, name)), size=0.5)+
   # scale_x_continuous(labels=NULL)+
   facet_grid(~condition, labeller = labeller(condition = BIL_CONDITION_LABELS))+
-  theme_minimal()+
+  cowplot::theme_minimal_grid()+
   theme(legend.position="bottom")+
   labs(
     x = "Normalized Stance Time (0-100%)",
@@ -147,7 +211,7 @@ mean_across_stance %>%
     cols = vars(stance_side)
   ) +
   scale_linetype_manual(values = setNames(c("solid", "dashed"), comparison)) + 
-    theme_minimal() +
+  cowplot::theme_minimal_grid() +
   theme(
     legend.position = "bottom",
   ) +
@@ -202,7 +266,7 @@ mean_across_stance %>%
     cols = vars(condition),
   ) +
   scale_linetype_manual(values = setNames(c("solid", "dashed"), comparison)) + 
-  theme_minimal() +
+  cowplot::theme_minimal_grid()+
   theme(legend.position = "bottom") +
   labs(
     x = "Normalized Stance Time (0-100%)",
@@ -218,7 +282,6 @@ ggsave(file.path(figure_directory,"torque_over_time.png"))
 ```
 
 # PF Impulse
-
 
 Needed to de-normalize impulse with respect to time.
 
@@ -239,11 +302,17 @@ PF_impulse <- mean_across_stance %>%
   filter(period %in% pre_post_periods) %>% 
   mutate(period = factor(period,levels = pre_post_periods)) %>% 
   filter(variable %in% c("IPSI_ANKLE_MOMENT") & axis == "X") %>% 
-  group_by(subject, period, condition, variable, normalized_time,stance_side) %>% 
-  summarize(PF_torque = mean(value)) %>% 
+  mutate(PF_torque = value) %>% 
+  select(-value, -axis, -variable) %>% 
+  # group_by(subject, period, condition, order, variable, normalized_time,stance_side) %>% 
+  # summarize(PF_torque = mean(value)) %>%
   filter(PF_torque<0) %>%
-  group_by(subject, stance_side,condition, period) %>% 
-  summarize(PF_impulse = sum(PF_torque)/-100)
+  group_by(subject, stance_side,condition, previous_condition, order, period) %>% 
+  summarize(PF_impulse_time_normalized = sum(PF_torque)/-100) %>% 
+  left_join(stance_times) %>% 
+  mutate(PF_impulse_adjusted = PF_impulse_time_normalized*stance_time)
+  
+
 ```
 
 ## Plot
@@ -252,13 +321,17 @@ plt <- PF_impulse %>%
   ungroup() %>% 
   mutate(condition = BIL_CONDITION_LABELS[condition]) %>% 
   group_by(subject,condition, period) %>% 
-  summarize(PF_impulse= mean(PF_impulse)) %>%  
+  summarize(PF_impulse= mean(PF_impulse_adjusted)) %>%  # averaging across sides
   ggplot(aes(x = period,y=PF_impulse, group = subject, color=condition))+
-  geom_point()+
-  geom_line()+
-  facet_grid( ~ condition)+
+  geom_boxplot(aes(group=period), 
+               alpha=0.3, 
+               width=0.2, 
+               color="black") +
+  geom_line(alpha=0.3, linewidth=0.3) +
+  geom_point(alpha=0.5, size=1) + 
+  facet_grid(~ condition)+
   # scale_x_discrete(guide = guide_axis(n.dodge = 2))+
-  theme_minimal()+
+  cowplot::theme_minimal_grid()+
   theme(
         # axis.text.x = element_text(angle = 45, hjust = 1),
         legend.position = "none")+
@@ -266,36 +339,30 @@ plt <- PF_impulse %>%
     x = "Period",
     y = "PF Impulse (N.m.s/BW)",
     title = "Plantarflexor Impulse Across Stance Phase by Period",
-  )
-
-# plt
-# 
-# ggsave(file.path(figure_directory,"bil_impulse.png"))
-
-plt+
+  ) +
+  geom_text(stat = "summary", 
+            fun = mean,
+            aes(label = sprintf("%.2f", ..y..), 
+                hjust = ifelse(period=="Late Baseline", 1.75, -.75),
+                group = 1),
+            color = "black", 
+            vjust = 0.4, 
+            size = 4)+
   stat_summary(aes(group = 1), 
               fun = mean, 
               geom = "line", 
               color = "black", 
               linewidth = 1, 
               linetype = "dashed", 
-              alpha = .6) +
+              alpha = .6)+ 
   stat_summary(aes(group = 1), 
               fun = mean, 
               geom = "point", 
               color = "black", 
               size = 3, 
-              shape = 18) +
-  # Optionally add mean values as text
-  geom_text(stat = "summary", 
-            fun = mean,
-            aes(label = sprintf("%.2f", ..y..), 
-                hjust = ifelse(period=="Late Baseline", 1.5, -0.5),
-                group = 1),
-            color = "black", 
-            vjust = -0.5, 
-          
-            size = 3)
+              shape = 18) 
+
+plt
 
 ggsave(file.path(figure_directory,"bil_impulse_w_mean.png"))
 ```
@@ -307,7 +374,7 @@ bilateral_data <- PF_impulse %>%
   ungroup() %>% 
   mutate(condition = BIL_CONDITION_LABELS[condition]) %>% 
   group_by(subject,condition, period) %>%
-  summarize(PF_impulse= mean(PF_impulse))
+  summarize(PF_impulse= mean(PF_impulse_adjusted))
   
 # Prepare data for lmer
 bilateral_data$subject <- factor(bilateral_data$subject)
@@ -327,17 +394,38 @@ emm <- emmeans(model, specs = ~ period | condition)
 period_comparisons <- pairs(emm, simple = "period", adjust="holm")
 summary(period_comparisons)
 ```
+## Quality Check
+Does the condition order or previous condition impact the PF_Impulse measure? It appears not.
 
+```{r}
+bilateral_data <- PF_impulse %>% 
+  ungroup() %>% 
+  mutate(condition = BIL_CONDITION_LABELS[condition]) %>% 
+  group_by(subject,order, condition, previous_condition, period) %>%
+  summarize(PF_impulse= mean(PF_impulse_adjusted)) # average across sides
+  
+# Prepare data for lmer
+bilateral_data$subject <- factor(bilateral_data$subject)
+bilateral_data$condition <- factor(bilateral_data$condition)
+bilateral_data$previous_condition <- factor(bilateral_data$previous_condition)
+bilateral_data$period <- factor(bilateral_data$period)
+
+model <- lmer(PF_impulse ~ period * condition + order + previous_condition + (1|subject), 
+             data = bilateral_data)
+
+
+summary(model)
+
+Anova(model, type = "III")
+```
 
 # Pelvis Position
 
 ```{r}
-periods = c("Late Adapt", "Early Post Adapt")
 
 pelvis_COM_data <- mean_across_stance %>% 
   mutate(condition = BIL_CONDITION_LABELS[condition]) %>% 
-  filter(period %in% periods) %>% 
-  mutate(period = factor(period, levels = periods)) %>% 
+  filter(period %in% pre_post_periods) %>% 
   filter(variable %in% c("PELVIS_COM") & axis == "Y") %>% 
   
   # negative Y is forward in treadmill frame of reference
@@ -354,17 +442,22 @@ pelvis_COM_data <- mean_across_stance %>%
   
 pelvis_COM_data %>% 
   ggplot(aes(x=period, y= Pelvis_COM, color=condition, group=subject)) +
-  geom_line() +
-  geom_point() +
+  geom_boxplot(aes(group=period), 
+               alpha=0.3, 
+               width=0.2, 
+               color="black") +
+  geom_line(alpha=0.3, linewidth=0.3) +
+  geom_point(alpha=0.5, size=1) +
   facet_grid(cols=vars(condition))+
   labs(
     x = "Period",
-    y = "Pelvis COM AP Position",
+    y = "Pelvis COM AP Position (m)",
     title = "Mean Pelvis CoM Position",
     subtitle = "5 steps immediately before and after the end of Adaptation",
     color = "Condition"
   ) +
-  theme_minimal()+
+  cowplot::theme_minimal_grid()+
+  theme(legend.position="none")+
   stat_summary(aes(group = 1), 
               fun = mean, 
               geom = "line", 
@@ -378,16 +471,14 @@ pelvis_COM_data %>%
               color = "black", 
               size = 3, 
               shape = 18) +
-  # Optionally add mean values as text
   geom_text(stat = "summary", 
             fun = mean,
             aes(label = sprintf("%.2f", ..y..), 
-                hjust = ifelse(period=="Late Adapt", 1.5, -0.5),
+                hjust = ifelse(period=="Late Adaptation", 1.75, -.75),
                 group = 1),
             color = "black", 
-            vjust = -0.5, 
-          
-            size = 3)
+            vjust = 0.4, 
+            size = 4)
 
 ```
 
@@ -454,7 +545,7 @@ step_length_data %>%
              scales="free_y"
              )+
   
-  theme_minimal()+
+  cowplot::theme_minimal_grid()+
   labs(
     title = "Step Length Immediately Before and After End of Adaptation"
     )+
@@ -499,7 +590,7 @@ wide_step_length_data <- step_length_data %>%
   filter(period %in% pre_post_periods) %>% 
   pivot_wider()
 
-model <- lmer(posterior_step_length ~ period * condition + (1|subject), 
+model <- lmer(anterior_step_length ~ period * condition + (1|subject), 
              data = wide_step_length_data)
 
 
@@ -511,7 +602,5 @@ emm <- emmeans(model, specs = ~ period | condition)
 # Pairwise comparisons of Period within each Condition
 period_comparisons <- pairs(emm, simple = "period", adjust="holm")
 summary(period_comparisons)
-
-
 
 ```
