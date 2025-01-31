@@ -141,3 +141,4 @@ all_normalized_stance_data.csv
 .RDataTmp1
 primary_analysis.html
 quasi_stiffness_analysis.html
+*.Rhistory
