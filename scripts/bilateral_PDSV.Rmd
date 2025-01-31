@@ -68,6 +68,7 @@ periods <- c("begin start" = "begin start",
 pre_post_periods <- c("Late Baseline", "Early Post Adaptation")
 primary_periods <- c("Late Baseline", "Early Adaptation" , "Late Adaptation", "Early Post Adaptation")
 pre_late_periods <- c("Late Baseline",  "Late Adaptation")
+convergence_check <- c("begin stop", "Late Adaptation")
 
 BIL_CONDITION_LABELS <- c(
   "bbp" = "Fast Brake",
@@ -129,7 +130,7 @@ mean_across_stance %>% group_by(period) %>% summarize()
 
 # filter out the swing phase from contralateral belt speed
 mean_across_stance %>% 
-  filter(period == "Late Adaptation") %>% view()
+  filter(period == "Late Adaptation") %>% 
   filter(
     (variable %in% c("CONTRA_BeltSpeed", "IPSI_BeltSpeed") & axis == "X") |
     (variable %in% c("CONTRA_GRF", "IPSI_GRF") & axis == "Z")
@@ -299,8 +300,7 @@ stance_times <- mean_across_stance %>%
   mutate(stance_time = stop_stance - start_stance)
 
 PF_impulse <- mean_across_stance %>% 
-  filter(period %in% pre_post_periods) %>% 
-  mutate(period = factor(period,levels = pre_post_periods)) %>% 
+  # mutate(period = factor(period,levels = pre_post_periods)) %>% 
   filter(variable %in% c("IPSI_ANKLE_MOMENT") & axis == "X") %>% 
   mutate(PF_torque = value) %>% 
   select(-value, -axis, -variable) %>% 
@@ -315,13 +315,25 @@ PF_impulse <- mean_across_stance %>%
 
 ```
 
+
+```{r}
+stance_times %>% 
+  ggplot(aes(x = period,y=stance_time, group = subject, color=condition))+
+  geom_point()+
+  facet_grid(~condition)
+  
+```
+
+
 ## Plot
 ```{r}
 plt <- PF_impulse %>% 
+  filter(period %in% pre_post_periods) %>% 
   ungroup() %>% 
   mutate(condition = BIL_CONDITION_LABELS[condition]) %>% 
   group_by(subject,condition, period) %>% 
   summarize(PF_impulse= mean(PF_impulse_adjusted)) %>%  # averaging across sides
+  # summarize(PF_impulse= mean(PF_impulse_time_normalized)) %>%  # averaging across sides
   ggplot(aes(x = period,y=PF_impulse, group = subject, color=condition))+
   geom_boxplot(aes(group=period), 
                alpha=0.3, 
@@ -372,6 +384,8 @@ ggsave(file.path(figure_directory,"bil_impulse_w_mean.png"))
 ```{r}
 bilateral_data <- PF_impulse %>% 
   ungroup() %>% 
+  filter(period %in% pre_post_periods) %>%
+  # filter(period %in% convergence_check) %>% 
   mutate(condition = BIL_CONDITION_LABELS[condition]) %>% 
   group_by(subject,condition, period) %>%
   summarize(PF_impulse= mean(PF_impulse_adjusted))
@@ -395,7 +409,8 @@ period_comparisons <- pairs(emm, simple = "period", adjust="holm")
 summary(period_comparisons)
 ```
 ## Quality Check
-Does the condition order or previous condition impact the PF_Impulse measure? It appears not.
+
+### Condition Order or Previous Condition
 
 ```{r}
 bilateral_data <- PF_impulse %>% 
@@ -419,13 +434,64 @@ summary(model)
 Anova(model, type = "III")
 ```
 
+### Convergence and Stability in Late Adaptation
+
+```{r}
+
+PF_impulse %>% 
+  ungroup() %>% 
+  mutate(condition = BIL_CONDITION_LABELS[condition]) %>% 
+  group_by(subject,condition, period) %>% 
+  summarize(PF_impulse= mean(PF_impulse_adjusted)) %>%  # averaging across sides
+  ggplot(aes(x = period,y=PF_impulse, group = subject, color=condition))+
+  geom_boxplot(aes(group=period), 
+               alpha=0.3, 
+               width=0.2, 
+               color="black") +
+  geom_line(alpha=0.3, linewidth=0.3) +
+  geom_point(alpha=0.5, size=1) + 
+  facet_grid(~ condition) + 
+  cowplot::theme_minimal_grid()+
+  theme(
+        # axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.position = "none")+
+  labs(
+    x = "Period",
+    y = "PF Impulse (N.m.s/BW)",
+    title = "Plantarflexor Impulse Across Stance Phase by Period",
+  ) +
+  geom_text(stat = "summary", 
+            fun = mean,
+            aes(label = sprintf("%.2f", ..y..),
+                vjust = -3.4, 
+                # hjust = ifelse(period=="Late Baseline", 1.75, -.75),
+                group = 1),
+            color = "black", 
+            size = 4)+
+  stat_summary(aes(group = 1), 
+              fun = mean, 
+              geom = "line", 
+              color = "black", 
+              linewidth = 1, 
+              linetype = "dashed", 
+              alpha = .6)+ 
+  stat_summary(aes(group = 1), 
+              fun = mean, 
+              geom = "point", 
+              color = "black", 
+              size = 3, 
+              shape = 18) 
+
+
+```
+
+
 # Pelvis Position
 
 ```{r}
 
 pelvis_COM_data <- mean_across_stance %>% 
   mutate(condition = BIL_CONDITION_LABELS[condition]) %>% 
-  filter(period %in% pre_post_periods) %>% 
   filter(variable %in% c("PELVIS_COM") & axis == "Y") %>% 
   
   # negative Y is forward in treadmill frame of reference
@@ -537,12 +603,12 @@ step_length_data <- mean_across_stance %>%
 ```{r}
 
 step_length_data %>% 
-  filter(period %in% pre_post_periods) %>% 
+  # filter(period %in% pre_post_periods) %>% 
   ggplot(aes(x = period, y = value, color=condition))+
   geom_point()+
   facet_grid(cols = vars(condition),
              rows = vars(name),
-             scales="free_y"
+             # scales="free_y"
              )+
   
   cowplot::theme_minimal_grid()+
