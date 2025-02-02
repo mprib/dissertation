@@ -592,15 +592,12 @@ impulse_data %>%
               shape = 18) 
 
   
-  
-  
-
 ```
 
 ```{r}
 impulse_data_for_test <- impulse_data%>% 
-  filter(variable=="Hip") %>% 
-  filter(moment_type=="Flexion")
+  filter(variable=="Ankle") %>% 
+  filter(moment_type=="Extension")
 
 # Prepare data for lmer
 impulse_data_for_test$subject <- factor(impulse_data_for_test$subject)
