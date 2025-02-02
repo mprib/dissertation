@@ -1,0 +1,28 @@
+---
+title: "Participant Stats"
+author: "Mac Prible"
+date: "2025-02-02"
+output: html_document
+---
+
+```{r}
+library(tidyverse)
+library(here)
+
+
+participant_data <- read_delim(file = here("subject_data.csv"), delim=",")
+```
+
+```{r}
+
+participant_data %>% 
+  summarize(max_age = max(Age),
+            min_age = min(Age),
+            mean_age = mean(Age),
+            sd_age = sd(Age))
+
+
+
+
+```
+
