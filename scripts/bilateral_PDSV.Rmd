@@ -1,5 +1,5 @@
 ---
-title: "Bilateral PDSV to Modulate Ankle Torque and Stepping"
+title: "Bilateral PDSV to Modulate Lower Extremity Joint Moments"
 author: "Mac Prible"
 output: html_document
 ---
@@ -11,6 +11,7 @@ library(here)
 knitr::opts_chunk$set(echo=FALSE)
 knitr::opts_chunk$set(error = TRUE)
 options(error = function() traceback(2))
+
 ```
 
 Color reference guide here: https://sape.inf.usi.ch/quick-reference/ggplot2/colour
@@ -20,10 +21,14 @@ Color reference guide here: https://sape.inf.usi.ch/quick-reference/ggplot2/colo
 ```{r, warning=FALSE, message=FALSE}
 library(tidyverse)
 library(lme4)
-library(cowplot) # Mac, Check out customization options
+library(cowplot) 
 library(emmeans)
 library(car)
 library(clipr)
+library(rstatix)
+library(ggpubr)
+
+theme_set(cowplot::theme_minimal_grid(font_family = "serif"))
 
 tidy_data_directory <- here("data")
 figure_directory <- here("manuscripts","figures")
@@ -121,6 +126,66 @@ mean_across_stance %>% group_by(period) %>% summarize()
 
 # Belt Speed
 
+## Sample Participant
+
+```{r}
+
+measurement_names <- list("GRF" = "VGRF (N)",
+                       "BeltSpeed" = "Belt Speed (m/s)")
+
+# filter out the swing phase from contralateral belt speed
+mean_across_stance %>% 
+  filter(subject == "s1") %>%  
+  filter(period == "Late Adaptation") %>% 
+  filter(
+    (variable %in% c("CONTRA_BeltSpeed", "IPSI_BeltSpeed") & axis == "X") |
+    (variable %in% c("CONTRA_GRF", "IPSI_GRF") & axis == "Z")
+  ) %>%
+  select(-axis) %>% 
+  ungroup() %>% 
+  group_by(subject,  condition, period,variable, normalized_time) %>% 
+  summarize(value = mean(value)) %>% 
+  ungroup() %>% 
+  pivot_wider(values_from = value, names_from = variable) %>% 
+  mutate(CONTRA_BeltSpeed = case_when(CONTRA_GRF < 0.1 | normalized_time >= 30 & normalized_time <= 50 ~ NA_real_,
+                                      TRUE ~ CONTRA_BeltSpeed),
+         CONTRA_GRF = case_when(CONTRA_GRF < 0.1 | normalized_time >= 30 & normalized_time <= 50 ~ NA_real_,
+                                      TRUE ~ CONTRA_GRF),
+         ) %>% 
+  # select(-contains("_GRF")) %>% 
+  pivot_longer(cols = c(CONTRA_BeltSpeed, IPSI_BeltSpeed, CONTRA_GRF, IPSI_GRF)) %>% 
+  mutate(measurement_type = case_when(str_detect(name, "GRF") ~ measurement_names$GRF,
+                                      str_detect(name, "BeltSpeed") ~ measurement_names$BeltSpeed)) %>% 
+  mutate(measurement_type = factor(measurement_type,levels=unlist(measurement_names))) %>% 
+  mutate(name = case_when(str_detect(name, "IPSI") ~ "IPSI",
+                          str_detect(name, "CONTRA") ~ "CONTRA",
+                          TRUE ~ "")) %>% 
+  mutate(name = factor(name, levels = c("IPSI", "CONTRA"))) %>% 
+  ggplot(aes(x=normalized_time,y= value,color=name, group=subject))+
+  geom_line(aes(group = interaction(subject, name)), size=0.5)+
+  # scale_x_continuous(labels=NULL)+
+
+  facet_grid(measurement_type~condition,
+             scales="free_y",
+             labeller = labeller(condition = BIL_CONDITION_LABELS))+
+  theme(legend.position="bottom")+
+  labs(
+    x = "Normalized Stance Time (0-100%)",
+    y = NULL,
+    title = "Example of Force Based Trigger for Belt Speed Changes",
+    subtitle = "Average of last five steps of Late Adaptation for Participant 1",
+    color = ""
+  )+
+  scale_color_manual(
+    values = c("IPSI" = "blue", "CONTRA" = "red"),
+    labels = c("IPSI" = "Reference Stance Limb", "CONTRA" = "Contralateral Limb") # Added labels for each color
+  )
+  
+ggsave(file.path(figure_directory,"Example Force Based Trigger.svg"))
+
+```
+
+## all participants
 ```{r}
 
 # filter out the swing phase from contralateral belt speed
@@ -147,21 +212,53 @@ mean_across_stance %>%
   geom_line(aes(group = interaction(subject, name)), size=0.5)+
   # scale_x_continuous(labels=NULL)+
   facet_grid(~condition, labeller = labeller(condition = BIL_CONDITION_LABELS))+
-  cowplot::theme_minimal_grid()+
-  theme(legend.position="bottom")+
+  cowplot::theme_minimal_grid(font_family="serif")+
+  theme(legend.position="bottom",
+        legend.justification = "center")+
   labs(
     x = "Normalized Stance Time (0-100%)",
     y = "Belt Speed (m/s)",
     title = "Belt Speed During Stance Phase",
     subtitle = "Average of Five Steps in Late Adaptation for Each Participant",
-    color = "Side"
+    color = ""
   )+
   scale_color_manual(
     values = c("IPSI_BeltSpeed" = "blue", "CONTRA_BeltSpeed" = "red"),
     labels = c("IPSI_BeltSpeed" = "Reference Limb", "CONTRA_BeltSpeed" = "Contralateral Limb") # Added labels for each color
   )
   
-ggsave(file.path(figure_directory,"Bilateral PDSV speeds.svg"))
+ggsave(file.path(figure_directory,"Bilateral PDSV speeds - All Participants.svg"))
+```
+## Fast Brake vs Fast Prop
+
+```{r}
+
+
+mean_across_stance %>% 
+  filter(axis == "X") %>% 
+  filter(period == "Late Adaptation") %>% 
+  filter(variable == "IPSI_BeltSpeed") %>% 
+  group_by(subject, condition) %>% 
+  summarize(Speed_Across_Stance = mean(value)) %>%
+  ggplot(aes(x=condition, y = Speed_Across_Stance))+
+  geom_boxplot(width=.1) +
+  geom_point() +
+  geom_line(aes(group = subject), alpha = 0.3) +
+  stat_compare_means(method = "t.test", paired = TRUE)+
+  stat_summary(fun = mean, geom = "point",shape=23, fill= "red", color = "red", size = 2)+
+  # Add dotted line between means
+  stat_summary(fun = mean, geom = "line", linetype = "dashed", size = 1.2, color = "red") +
+  # Add mean values as text
+  stat_summary(fun = mean, 
+              geom = "text", 
+              aes(label = sprintf("%.2f", ..y..),
+                  hjust = ifelse(condition == "bpp", -0.5, 1.5)), # shift left for bbp, right for bpp
+              vjust = .5,
+              size = 4,
+              color = "black")+
+  theme(title = "Mean Belt Speed",
+        subtitle = )
+  
 ```
 
 
@@ -411,108 +508,182 @@ PF_impulse %>%
 
 
 ```
+# Generate Primary Data for Study
 
-
-# Moment of Support Across Stance Phase
-
-## Plot of Characteristic Curves
 ```{r, fig.width=6, fig.height=8}
 
-# comparison <- pre_late_periods
-comparison <- c("Late Baseline", "Late Adaptation")
-
-comparison = pre_post_periods
-
-support_moment_across_stance <- mean_across_stance %>% 
-  filter(period %in% comparison) %>% 
-  filter(condition %in% names(BIL_CONDITION_LABELS)) %>%  
-  filter(variable %in% c("IPSI_ANKLE_MOMENT", "IPSI_KNEE_MOMENT", "IPSI_HIP_MOMENT") & axis == "X") %>% 
-  mutate(variable = case_when(variable =="IPSI_ANKLE_MOMENT" ~ "Ankle",
-                              variable =="IPSI_KNEE_MOMENT" ~ "Knee",
-                              variable =="IPSI_HIP_MOMENT" ~ "Hip")) %>% 
-  pivot_wider(names_from = variable, values_from = value) %>% 
-  mutate(Hip = -Hip,  # fix sign for moment of support
-         Ankle = -Ankle,  # fix sign for moment of support
-         Support = Hip + Knee + Ankle) %>% 
-  pivot_longer(cols=c(Hip, Knee, Ankle, Support), names_to = "variable") %>% 
-  mutate(variable = factor(variable, levels=c("Support", "Hip","Knee", "Ankle")))
-
-support_moment_across_stance %>% 
-  filter(variable!="Support") %>%  # simplify plot
-  mutate(condition = BIL_CONDITION_LABELS[condition]) %>% 
-  group_by(period, condition, variable, normalized_time) %>% 
-  summarize(
-    joint_torque = mean(value),
-    se = sd(value)/sqrt(n()),  # Standard error
-    ci = 1.96 * se,            # 95% confidence interval
-    upper = joint_torque + ci,
-    lower = joint_torque - ci,
-    .groups = 'drop'
-  ) %>% 
-  ggplot(aes(x = normalized_time, color = condition, linetype = period)) +
-  geom_ribbon(aes(
-    ymin = lower, 
-    ymax = upper,
-    fill = condition,
-    group = interaction(condition, period)
-  ), 
-  alpha = 0.2,
-  color = NA
-  ) +
-
-  geom_line(aes(y = joint_torque), size = 1) +
-  geom_hline(yintercept = 0) +
-  scale_x_continuous(labels = NULL) +
-  facet_grid(cols = vars(condition), 
-             rows = vars(variable),
-             scales = "free_y") +
-  scale_linetype_manual(values = setNames(c("dotted", "solid"), comparison)) +
-  cowplot::theme_minimal_grid() +
-  # cowplot::theme_cowplot()+
-  theme(
-    legend.position = "bottom",
-    legend.box.just = "center",
-    legend.justification = "center"
-  ) +
-  labs(
-    x = "Normalized Stance Time (0-100%)",
-    y = "Joint Moment (N.m/BW)",
-    title = "Average Joint Moment Across Stance (95% CI)",
-    subtitle = "5 Steps Immediately Before and After Adaptation",
-    color = NULL,
-    fill = NULL,
-    linetype=NULL
-  )+
-  scale_color_discrete(guide = "none") +
-  scale_fill_discrete(guide = "none")  
+primary_data <- mean_across_stance %>% 
+    filter(condition %in% names(BIL_CONDITION_LABELS)) %>%  
+    filter(axis == "X") %>% 
+    filter(variable %in% c("IPSI_ANKLE_MOMENT", 
+                           "IPSI_KNEE_MOMENT", 
+                           "IPSI_HIP_MOMENT",
+                           "IPSI_ANKLE_ANGLE", 
+                           "IPSI_KNEE_ANGLE", 
+                           "IPSI_HIP_ANGLE")) %>% 
+    mutate(joint = case_when(str_detect(variable, "HIP"    ) ~ "Hip",
+                             str_detect(variable, "KNEE"  ) ~ "Knee",
+                             str_detect(variable, "ANKLE") ~ "Ankle",
+                             TRUE ~ ""),
+           measurement_type= case_when(str_detect(variable,"MOMENT" ) ~ "Moment",
+                                       str_detect(variable,"ANGLE"  ) ~ "Angle",
+                                       TRUE ~ ""),
+           variable = paste0(joint, "_", measurement_type)) %>% 
+    select(-joint, -measurement_type) %>% 
+    pivot_wider(names_from = variable, values_from = value) %>% 
+    mutate(Hip_Moment = -Hip_Moment,  # align with typical "moment of support" style presentations
+           Ankle_Moment = -Ankle_Moment, # align with typical "moment of support" style presentations
+           Hip_Angle = -Hip_Angle,
+           Ankle_Angle = -Ankle_Angle 
+           ) %>%  
+    pivot_longer(cols=contains(c("Hip", "Knee", "Ankle")), names_to = "variable") %>% 
+    separate(col=variable,into=c("joint", "measurement_type"),sep="_") %>% 
+    mutate(joint = factor(joint, levels=c("Hip","Knee", "Ankle"))) 
   
-ggsave(file.path(figure_directory,"bil_torque_over_time.svg"))
+```
+
+
+# Baseline vs. Late Adaptation
+## Moments
+```{r, fig.height=8, fig.width=6}
+
+comparison <-  pre_post_periods
+
+primary_data %>% 
+    filter(period %in% comparison) %>% 
+    filter(measurement_type== "Moment") %>% 
+    mutate(condition = BIL_CONDITION_LABELS[condition]) %>%   # more meaningful labels
+    group_by(period, condition, joint, normalized_time) %>% 
+    summarize(
+      mean = mean(value),
+      se = sd(value)/sqrt(n()),  # Standard error
+      ci = 1.96 * se,            # 95% confidence interval
+      upper = mean + ci,
+      lower = mean - ci,
+      .groups = 'drop'
+    ) %>% 
+    ggplot(aes(x = normalized_time, color = condition, linetype = period)) +
+    geom_ribbon(aes(
+      ymin = lower, 
+      ymax = upper,
+      fill = condition,
+      group = interaction(condition, period)
+    ), 
+    alpha = 0.2,
+    color = NA
+    ) +
+    geom_line(aes(y = mean), size = 1) +
+    scale_x_continuous(labels = NULL) +
+    facet_grid(cols = vars(condition), 
+               rows = vars(joint),
+               scales = "free_y") +
+    scale_linetype_manual(values = setNames(c("dotted", "solid"), comparison)) +
+    cowplot::theme_minimal_grid(font_family = "serif") +
+    theme(
+      legend.position = "bottom",
+      legend.box.just = "center",
+      legend.justification = "center"
+    ) +
+    labs(
+      x = "Normalized Stance Time (0-100%)",
+      y = "Joint Moment (N.m/BW)",
+      title = "Average Joint Moment Across Stance (95% CI)",
+      subtitle = "Last 5 Steps of Baseline vs First 5 Steps of Post Adaptation",
+      color = NULL,
+      fill = NULL,
+      linetype=NULL
+    )+
+    scale_color_discrete(guide = "none") +
+    scale_fill_discrete(guide = "none")  
+
+
+ggsave(file.path(figure_directory,"pre_vs_post_moments.svg"))
+```
+
+## Angles
+```{r, fig.height=8, fig.width=6}
+
+
+comparison <-  pre_post_periods
+
+primary_data %>% 
+    filter(period %in% comparison) %>% 
+    filter(measurement_type== "Angle") %>% 
+    mutate(condition = BIL_CONDITION_LABELS[condition]) %>%   # more meaningful labels
+    group_by(period, condition, joint, normalized_time) %>% 
+    summarize(
+      mean = mean(value),
+      se = sd(value)/sqrt(n()),  # Standard error
+      ci = 1.96 * se,            # 95% confidence interval
+      upper = mean + ci,
+      lower = mean - ci,
+      .groups = 'drop'
+    ) %>% 
+    ggplot(aes(x = normalized_time, color = condition, linetype = period)) +
+    geom_ribbon(aes(
+      ymin = lower, 
+      ymax = upper,
+      fill = condition,
+      group = interaction(condition, period)
+    ), 
+    alpha = 0.2,
+    color = NA
+    ) +
+    geom_line(aes(y = mean), size = 1) +
+    scale_x_continuous(labels = NULL) +
+    facet_grid(cols = vars(condition), 
+               rows = vars(joint),
+               scales = "free_y") +
+    scale_linetype_manual(values = setNames(c("dotted", "solid"), comparison)) +
+    cowplot::theme_minimal_grid(font_family = "serif") +
+    theme(
+      legend.position = "bottom",
+      legend.box.just = "center",
+      legend.justification = "center"
+    ) +
+    labs(
+      x = "Normalized Stance Time (0-100%)",
+      y = "Joint Angle (degrees)",
+      title = "Average Joint Angle Across Stance (95% CI)",
+      subtitle = "Last 5 Steps of Baseline vs First 5 Steps of Post Adaptation",
+      color = NULL,
+      fill = NULL,
+      linetype=NULL
+    )+
+    scale_color_discrete(guide = "none") +
+    scale_fill_discrete(guide = "none")  
+
+
+ggsave(file.path(figure_directory,"pre_vs_post_angles.svg"))
 
 ```
 
 ## Impulses
 
 
-```{r, fig.height=10}
+```{r, fig.height=8, fig.width=6}
+# comparison = pre_late_periods
+comparison = pre_post_periods
 
-
-moment_by_type <- support_moment_across_stance %>% 
-  group_by(subject,variable, condition, period, normalized_time) %>%
+moment_by_type <- primary_data %>% 
+  filter(period %in% comparison) %>% 
+  filter(measurement_type=="Moment") %>% 
+  group_by(subject,joint, condition, period, normalized_time) %>%
   summarize(value = mean(value)) %>% 
+  ungroup() %>% 
   mutate(moment_type = case_when(# Knee phases
-                           variable == "Knee" & value > 0~ "Extension",
-                           variable == "Knee" & value < 0~ "Flexion",
+                           joint == "Knee" & value > 0~ "Extension",
+                           joint == "Knee" & value < 0~ "Flexion",
                            
                            # Ankle phases (based on moment sign)
-                           variable == "Ankle" & value > 0 ~ "Extension", # or Plantarflexion
-                           variable == "Ankle" & value < 0 ~ "Flexion", # or Dorsiflexion
+                           joint == "Ankle" & value > 0 ~ "Extension", # or Plantarflexion
+                           joint == "Ankle" & value < 0 ~ "Flexion", # or Dorsiflexion
                            
                            # Hip phases (based on moment sign)
-                           variable == "Hip" & value > 0 ~ "Extension",
-                           variable == "Hip" & value < 0 ~ "Flexion"
+                           joint == "Hip" & value > 0 ~ "Extension",
+                           joint == "Hip" & value < 0 ~ "Flexion"
                            )
-  ) %>% 
-  filter(variable!="Support") 
+  ) 
 
 moment_by_type %>% 
   ggplot(aes(x = normalized_time, y = value, color = condition, shape= period)) +
@@ -520,11 +691,10 @@ moment_by_type %>%
   geom_hline(yintercept = 0) +
   scale_x_continuous(labels = NULL) +
   facet_grid(cols = vars(period, condition), 
-             rows = vars(variable, moment_type),
+             rows = vars(joint, moment_type),
              scales = "free_y") +
   scale_linetype_manual(values = setNames(c("dotted", "solid"), comparison)) +
   cowplot::theme_minimal_grid() +
-  # cowplot::theme_cowplot()+
   theme(
     legend.position = "bottom",
     legend.box.just = "center",
@@ -545,37 +715,39 @@ moment_by_type %>%
 
 impulse_data <- moment_by_type %>% 
   filter(moment_type %in% c("Extension", "Flexion")) %>% 
-  group_by(subject, condition, period, variable, moment_type) %>% 
+  group_by(subject, condition, period, joint, moment_type) %>% 
   summarize(impulse_normalized_time = abs(sum(value)/100)) %>% 
   left_join(stance_times) %>% 
   mutate(impulse_adjusted = impulse_normalized_time*stance_time)
 
 impulse_data %>% 
+  filter(moment_type=="Extension") %>% 
+  mutate(condition = BIL_CONDITION_LABELS[condition]) %>% 
   ggplot(aes(x = period,y=impulse_adjusted, group = subject, color=condition))+
   geom_boxplot(aes(group=period), 
                alpha=0.3, 
                width=0.2, 
                color="black") +
   geom_line(alpha=0.3, linewidth=0.3) +
-  geom_point(alpha=0.5, size=1) + 
-  facet_grid(variable~ condition + moment_type)+
-  # scale_x_discrete(guide = guide_axis(n.dodge = 2))+
-  cowplot::theme_minimal_grid()+
+  geom_point(alpha=0.5, size=1) +
+  facet_grid(joint~ condition,
+             scales = "free_y")+
+  cowplot::theme_minimal_grid(font_family = "serif")+
   theme(
-        # axis.text.x = element_text(angle = 45, hjust = 1),
+        axis.text.x = element_text(angle = 45, hjust = 1),
         legend.position = "none")+
   labs(
     x = "Period",
-    y = "PF Impulse (N.m.s/BW)",
-    title = "Impulse Across Stance Phase by Period",
+    y = "Joint Moment Impulse (N.m.s/BW)",
+    title = "Angular Impulses Across Stance Phase by Period",
   ) +
-  geom_text(stat = "summary", 
+  geom_text(stat = "summary",
             fun = mean,
-            aes(label = sprintf("%.2f", ..y..), 
-                hjust = ifelse(period=="Late Baseline", 1.75, -.75),
+            aes(label = sprintf("%.3f", ..y..),
+                hjust = ifelse(period=="Late Baseline", 1.5, -.5),
                 group = 1),
-            color = "black", 
-            vjust = 0.4, 
+            color = "black",
+            vjust = 0.4,
             size = 4)+
   stat_summary(aes(group = 1), 
               fun = mean, 
@@ -591,30 +763,68 @@ impulse_data %>%
               size = 3, 
               shape = 18) 
 
-  
+ggsave(file.path(figure_directory,"Angular Impulses by Period.svg"))
+
 ```
 
+## Tabular Form
+
 ```{r}
-impulse_data_for_test <- impulse_data%>% 
-  filter(variable=="Ankle") %>% 
-  filter(moment_type=="Extension")
 
-# Prepare data for lmer
-impulse_data_for_test$subject <- factor(impulse_data_for_test$subject)
-impulse_data_for_test$condition <- factor(impulse_data_for_test$condition)
-impulse_data_for_test$period <- factor(impulse_data_for_test$period)
+impulse_data %>% 
+  ungroup() %>% 
+  mutate(condition = BIL_CONDITION_LABELS[condition]) %>% 
+  filter(moment_type=="Extension") %>% 
+  group_by(joint, moment_type,condition, period) %>% 
+  summarize(
+    mean = round(mean(impulse_adjusted),3),
+    sd = round(sd(impulse_adjusted),3),
+  ) %>% 
+  mutate(period = str_replace(period, " ",""),
+         condition = str_replace(condition, " ", ""),
+         description = paste0(mean , "±", sd)) %>% 
+  select(-mean, -sd) %>% 
+  pivot_wider(names_from=period, values_from = description)
 
-model <- lmer(impulse_adjusted ~ period * condition + (1|subject), 
-             data = impulse_data_for_test)
 
 
-summary(model)
+```
 
-# Compute estimated marginal means
-emm <- emmeans(model, specs = ~ period | condition)
 
-# Pairwise comparisons of Period within each Condition
-period_comparisons <- pairs(emm, simple = "period", adjust="holm")
-summary(period_comparisons)
+## Test
+
+```{r}
+
+
+simple_comparison <- function(test_joint){
+    print(paste0("Comparing changes for ankle"))
+    impulse_data_for_test <- impulse_data%>% 
+      filter(period %in% pre_post_periods) %>% 
+      mutate(condition = BIL_CONDITION_LABELS[condition]) %>% 
+      filter(joint==test_joint) %>% 
+      filter(moment_type=="Extension")
+    
+    # Prepare data for lmer
+    impulse_data_for_test$subject <- factor(impulse_data_for_test$subject)
+    impulse_data_for_test$condition <- factor(impulse_data_for_test$condition)
+    impulse_data_for_test$period <- factor(impulse_data_for_test$period)
+    
+    model <- lmer(impulse_adjusted ~ period * condition + (1|subject), 
+                 data = impulse_data_for_test)
+    
+    
+    summary(model)
+    
+    # Compute estimated marginal means
+    emm <- emmeans(model, specs = ~ period | condition)
+    
+    # Pairwise comparisons of Period within each Condition
+    period_comparisons <- pairs(emm, simple = "period", adjust="holm")
+    summary(period_comparisons)
+}
+
+simple_comparison("Hip")
+simple_comparison("Knee")
+simple_comparison("Ankle")
 ```
 
