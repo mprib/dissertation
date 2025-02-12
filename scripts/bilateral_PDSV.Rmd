@@ -587,7 +587,7 @@ primary_data %>%
     labs(
       x = "Normalized Stance Time (0-100%)",
       y = "Joint Moment (N.m/BW)",
-      title = "Average Joint Moment Across Stance (95% CI)",
+      title = "Joint Moment Across Stance (95% CI)",
       subtitle = "Last 5 Steps of Baseline vs First 5 Steps of Post Adaptation",
       color = NULL,
       fill = NULL,
@@ -644,7 +644,7 @@ primary_data %>%
     labs(
       x = "Normalized Stance Time (0-100%)",
       y = "Joint Angle (degrees)",
-      title = "Average Joint Angle Across Stance (95% CI)",
+      title = "Joint Angle Across Stance (95% CI)",
       subtitle = "Last 5 Steps of Baseline vs First 5 Steps of Post Adaptation",
       color = NULL,
       fill = NULL,
@@ -660,6 +660,7 @@ ggsave(file.path(figure_directory,"pre_vs_post_angles.svg"))
 
 ## Impulses
 
+### Plot
 
 ```{r, fig.height=8, fig.width=6}
 # comparison = pre_late_periods
@@ -767,7 +768,7 @@ ggsave(file.path(figure_directory,"Angular Impulses by Period.svg"))
 
 ```
 
-## Tabular Form
+### Tabular Form
 
 ```{r}
 
@@ -788,6 +789,41 @@ impulse_data %>%
 
 
 
+```
+
+### Correlation
+
+```{r, fig.width=7, fig.height=7}
+impulse_data %>% 
+  filter(joint %in% c("Knee", "Ankle")) %>% 
+  mutate(condition = BIL_CONDITION_LABELS[condition]) %>% 
+  filter(moment_type=="Extension") %>% 
+  select(subject, condition, period, joint,impulse_adjusted) %>% 
+  mutate(period = case_when(period=="Late Baseline" ~ "LB",
+                            period=="Early Post Adaptation" ~ "EPA",
+                            TRUE ~ "")) %>% 
+  unite(measure_type, joint, period, sep="_") %>% 
+  pivot_wider(names_from = measure_type, values_from = impulse_adjusted) %>% 
+  mutate(delta_knee_ext_impulse = Knee_EPA - Knee_LB,
+         delta_ankle_pf_impulse = Ankle_EPA - Ankle_LB) %>% 
+  ggplot(aes(x = delta_ankle_pf_impulse, y = delta_knee_ext_impulse, color=condition))+
+  geom_point()+ 
+  # geom_text(aes(label = subject), 
+  #         nudge_x = 0.01,    # adjust these values to offset the text
+  #         nudge_y = 0.01) +  # from the points
+  stat_cor(aes(color=NULL),  # uses r.label instead of rr.label
+           method = "pearson",
+           p.accuracy = .001,
+           label.x.npc = "middle", 
+           label.y.npc = "top")+  
+  theme(legend.position="bottom",
+        legend.justification = "center",
+        legend.title=element_blank())+
+  labs(title="Change in Angular Impulse Before and After Adaptation",
+       x="Δ Ankle Plantarflexor Impulse (N.m.s/BW)",
+       y="Δ Knee Extensor Impulse (N.m.s/BW)")
+
+  
 ```
 
 
