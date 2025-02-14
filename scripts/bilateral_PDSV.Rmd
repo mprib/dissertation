@@ -793,9 +793,8 @@ impulse_data %>%
 
 ### Correlation
 
-```{r, fig.width=7, fig.height=7}
+```{r, fig.width=5, fig.height=5}
 impulse_data %>% 
-  filter(joint %in% c("Knee", "Ankle")) %>% 
   mutate(condition = BIL_CONDITION_LABELS[condition]) %>% 
   filter(moment_type=="Extension") %>% 
   select(subject, condition, period, joint,impulse_adjusted) %>% 
@@ -804,9 +803,11 @@ impulse_data %>%
                             TRUE ~ "")) %>% 
   unite(measure_type, joint, period, sep="_") %>% 
   pivot_wider(names_from = measure_type, values_from = impulse_adjusted) %>% 
-  mutate(delta_knee_ext_impulse = Knee_EPA - Knee_LB,
+  mutate(delta_hip_ext_impulse = Hip_EPA - Hip_LB,
+         delta_knee_ext_impulse = Knee_EPA - Knee_LB,
          delta_ankle_pf_impulse = Ankle_EPA - Ankle_LB) %>% 
   ggplot(aes(x = delta_ankle_pf_impulse, y = delta_knee_ext_impulse, color=condition))+
+  # ggplot(aes(x = delta_knee_ext_impulse, y = delta_hip_ext_impulse, color=condition))+
   geom_point()+ 
   # geom_text(aes(label = subject), 
   #         nudge_x = 0.01,    # adjust these values to offset the text
@@ -816,6 +817,11 @@ impulse_data %>%
            p.accuracy = .001,
            label.x.npc = "middle", 
            label.y.npc = "top")+  
+  stat_cor(aes(),  # uses r.label instead of rr.label
+           method = "pearson",
+           p.accuracy = .001,
+           label.x.npc = "middle", 
+           label.y.npc = "middle")+  
   theme(legend.position="bottom",
         legend.justification = "center",
         legend.title=element_blank())+
@@ -849,7 +855,7 @@ simple_comparison <- function(test_joint){
                  data = impulse_data_for_test)
     
     
-    summary(model)
+    print(summary(model))
     
     # Compute estimated marginal means
     emm <- emmeans(model, specs = ~ period | condition)
