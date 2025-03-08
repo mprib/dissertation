@@ -4,8 +4,6 @@ author: "Mac Prible"
 output: html_document
 ---
 
-
-
 ```{r setup, include=FALSE}
 library(here)
 knitr::opts_chunk$set(echo=FALSE)
@@ -14,8 +12,8 @@ options(error = function() traceback(2))
 
 ```
 
-Color reference guide here: https://sape.inf.usi.ch/quick-reference/ggplot2/colour
-  
+Color reference guide here: <https://sape.inf.usi.ch/quick-reference/ggplot2/colour>
+
 # Import Data
 
 ```{r, warning=FALSE, message=FALSE}
@@ -48,7 +46,6 @@ raw_mean_across_stance %>%
 
 ```
 
-
 # Mild Data Adjustments
 
 ## Define Some Lists for Convenience
@@ -57,14 +54,15 @@ Some lists for convenience.
 
 Periods:
 
-1. begin start     
-2. Late Baseline   
-3. Early Adapt     
-4. end start       
-5. begin stop      
-6. Late Adapt      
-7. Early Post Adapt
-8. end stop     
+1.  begin start\
+2.  Late Baseline\
+3.  Early Adapt\
+4.  end start\
+5.  begin stop\
+6.  Late Adapt\
+7.  Early Post Adapt
+8.  end stop\
+
 ```{r}
 periods <- c("begin start" = "begin start", 
              "Late Baseline" = "Late Baseline", 
@@ -87,6 +85,7 @@ BIL_CONDITION_LABELS <- c(
 ```
 
 ## Assign Previous Condition
+
 ```{r}
 
 previous_condition <- raw_mean_across_stance %>% 
@@ -186,6 +185,7 @@ ggsave(file.path(figure_directory,"Example Force Based Trigger.svg"))
 ```
 
 ## all participants
+
 ```{r}
 
 # filter out the swing phase from contralateral belt speed
@@ -229,8 +229,8 @@ mean_across_stance %>%
   
 ggsave(file.path(figure_directory,"Bilateral PDSV speeds - All Participants.svg"))
 ```
-## Fast Brake vs Fast Prop
 
+## Fast Brake vs Fast Prop
 
 ```{r}
 # First, create your filtered dataset
@@ -275,64 +275,10 @@ ggplot(filtered_data, aes(x=condition, y=Speed_Across_Stance)) +
 
 ```
 
-
-While the mean belt speeds in the two conditions are statistically different, it amounts to a difference of .06 m/s. The 
-
-# Characteristic Torque Profile
-
-```{r}
-
-# comparison <- pre_late_periods
-comparison <- pre_post_periods
-
-mean_across_stance %>% 
-  filter(period %in% comparison) %>% 
-  filter(condition %in% names(BIL_CONDITION_LABELS)) %>%  
-  mutate(condition = BIL_CONDITION_LABELS[condition]) %>% 
-  filter(variable %in% c("IPSI_ANKLE_MOMENT") & axis == "X") %>%
-  # filter(variable %in% c("IPSI_KNEE_MOMENT") & axis == "X") %>%
-  group_by(period, condition, variable, normalized_time) %>% 
-  summarize(
-    PF_torque = mean(value),
-    se = sd(value)/sqrt(n()),  # Standard error
-    ci = 1.96 * se,            # 95% confidence interval
-    upper = PF_torque + ci,
-    lower = PF_torque - ci,
-    .groups = 'drop'
-  ) %>% 
-  ggplot(aes(x = normalized_time, color = condition, linetype = period)) +
-  geom_ribbon(aes(
-    ymin = lower, 
-    ymax = upper,
-    fill = condition,
-    group = interaction(condition, period)
-  ), 
-  alpha = 0.2,
-  color = NA
-  ) +
-  geom_line(aes(y = PF_torque), size = 1) +
-  geom_hline(yintercept = 0) +
-  scale_x_continuous(labels = NULL) +
-  facet_grid(
-    cols = vars(condition),
-  ) +
-  scale_linetype_manual(values = setNames(c("solid", "dashed"), comparison)) + 
-  cowplot::theme_minimal_grid()+
-  theme(legend.position = "bottom") +
-  labs(
-    x = "Normalized Stance Time (0-100%)",
-    y = "Ankle PF Torque (N.m/BW)",
-    title = "Ankle Torque Across Conditions",
-    subtitle = "Averaged Across Subjects (95% CI)",
-    color = "Condition",
-    fill = "Condition"
-  )
+While the mean belt speeds in the two conditions are statistically different, it amounts to a difference of .06 m/s. The
 
 
-ggsave(file.path(figure_directory,"torque_over_time.png"))
-```
-
-# PF Impulse
+# Stance Times
 
 Needed to de-normalize impulse with respect to time.
 
@@ -349,24 +295,7 @@ stance_times <- mean_across_stance %>%
   ungroup() %>% 
   mutate(stance_time = stop_stance - start_stance)
 
-PF_impulse <- mean_across_stance %>% 
-  # mutate(period = factor(period,levels = pre_post_periods)) %>% 
-  filter(variable %in% c("IPSI_ANKLE_MOMENT") & axis == "X") %>% 
-  mutate(PF_torque = value) %>% 
-  select(-value, -axis, -variable) %>% 
-  # group_by(subject, period, condition, order, variable, normalized_time,stance_side) %>% 
-  # summarize(PF_torque = mean(value)) %>%
-  filter(PF_torque<0) %>%
-  group_by(subject, condition, previous_condition, order, period) %>% 
-  summarize(PF_impulse_time_normalized = sum(PF_torque)/-100) %>% 
-  left_join(stance_times) %>% 
-  mutate(PF_impulse_adjusted = PF_impulse_time_normalized*stance_time)
-  
 
-```
-
-
-```{r}
 stance_times %>% 
   ggplot(aes(x = period,y=stance_time, group = subject, color=condition))+
   geom_point()+
@@ -374,87 +303,6 @@ stance_times %>%
   
 ```
 
-
-## Plot
-```{r}
-plt <- PF_impulse %>% 
-  filter(period %in% pre_post_periods) %>%
-  ungroup() %>% 
-  mutate(condition = BIL_CONDITION_LABELS[condition]) %>% 
-  group_by(subject,condition, period) %>% 
-  summarize(PF_impulse= mean(PF_impulse_adjusted)) %>%  # averaging across sides
-  # summarize(PF_impulse= mean(PF_impulse_time_normalized)) %>%  # averaging across sides
-  ggplot(aes(x = period,y=PF_impulse, group = subject, color=condition))+
-  geom_boxplot(aes(group=period), 
-               alpha=0.3, 
-               width=0.2, 
-               color="black") +
-  geom_line(alpha=0.3, linewidth=0.3) +
-  geom_point(alpha=0.5, size=1) + 
-  facet_grid(~ condition)+
-  # scale_x_discrete(guide = guide_axis(n.dodge = 2))+
-  cowplot::theme_minimal_grid()+
-  theme(
-        # axis.text.x = element_text(angle = 45, hjust = 1),
-        legend.position = "none")+
-  labs(
-    x = "Period",
-    y = "PF Impulse (N.m.s/BW)",
-    title = "Plantarflexor Impulse Across Stance Phase by Period",
-  ) +
-  geom_text(stat = "summary", 
-            fun = mean,
-            aes(label = sprintf("%.2f", ..y..), 
-                hjust = ifelse(period=="Late Baseline", 1.75, -.75),
-                group = 1),
-            color = "black", 
-            vjust = 0.4, 
-            size = 4)+
-  stat_summary(aes(group = 1), 
-              fun = mean, 
-              geom = "line", 
-              color = "black", 
-              linewidth = 1, 
-              linetype = "dashed", 
-              alpha = .6)+ 
-  stat_summary(aes(group = 1), 
-              fun = mean, 
-              geom = "point", 
-              color = "black", 
-              size = 3, 
-              shape = 18) 
-
-plt
-
-ggsave(file.path(figure_directory,"bil_impulse_w_mean.svg"))
-```
-
-## Test
-
-```{r}
-bilateral_data <- PF_impulse %>% 
-  ungroup() %>% 
-  filter(period %in% pre_post_periods) %>%
-  mutate(condition = BIL_CONDITION_LABELS[condition]) 
-  
-# Prepare data for lmer
-bilateral_data$subject <- factor(bilateral_data$subject)
-bilateral_data$condition <- factor(bilateral_data$condition)
-bilateral_data$period <- factor(bilateral_data$period)
-
-model <- lmer(PF_impulse_adjusted ~ period * condition + (1|subject), 
-             data = bilateral_data)
-
-
-summary(model)
-
-# Compute estimated marginal means
-emm <- emmeans(model, specs = ~ period | condition)
-
-# Pairwise comparisons of Period within each Condition
-period_comparisons <- pairs(emm, simple = "period", adjust="holm")
-summary(period_comparisons)
-```
 ## Quality Check
 
 ### Condition Order or Previous Condition
@@ -524,6 +372,7 @@ PF_impulse %>%
 
 
 ```
+
 # Generate Primary Data for Study
 
 ```{r, fig.width=6, fig.height=8}
@@ -558,10 +407,10 @@ primary_data <- mean_across_stance %>%
   
 ```
 
-
-# Baseline vs. Late Adaptation
+# Joint Kinetics and Kinematics Across stance
 
 ## Bootstrap Approach
+
 ### Calculate Bootstrap Bands Function
 
 ```{r}
@@ -594,8 +443,6 @@ calculate_bootstrap_bands <- function(subset_data, confidence_level = 0.95, boot
       n_obs = sum(!is.na(value)),
       .groups = 'drop'
     )
-  
-  print(paste("Mean observations per time point:", mean(mean_curve$n_obs, na.rm=TRUE)))
   
   # Store bootstrap resampled means
   print(paste("Performing bootstrap with", bootstrap_iterations, "iterations..."))
@@ -685,205 +532,108 @@ calculate_bootstrap_bands <- function(subset_data, confidence_level = 0.95, boot
       ci_ratio = ci / gaussian_ci
     )
   
-  print(paste("Mean CI ratio:", mean(result$ci_ratio, na.rm=TRUE)))
-  print("Bootstrap calculation complete.")
-  
   return(result)
 }
 
 
 ```
 
-#### Test function
+
+### Get Confidence Bands for All Conditions, Joints, Periods
 
 ```{r}
-# Filter to ankle joint, bpp condition, both periods
-ankle_data <- primary_data %>% 
-  filter(joint == "Ankle", 
-         period %in% c("Late Baseline", "Early Post Adaptation"), 
-         measurement_type == "Moment",
-         condition == "bpp")
 
-# Process each period separately
-result_list <- list()
-
-for (current_period in unique(ankle_data$period)) {
-  # Filter to just the current period
-  period_data <- ankle_data %>% 
-    filter(period == current_period)
+get_bootstrap_band_data <- function(moment_or_angle, bootstrap_iterations=400){
   
-  print(paste("Processing period:", current_period))
+  # Filter to just the data we need
+  filtered_data <- primary_data %>% 
+    filter(period %in% pre_post_periods) %>% 
+    filter(measurement_type == moment_or_angle)
   
-  # Use the new function to calculate bootstrap bands
-  period_bootstrap_band <- calculate_bootstrap_bands(
-    period_data, 
-    confidence_level = 0.95, 
-    bootstrap_iterations = 40
+  joints <- unique(filtered_data$joint)
+  conditions <- unique(filtered_data$condition)
+  periods <- unique(filtered_data$period)
+  
+  print("Unique values:")
+  print(paste("Joints:", paste(joints, collapse=", ")))
+  print(paste("Conditions:", paste(conditions, collapse=", ")))
+  print(paste("Periods:", paste(periods, collapse=", ")))
+  
+  # Create all combinations manually
+  combinations <- expand.grid(
+    condition = conditions,
+    joint = joints,
+    period = periods,
+    stringsAsFactors = FALSE
   )
   
-  # Add period to identify the data
-  period_bootstrap_band <- period_bootstrap_band %>%
-    mutate(period = current_period)
+  print(paste("Total combinations to process:", nrow(combinations)))
   
-  # Store results
-  result_list[[current_period]] <- period_bootstrap_band
-}
-
-# Combine all results
-ankle_comparison <- bind_rows(result_list)
-
-# Examine the CI width ratios
-ggplot(ankle_comparison, aes(x = normalized_time, y = ci_ratio, color = period)) +
-  geom_line() +
-  geom_hline(yintercept = 1, linetype = "dashed") +
-  labs(
-    title = "Ratio of Bootstrap CI Width to Gaussian CI Width",
-    subtitle = "Values > 1 indicate Bootstrap CI is wider",
-    x = "Normalized Time",
-    y = "Bootstrap CI Width / Gaussian CI Width"
-  ) +
-  theme_minimal()
-
-# Create a long format dataset for better visualization
-ankle_long <- ankle_comparison %>%
-  select(period, normalized_time, mean, 
-         lower, upper,
-         gaussian_lower, gaussian_upper) %>%
-  pivot_longer(
-    cols = c(lower, upper, gaussian_lower, gaussian_upper),
-    names_to = "bound_type",
-    values_to = "bound"
-  ) %>%
-  mutate(
-    method = case_when(
-      grepl("gaussian", bound_type) ~ "Gaussian",
-      TRUE ~ "Bootstrap"
-    ),
-    bound_direction = case_when(
-      grepl("lower", bound_type) ~ "lower",
-      grepl("upper", bound_type) ~ "upper"
-    )
-  )
-
-# Create a clearer visualization of the differences
-ggplot() +
-  # Mean curves
-  geom_line(data = ankle_comparison, 
-            aes(x = normalized_time, y = mean, color = period),
-            size = 1) +
-  # Bootstrap bounds
-  geom_line(data = ankle_long %>% filter(method == "Bootstrap"),
-            aes(x = normalized_time, y = bound, 
-                color = period, linetype = bound_direction),
-            size = 0.7) +
-  # Gaussian bounds
-  geom_line(data = ankle_long %>% filter(method == "Gaussian"),
-            aes(x = normalized_time, y = bound, 
-                color = period, linetype = bound_direction),
-            size = 0.7, alpha = 0.5) +
-  facet_wrap(~period) +
-  labs(
-    title = "Comparison of Confidence Intervals",
-    subtitle = "Solid Lines: Bootstrap CI, Transparent Lines: Gaussian CI",
-    x = "Normalized Time",
-    y = "Ankle Moment (N.m/BW)"
-  ) +
-  theme_minimal() +
-  theme(legend.position = "bottom")
-
-```
-
-
-## Moments With Confidence Bands
-```{r}
-# Simplified approach
-
-# Filter to just the data we need
-filtered_data <- primary_data %>% 
-  filter(period %in% comparison_periods) %>% 
-  filter(measurement_type == "Moment")
-
-joints <- unique(filtered_data$joint)
-conditions <- unique(filtered_data$condition)
-periods <- unique(filtered_data$period)
-
-print("Unique values:")
-print(paste("Joints:", paste(joints, collapse=", ")))
-print(paste("Conditions:", paste(conditions, collapse=", ")))
-print(paste("Periods:", paste(periods, collapse=", ")))
-
-# Create all combinations manually
-combinations <- expand.grid(
-  condition = conditions,
-  joint = joints,
-  period = periods,
-  stringsAsFactors = FALSE
-)
-
-print(paste("Total combinations to process:", nrow(combinations)))
-
-# Now loop through these guaranteed unique combinations
-result_list <- list()
-
-for(i in 1:nrow(combinations)) {
-  cond <- combinations$condition[i]
-  jnt <- combinations$joint[i]
-  per <- combinations$period[i]
+  # Now loop through these guaranteed unique combinations
+  result_list <- list()
   
-  combo_name <- paste(cond, jnt, per, sep="_")
-  print(paste("Processing combination", i, "of", nrow(combinations), ":", combo_name))
-  
-  # Get the subset of data for this combination
-  subset_data <- filtered_data %>%
-    filter(condition == cond, joint == jnt, period == per)
-  
-  # Only proceed if we have sufficient data
-  if(nrow(subset_data) > 10) {  # Requiring at least 10 data points
-    tryCatch({
-      # Calculate bootstrap bands for this subset
-      band_result <- calculate_bootstrap_bands(
-        subset_data,
-        confidence_level = 0.95,
-        bootstrap_iterations = 10
-      )
-      
-      # Add metadata
-      band_result <- band_result %>%
-        mutate(
-          condition = cond,
-          joint = jnt,
-          period = per
+  for(i in 1:nrow(combinations)) {
+    cond <- combinations$condition[i]
+    jnt <- combinations$joint[i]
+    per <- combinations$period[i]
+    
+    combo_name <- paste(cond, jnt, per, sep="_")
+    print(paste("Processing combination", i, "of", nrow(combinations), ":", combo_name))
+    
+    # Get the subset of data for this combination
+    subset_data <- filtered_data %>%
+      filter(condition == cond, joint == jnt, period == per)
+    
+    # Only proceed if we have sufficient data
+    if(nrow(subset_data) > 10) {  # Requiring at least 10 data points
+      tryCatch({
+        # Calculate bootstrap bands for this subset
+        band_result <- calculate_bootstrap_bands(
+          subset_data,
+          confidence_level = 0.95,
+          bootstrap_iterations = 400
         )
-      
-      # Store in results list
-      result_list[[combo_name]] <- band_result
-      
-      print(paste("  Successfully processed:", combo_name))
-    }, error = function(e) {
-      print(paste("  ERROR processing:", combo_name, ":", e$message))
-    })
-  } else {
-    print(paste("  Insufficient data for:", combo_name, "(", nrow(subset_data), "points )"))
+        
+        # Add metadata
+        band_result <- band_result %>%
+          mutate(
+            condition = cond,
+            joint = jnt,
+            period = per
+          )
+        
+        # Store in results list
+        result_list[[combo_name]] <- band_result
+        
+        print(paste("  Successfully processed:", combo_name))
+      }, error = function(e) {
+        print(paste("  ERROR processing:", combo_name, ":", e$message))
+      })
+    } else {
+      print(paste("  Insufficient data for:", combo_name, "(", nrow(subset_data), "points )"))
+    }
   }
+  
+  # Combine all data frames into a single one
+  bootstrap_results <- bind_rows(result_list)
+  
+  bootstrap_results <- bootstrap_results %>%
+    mutate(condition = BIL_CONDITION_LABELS[as.character(condition)])
+  
+  return(bootstrap_results)
 }
 
 ```
 
 ### Plot Bootstrap Results
 
+#### Moments
+```{r,fig.width=6, fig.height=8}
 
-```{r,fig.width=8, fig.height=8}
-
-# Combine all data frames into a single one
-bootstrap_results <- bind_rows(result_list)
-
-
-bootstrap_results <- bootstrap_results %>%
-  mutate(condition = BIL_CONDITION_LABELS[as.character(condition)])
-  
+moment_bootstrap_results <- get_bootstrap_band_data(moment_or_angle = "Moment", bootstrap_iterations = 400)
 
 # Create the main bootstrap plot
-bootstrap_results %>% 
+moment_bootstrap_results %>% 
     ggplot(aes(x = normalized_time, color = condition, linetype = period)) +
     geom_ribbon(aes(
       ymin = lower, 
@@ -899,7 +649,7 @@ bootstrap_results %>%
     facet_grid(rows = vars(joint),
                cols = vars(condition),
                scales = "free_y") +
-    scale_linetype_manual(values = setNames(c("dotted", "solid"), unique(bootstrap_results$period))) +
+    scale_linetype_manual(values = setNames(c("dotted", "solid"), unique(moment_bootstrap_results$period))) +
     cowplot::theme_minimal_grid(font_family = "serif") +
     theme(
       legend.position = "bottom",
@@ -916,17 +666,58 @@ bootstrap_results %>%
       linetype = "Period"
     )
 
-print("Saving bootstrap plot...")
-ggsave(file.path(figure_directory,"pre_vs_post_moments_bootstrap.svg"), bootstrap_plot, width = 10, height = 8)
+ggsave(file.path(figure_directory,"pre_vs_post_moments_bootstrap.svg"), width = 6, height = 8)
 
 
 ```
 
+#### Angles
+```{r,fig.width=8, fig.height=8}
+
+angle_bootstrap_results <- get_bootstrap_band_data(moment_or_angle = "Angle", bootstrap_iterations = 400)
+
+# Create the main bootstrap plot
+angle_bootstrap_results %>% 
+    ggplot(aes(x = normalized_time, color = condition, linetype = period)) +
+    geom_ribbon(aes(
+      ymin = lower, 
+      ymax = upper,
+      fill = condition,
+      group = interaction(condition, period)
+    ), 
+    alpha = 0.2,
+    color = NA
+    ) +
+    geom_line(aes(y = mean), size = 1) +
+    scale_x_continuous(breaks = seq(0, 100, by = 25)) +
+    facet_grid(rows = vars(joint),
+               cols = vars(condition),
+               scales = "free_y") +
+    scale_linetype_manual(values = setNames(c("dotted", "solid"), unique(angle_bootstrap_results$period))) +
+    cowplot::theme_minimal_grid(font_family = "serif") +
+    theme(
+      legend.position = "bottom",
+      legend.box.just = "center",
+      legend.justification = "center"
+    ) +
+    labs(
+      x = "Normalized Stance Time (0-100%)",
+      y = "Joint Angle (degrees)",
+      title = "Joint Angle Across Stance (95% Confidence Bands)",
+      subtitle = "Last 5 Steps of Baseline vs First 5 Steps of Post Adaptation",
+      color = "Condition",
+      fill = "Condition",
+      linetype = "Period"
+    )
+
+ggsave(file.path(figure_directory,"pre_vs_post_angles_bootstrap.svg"), width = 6, height = 8)
 
 
-### Plot all Primary data
+```
 
-I'm not convinced that I'm getting the right confidence bands using this bootstrap approach...I'm going to inspect all of the ankle curves...
+### Plot all Individual data
+
+This is just a sanity check of the bootstrapped results.
 
 ```{r}
 
@@ -944,70 +735,11 @@ primary_data %>%
 
 ```
 
+# Impulses
 
-## Angles
-```{r, fig.height=8, fig.width=6}
+## Generate Impulse Data
 
-
-comparison <-  pre_post_periods
-
-primary_data %>% 
-    filter(period %in% comparison) %>% 
-    filter(measurement_type== "Angle") %>% 
-    mutate(condition = BIL_CONDITION_LABELS[condition]) %>%   # more meaningful labels
-    group_by(period, condition, joint, normalized_time) %>% 
-    summarize(
-      mean = mean(value),
-      se = sd(value)/sqrt(n()),  # Standard error
-      ci = 1.96 * se,            # 95% confidence interval
-      upper = mean + ci,
-      lower = mean - ci,
-      .groups = 'drop'
-    ) %>% 
-    ggplot(aes(x = normalized_time, color = condition, linetype = period)) +
-    geom_ribbon(aes(
-      ymin = lower, 
-      ymax = upper,
-      fill = condition,
-      group = interaction(condition, period)
-    ), 
-    alpha = 0.2,
-    color = NA
-    ) +
-    geom_line(aes(y = mean), size = 1) +
-    scale_x_continuous(labels = NULL) +
-    facet_grid(cols = vars(condition), 
-               rows = vars(joint),
-               scales = "free_y") +
-    scale_linetype_manual(values = setNames(c("dotted", "solid"), comparison)) +
-    cowplot::theme_minimal_grid(font_family = "serif") +
-    theme(
-      legend.position = "bottom",
-      legend.box.just = "center",
-      legend.justification = "center"
-    ) +
-    labs(
-      x = "Normalized Stance Time (0-100%)",
-      y = "Joint Angle (degrees)",
-      title = "Joint Angle Across Stance (95% CI)",
-      subtitle = "Last 5 Steps of Baseline vs First 5 Steps of Post Adaptation",
-      color = NULL,
-      fill = NULL,
-      linetype=NULL
-    )+
-    scale_color_discrete(guide = "none") +
-    scale_fill_discrete(guide = "none")  
-
-
-ggsave(file.path(figure_directory,"pre_vs_post_angles.svg"))
-
-```
-
-## Impulses
-
-### Plot
-
-```{r, fig.height=8, fig.width=6}
+```{r}
 # comparison = pre_late_periods
 comparison = pre_post_periods
 
@@ -1031,34 +763,6 @@ moment_by_type <- primary_data %>%
                            )
   ) 
 
-moment_by_type %>% 
-  ggplot(aes(x = normalized_time, y = value, color = condition, shape= period)) +
-  geom_point(aes(group=subject))+
-  geom_hline(yintercept = 0) +
-  scale_x_continuous(labels = NULL) +
-  facet_grid(cols = vars(period, condition), 
-             rows = vars(joint, moment_type),
-             scales = "free_y") +
-  scale_linetype_manual(values = setNames(c("dotted", "solid"), comparison)) +
-  cowplot::theme_minimal_grid() +
-  theme(
-    legend.position = "bottom",
-    legend.box.just = "center",
-    legend.justification = "center"
-  ) +
-  labs(
-    x = "Normalized Stance Time (0-100%)",
-    y = "Joint Moment (N.m/BW)",
-    title = "Average Joint Moment Across Stance (95% CI)",
-    subtitle = "5 Steps Immediately Before and After Adaptation",
-    color = NULL,
-    fill = NULL,
-    linetype=NULL
-  )+
-  scale_color_discrete(guide = "none") +
-  scale_fill_discrete(guide = "none")  
-
-
 impulse_data <- moment_by_type %>% 
   filter(moment_type %in% c("Extension", "Flexion")) %>% 
   group_by(subject, condition, period, joint, moment_type) %>% 
@@ -1066,125 +770,14 @@ impulse_data <- moment_by_type %>%
   left_join(stance_times) %>% 
   mutate(impulse_adjusted = impulse_normalized_time*stance_time)
 
-impulse_data %>% 
-  filter(moment_type=="Extension") %>% 
-  mutate(condition = BIL_CONDITION_LABELS[condition]) %>% 
-  ggplot(aes(x = period,y=impulse_adjusted, group = subject, color=condition))+
-  geom_boxplot(aes(group=period), 
-               alpha=0.3, 
-               width=0.2, 
-               color="black") +
-  geom_line(alpha=0.3, linewidth=0.3) +
-  geom_point(alpha=0.5, size=1) +
-  facet_grid(joint~ condition,
-             scales = "free_y")+
-  cowplot::theme_minimal_grid(font_family = "serif")+
-  theme(
-        axis.text.x = element_text(angle = 45, hjust = 1),
-        legend.position = "none")+
-  labs(
-    x = "Period",
-    y = "Joint Moment Impulse (N.m.s/BW)",
-    title = "Angular Impulses Across Stance Phase by Period",
-  ) +
-  geom_text(stat = "summary",
-            fun = mean,
-            aes(label = sprintf("%.3f", ..y..),
-                hjust = ifelse(period=="Late Baseline", 1.5, -.5),
-                group = 1),
-            color = "black",
-            vjust = 0.4,
-            size = 4)+
-  stat_summary(aes(group = 1), 
-              fun = mean, 
-              geom = "line", 
-              color = "black", 
-              linewidth = 1, 
-              linetype = "dashed", 
-              alpha = .6)+ 
-  stat_summary(aes(group = 1), 
-              fun = mean, 
-              geom = "point", 
-              color = "black", 
-              size = 3, 
-              shape = 18) 
-
-ggsave(file.path(figure_directory,"Angular Impulses by Period.svg"))
-
 ```
-
-### Tabular Form
-
-```{r}
-
-impulse_data %>% 
-  ungroup() %>% 
-  mutate(condition = BIL_CONDITION_LABELS[condition]) %>% 
-  filter(moment_type=="Extension") %>% 
-  group_by(joint, moment_type,condition, period) %>% 
-  summarize(
-    mean = round(mean(impulse_adjusted),3),
-    sd = round(sd(impulse_adjusted),3),
-  ) %>% 
-  mutate(period = str_replace(period, " ",""),
-         condition = str_replace(condition, " ", ""),
-         description = paste0(mean , "±", sd)) %>% 
-  select(-mean, -sd) %>% 
-  pivot_wider(names_from=period, values_from = description)
-
-
-
-```
-
-### Correlation
-
-```{r, fig.width=5, fig.height=5}
-impulse_data %>% 
-  mutate(condition = BIL_CONDITION_LABELS[condition]) %>% 
-  filter(moment_type=="Extension") %>% 
-  select(subject, condition, period, joint,impulse_adjusted) %>% 
-  mutate(period = case_when(period=="Late Baseline" ~ "LB",
-                            period=="Early Post Adaptation" ~ "EPA",
-                            TRUE ~ "")) %>% 
-  unite(measure_type, joint, period, sep="_") %>% 
-  pivot_wider(names_from = measure_type, values_from = impulse_adjusted) %>% 
-  mutate(delta_hip_ext_impulse = Hip_EPA - Hip_LB,
-         delta_knee_ext_impulse = Knee_EPA - Knee_LB,
-         delta_ankle_pf_impulse = Ankle_EPA - Ankle_LB) %>% 
-  ggplot(aes(x = delta_ankle_pf_impulse, y = delta_knee_ext_impulse, color=condition))+
-  # ggplot(aes(x = delta_knee_ext_impulse, y = delta_hip_ext_impulse, color=condition))+
-  geom_point()+ 
-  # geom_text(aes(label = subject), 
-  #         nudge_x = 0.01,    # adjust these values to offset the text
-  #         nudge_y = 0.01) +  # from the points
-  stat_cor(aes(color=NULL),  # uses r.label instead of rr.label
-           method = "pearson",
-           p.accuracy = .001,
-           label.x.npc = "middle", 
-           label.y.npc = "top")+  
-  stat_cor(aes(),  # uses r.label instead of rr.label
-           method = "pearson",
-           p.accuracy = .001,
-           label.x.npc = "middle", 
-           label.y.npc = "middle")+  
-  theme(legend.position="bottom",
-        legend.justification = "center",
-        legend.title=element_blank())+
-  labs(title="Change in Angular Impulse Before and After Adaptation",
-       x="Δ Ankle Plantarflexor Impulse (N.m.s/BW)",
-       y="Δ Knee Extensor Impulse (N.m.s/BW)")
-
-  
-```
-
 
 ## Test
 
 ```{r}
 
-
 simple_comparison <- function(test_joint){
-    print(paste0("Comparing changes for ankle"))
+    print(paste0("Comparing changes for ", test_joint))
     impulse_data_for_test <- impulse_data%>% 
       filter(period %in% pre_post_periods) %>% 
       mutate(condition = BIL_CONDITION_LABELS[condition]) %>% 
@@ -1213,5 +806,240 @@ simple_comparison <- function(test_joint){
 simple_comparison("Hip")
 simple_comparison("Knee")
 simple_comparison("Ankle")
+```
+
+
+
+## Plot
+
+### Raw Plot
+
+```{r, fig.height=8, fig.width=6}
+moment_by_type %>% 
+  ggplot(aes(x = normalized_time, y = value, color = condition, shape= period)) +
+  geom_point(aes(group=subject))+
+  geom_hline(yintercept = 0) +
+  scale_x_continuous(labels = NULL) +
+  facet_grid(cols = vars(period, condition), 
+             rows = vars(joint, moment_type),
+             scales = "free_y") +
+  scale_linetype_manual(values = setNames(c("dotted", "solid"), comparison)) +
+  cowplot::theme_minimal_grid() +
+  theme(
+    legend.position = "bottom",
+    legend.box.just = "center",
+    legend.justification = "center"
+  ) +
+  labs(
+    x = "Normalized Stance Time (0-100%)",
+    y = "Joint Moment (N.m/BW)",
+    title = "Average Joint Moment Across Stance (95% CI)",
+    subtitle = "5 Steps Immediately Before and After Adaptation",
+    color = NULL,
+    fill = NULL,
+    linetype=NULL
+  )+
+  scale_color_discrete(guide = "none") +
+  scale_fill_discrete(guide = "none")  
+
+
+
+impulse_plot <- impulse_data %>% 
+  filter(moment_type=="Extension") %>% 
+  mutate(condition = BIL_CONDITION_LABELS[condition]) %>% 
+  ggplot(aes(x = period,y=impulse_adjusted, group = subject, color=condition))+
+  geom_boxplot(aes(group=period), 
+               alpha=0.3, 
+               width=0.2, 
+               color="black") +
+  geom_line(alpha=0.3, linewidth=0.3) +
+  geom_point(alpha=0.5, size=1) +
+  facet_grid(joint~ condition,
+             scales = "free_y")+
+  cowplot::theme_minimal_grid(font_family = "serif")+
+  theme(
+        legend.position = "none")+
+  # Add scale_x_discrete to create custom labels with line breaks
+  scale_x_discrete(labels = c("Late\nBaseline", "Early Post\nAdaptation")) + 
+  labs(
+    x = "Period",
+    y = "Joint Moment Impulse (N.m.s/BW)",
+    title = "Angular Impulses Across Stance Phase by Period",
+  ) +
+  geom_text(stat = "summary",
+            fun = mean,
+            aes(label = sprintf("%.3f", ..y..),
+                hjust = ifelse(period=="Late Baseline", 1.5, -.5),
+                group = 1),
+            color = "black",
+            vjust = 0.4,
+            size = 4)+
+  stat_summary(aes(group = 1), 
+              fun = mean, 
+              geom = "line", 
+              color = "black", 
+              linewidth = 1, 
+              linetype = "dashed", 
+              alpha = .6)+ 
+  stat_summary(aes(group = 1), 
+              fun = mean, 
+              geom = "point", 
+              color = "black", 
+              size = 3, 
+              shape = 18) 
+
+impulse_plot
+
+
+```
+
+
+### With Statistical Significance
+```{r, fig.height=8, fig.width=6}
+# Create a data frame with significance information
+sig_data <- tibble(
+  joint = factor(rep(c("Hip", "Knee", "Ankle"), each = 2), levels = c("Hip", "Knee", "Ankle")),
+  condition = rep(c("Fast Brake", "Fast Prop"), 3),
+  p_value = c("<0.0001", "<0.0001", "0.0048", "0.0048", "<0.0001", "<0.0001")
+)
+
+# Calculate appropriate y-positions for brackets based on your data
+# You'll need to extract range information from your existing data
+y_ranges <- impulse_data %>%
+  filter(moment_type == "Extension") %>%
+  mutate(condition = BIL_CONDITION_LABELS[condition]) %>%
+  group_by(joint, condition) %>%
+  summarize(
+    max_y = max(impulse_adjusted),
+    min_y = min(impulse_adjusted),
+    range = max_y - min_y,
+    .groups = "drop"
+  )
+
+# Join with significance data and calculate positions
+sig_data <- sig_data %>%
+  left_join(y_ranges, by = c("joint", "condition")) %>%
+  mutate(
+    # Position brackets above the highest point with some padding
+    y_pos = max_y + range * 0.10,
+    # Scale bracket height based on the data range
+    y_height = range * 0.05,
+    # Convert p-values to significance symbols
+    asterisks = case_when(
+      p_value == "<0.0001" ~ "****",
+      p_value == "0.0048" ~ "**",
+      TRUE ~ ""
+    )
+  )
+
+# Add significance indicators to your existing plot
+impulse_plot_with_sig <- impulse_plot +
+  # Add horizontal brackets
+  geom_segment(data = sig_data,
+               aes(x = 1, xend = 2, y = y_pos, yend = y_pos),
+               inherit.aes = FALSE,
+               linewidth = 0.5) +
+  # Add vertical bracket ends
+  geom_segment(data = sig_data,
+               aes(x = 1, xend = 1, y = y_pos, yend = y_pos - y_height),
+               inherit.aes = FALSE,
+               linewidth = 0.5) +
+  geom_segment(data = sig_data,
+               aes(x = 2, xend = 2, y = y_pos, yend = y_pos - y_height),
+               inherit.aes = FALSE,
+               linewidth = 0.5) +
+  # Add significance asterisks
+  geom_text(data = sig_data,
+            aes(x = 1.5, y = y_pos + y_height*0.7, label = asterisks),
+            inherit.aes = FALSE,
+            size = 3.5,
+            family = "serif") +
+  theme(plot.caption = element_text(hjust = 0, size = 9, family = "serif", face = "italic"))
+
+# Display the enhanced plot
+impulse_plot_with_sig
+
+# Save to file if needed
+ggsave(file.path(figure_directory, "Angular_Impulses_with_Significance.svg"), 
+       impulse_plot_with_sig, width = 7, height = 8, dpi = 300)
+```
+
+### Tabular Form to aid written description
+
+```{r}
+impulse_data %>% 
+  ungroup() %>% 
+  mutate(condition = BIL_CONDITION_LABELS[condition]) %>% 
+  filter(moment_type=="Extension") %>% 
+  group_by(joint, condition, period) %>% 
+  summarize(
+    mean = round(mean(impulse_adjusted), 3),
+    se = round(sd(impulse_adjusted)/sqrt(n()), 3),   # Using standard error instead of SD
+  ) %>% 
+  mutate(period = str_replace(period, " ", "")) %>%
+  pivot_wider(
+    id_cols = c(joint, condition),
+    names_from = period,
+    values_from = c(mean, se),
+    names_sep = "_"
+  ) %>%
+  # Calculate change and p-values from your model results
+  mutate(
+    Change = `mean_EarlyPost Adaptation` - mean_LateBaseline,
+    # You would need to manually add p-values from your models
+    pvalue = case_when(
+      joint == "Hip" ~ "<0.0001",
+      joint == "Knee" & condition == "Fast Brake" ~ "0.0048",
+      joint == "Knee" & condition == "Fast Prop" ~ "0.0048",
+      joint == "Ankle" & condition == "Fast Brake" ~ "<0.0001",
+      joint == "Ankle" & condition == "Fast Prop" ~ "<0.0001",
+      TRUE ~ "NA"
+    )
+  ) %>%
+  # Format for display
+  mutate(
+    Baseline = paste0(mean_LateBaseline, " ± ", se_LateBaseline),
+    PostAdaptation = paste0(`mean_EarlyPost Adaptation`, " ± ", `se_EarlyPost Adaptation`)
+  ) %>%
+  select(joint, condition, Baseline, PostAdaptation, Change, pvalue,`mean_LateBaseline`, `mean_EarlyPost Adaptation`)
+```
+
+### Correlation
+
+Coming back to this I am realizing that this is not actually as big as I'd thought it might be. A future study using simulation could be conducted without this motiviation.
+
+```{r, fig.width=5, fig.height=5}
+impulse_data %>% 
+  mutate(condition = BIL_CONDITION_LABELS[condition]) %>% 
+  filter(moment_type=="Extension") %>% 
+  select(subject, condition, period, joint,impulse_adjusted) %>% 
+  mutate(period = case_when(period=="Late Baseline" ~ "LB",
+                            period=="Early Post Adaptation" ~ "EPA",
+                            TRUE ~ "")) %>% 
+  unite(measure_type, joint, period, sep="_") %>% 
+  pivot_wider(names_from = measure_type, values_from = impulse_adjusted) %>% 
+  mutate(delta_hip_ext_impulse = Hip_EPA - Hip_LB,
+         delta_knee_ext_impulse = Knee_EPA - Knee_LB,
+         delta_ankle_pf_impulse = Ankle_EPA - Ankle_LB) %>% 
+  ggplot(aes(x = delta_ankle_pf_impulse, y = delta_knee_ext_impulse, color=condition))+
+  geom_point()+ 
+  stat_cor(aes(color=NULL),  # uses r.label instead of rr.label
+           method = "pearson",
+           p.accuracy = .001,
+           label.x.npc = "middle", 
+           label.y.npc = "top")+  
+  stat_cor(aes(),  # uses r.label instead of rr.label
+           method = "pearson",
+           p.accuracy = .001,
+           label.x.npc = "middle", 
+           label.y.npc = "middle")+  
+  theme(legend.position="bottom",
+        legend.justification = "center",
+        legend.title=element_blank())+
+  labs(title="Change in Angular Impulse Before and After Adaptation",
+       x="Δ Ankle Plantarflexor Impulse (N.m.s/BW)",
+       y="Δ Knee Extensor Impulse (N.m.s/BW)")
+
+  
 ```
 
